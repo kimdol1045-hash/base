@@ -1,0 +1,46 @@
+content: "스키마 설계 규칙 (데이터 무결성과 일관성을 보장한다):\n\n### 정규화 원칙\n- 3NF 이상 정규화가 기본. 의도적 비정규화는\
+  \ 주석에 근거 필수\n- 비정규화 허용 조건: 읽기 비율 90%+ 이고 JOIN이 3개 이상 필요한 경우\n\n### PK 전략\nDO:\n\
+  ```sql\n-- ✅ UUID v4: 예측 불가, 분산 시스템 안전\nCREATE TABLE users (\n  id UUID PRIMARY\
+  \ KEY DEFAULT gen_random_uuid(),\n  email VARCHAR(255) UNIQUE NOT NULL,\n  display_name\
+  \ VARCHAR(100) NOT NULL,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),\n  updated_at\
+  \ TIMESTAMPTZ NOT NULL DEFAULT now(),\n  deleted_at TIMESTAMPTZ  -- soft delete\n\
+  );\n```\n\nDON'T:\n```sql\n-- ❌ auto-increment: ID 추측 가능 → IDOR 취약점\nCREATE TABLE\
+  \ users (\n  id SERIAL PRIMARY KEY,\n  email TEXT  -- ❌ 길이 제한 없음, UNIQUE 누락\n);\n\
+  ```\n\n### 타임스탬프 필수 컬럼\n모든 테이블에 아래 3개 컬럼을 포함한다:\n- `created_at TIMESTAMPTZ NOT NULL\
+  \ DEFAULT now()`\n- `updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`\n- `deleted_at\
+  \ TIMESTAMPTZ` (soft delete가 필요한 경우)\n\n`updated_at` 자동 갱신 트리거:\n```sql\nCREATE\
+  \ OR REPLACE FUNCTION update_updated_at()\nRETURNS TRIGGER AS $$\nBEGIN\n  NEW.updated_at\
+  \ = now();\n  RETURN NEW;\nEND;\n$$ LANGUAGE plpgsql;\n\nCREATE TRIGGER set_updated_at\n\
+  \  BEFORE UPDATE ON users\n  FOR EACH ROW\n  EXECUTE FUNCTION update_updated_at();\n\
+  ```\n\n### 외래키 규칙\nDO:\n```sql\n-- ✅ CASCADE/SET NULL 명시적 선언\nCREATE TABLE posts\
+  \ (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  author_id UUID NOT NULL\
+  \ REFERENCES users(id) ON DELETE CASCADE,\n  category_id UUID REFERENCES categories(id)\
+  \ ON DELETE SET NULL,\n  title VARCHAR(200) NOT NULL,\n  content TEXT NOT NULL,\n\
+  \  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),\n  updated_at TIMESTAMPTZ NOT\
+  \ NULL DEFAULT now()\n);\n```\n\nDON'T:\n```sql\n-- ❌ ON DELETE 미명시 → 기본값 NO ACTION으로\
+  \ 삭제 시 에러\nCREATE TABLE posts (\n  author_id UUID REFERENCES users(id)\n);\n```\n\
+  \n### 네이밍 컨벤션\n- 테이블명: `snake_case`, 복수형 (`users`, `order_items`)\n- 컬럼명: `snake_case`\
+  \ (`created_at`, `author_id`)\n- 인덱스명: `idx_{table}_{columns}` (`idx_posts_author_id`)\n\
+  - 외래키명: `fk_{table}_{ref_table}` (`fk_posts_users`)\n\n### ENUM 처리\n```sql\n-- ✅\
+  \ PostgreSQL ENUM 타입 (값이 고정적일 때)\nCREATE TYPE order_status AS ENUM ('pending', 'confirmed',\
+  \ 'shipped', 'delivered', 'cancelled');\n\n-- ✅ 참조 테이블 (값이 자주 변경될 때)\nCREATE TABLE\
+  \ order_statuses (\n  id VARCHAR(20) PRIMARY KEY,\n  label VARCHAR(50) NOT NULL,\n\
+  \  sort_order INT NOT NULL DEFAULT 0\n);\n```\n\n### RLS 정책 (Supabase)\n```sql\n\
+  -- 사용자는 자신의 데이터만 CRUD 가능\nALTER TABLE posts ENABLE ROW LEVEL SECURITY;\n\nCREATE\
+  \ POLICY \"Users can read own posts\"\n  ON posts FOR SELECT\n  USING (author_id\
+  \ = auth.uid());\n\nCREATE POLICY \"Users can insert own posts\"\n  ON posts FOR\
+  \ INSERT\n  WITH CHECK (author_id = auth.uid());\n```\n\n### 흔한 실수\n- VARCHAR 길이\
+  \ 미지정 → TEXT와 동일하지만 의도가 불명확\n- NOT NULL 누락 → 의도치 않은 NULL 데이터 유입\n- 인덱스 없는 외래키 →\
+  \ JOIN 성능 저하\n- TIMESTAMPTZ 대신 TIMESTAMP → 타임존 이슈 발생\n"
+domain: development.database
+id: dev.backend.database.schema
+tags:
+- database
+- schema
+- normalization
+- postgresql
+- rls
+theory: '#107 Codd 정규화 이론 (Codd, 1970)'
+token_estimate: 1313
+type: rule
+version: 1

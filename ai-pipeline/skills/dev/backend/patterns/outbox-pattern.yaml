@@ -1,0 +1,24 @@
+content: "Outbox 패턴 (DB 쓰기 + 이벤트 발행의 원자성을 보장한다):\n\n### 문제 상황\n주문 저장 + 이벤트 발행이 별도\
+  \ 트랜잭션:\n- DB 성공 + 이벤트 실패 = 데이터 불일치\n- 이벤트 성공 + DB 실패 = 유령 이벤트\n\n### 해결: Outbox\
+  \ 테이블\n```sql\nCREATE TABLE outbox_events (\n  id UUID PRIMARY KEY,\n  aggregate_type\
+  \ VARCHAR(255) NOT NULL,\n  aggregate_id VARCHAR(255) NOT NULL,\n  event_type VARCHAR(255)\
+  \ NOT NULL,\n  payload JSONB NOT NULL,\n  created_at TIMESTAMPTZ DEFAULT NOW(),\n\
+  \  published_at TIMESTAMPTZ NULL\n);\n```\n\n### 동작 흐름\n```\n1. BEGIN TRANSACTION\n\
+  2.   INSERT INTO orders (...)\n3.   INSERT INTO outbox_events (event_type='OrderCreated',\
+  \ ...)\n4. COMMIT\n\n5. [별도 프로세스] Outbox Relay\n   - published_at IS NULL인 이벤트 조회\n\
+  \   - 메시지 브로커에 발행\n   - published_at 업데이트\n```\n\n### Relay 구현 방식\n| 방식 | 장점 | 단점\
+  \ |\n|------|------|------|\n| Polling | 구현 간단 | 지연 발생, DB 부하 |\n| CDC (Debezium)\
+  \ | 실시간, DB 부하 적음 | 인프라 복잡 |\n| pg_notify | PostgreSQL 네이티브 | DB 종속 |\n\n### 주의사항\n\
+  - 이벤트 컨슈머는 반드시 멱등 처리 (중복 발행 가능)\n- Outbox 테이블 정리: 발행 완료 후 일정 기간 지나면 삭제\n- 순서 보장:\
+  \ aggregate_id 기준 파티셔닝\n"
+domain: development.backend
+id: dev.backend.patterns.outbox-pattern
+tags:
+- backend
+- event-driven
+- outbox
+- consistency
+theory: '#148 Transactional Outbox Pattern (Chris Richardson)'
+token_estimate: 430
+type: pattern
+version: 1

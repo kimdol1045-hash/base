@@ -1,0 +1,83 @@
+---
+id: "marketing.persuasion.anchoring"
+domain: "marketing"
+type: "rule"
+bloom_level: ""
+tags: ["marketing", "persuasion", "anchoring", "pricing", "cognitive-bias"]
+brain_region: "SENSORS"
+token_estimate: 480
+---
+
+# marketing.persuasion.anchoring
+
+> #60 앵커링 효과 (Tversky & Kahneman, 1974)
+
+앵커링 효과 — 처음 접한 정보(앵커)가 이후 판단의 기준이 된다:
+
+### 원리
+사람은 첫 번째 숫자/정보를 기준점으로 삼아 비교 판단한다.
+높은 앵커를 먼저 보여주면, 이후 가격이 "저렴하게" 느껴진다.
+
+### 1. 가격 앵커링 전략
+
+**높은 가격 → 할인가 순서**:
+- "정가 ₩890,000 → 오늘만 ₩490,000" (45% 할인 강조)
+- "시간당 컨설팅 비용 ₩500,000 → 월 구독 ₩99,000으로 무제한"
+- "경쟁사 평균 ₩150,000/월 → 우리는 ₩59,000/월"
+
+**3단 요금제 (Decoy Effect 활용)**:
+```
+┌──────────┐  ┌──────────────┐  ┌──────────┐
+│  Starter │  │  ★ Growth ★  │  │ Scale    │
+│ ₩39,000  │  │  ₩79,000     │  │ ₩199,000 │
+│          │  │              │  │          │
+│  1명     │  │  10명        │  │  무제한   │
+│  10GB    │  │  100GB       │  │  1TB     │
+│  이메일   │  │  전화+이메일  │  │  전담 매니저│
+│          │  │  "가성비 최고" │  │          │
+│ [선택]   │  │  [추천]      │  │ [문의]   │
+└──────────┘  └──────────────┘  └──────────┘
+```
+- Scale(₩199,000)이 앵커 역할 → Growth(₩79,000)가 합리적으로 느껴짐
+- Growth와 Starter 차이 > Scale과 Growth 차이로 설계 (가치 격차)
+
+### 2. 가치 앵커링 전략
+
+**비용 절감 앵커**:
+- "신규 채용 1명 연봉 ₩5,000만원 vs 우리 서비스 연 ₩600만원"
+- "회의 시간 주 10시간 × 시급 ₩50,000 = 월 ₩200만원 낭비"
+- "수동 작업 월 40시간 → 자동화로 월 2시간"
+
+**시간 앵커**:
+- "기존: 리포트 작성 3일 → 우리 서비스: 5분"
+- "1년 걸릴 학습을 3개월에"
+
+### 3. 숫자 제시 순서
+
+| 상황 | 잘못된 순서 | 올바른 순서 |
+|------|-----------|-----------|
+| 가격 | "₩49,000입니다" | "보통 ₩120,000인데, ₩49,000입니다" |
+| 절감 | "월 ₩10만원입니다" | "연 ₩300만원 절감, 월 ₩10만원" |
+| 성과 | "전환율 3.2%" | "업계 평균 1.1% → 우리 고객 3.2%" |
+| 시간 | "5분이면 됩니다" | "보통 3시간 걸리는 작업을 5분에" |
+
+### 4. 한국어 카피 예시
+- "인건비 월 400만원 vs 자동화 월 9만원, 선택은 명확합니다"
+- "마케팅 대행사 월 500만원, 우리 툴 월 19만원으로 같은 결과"
+- "기존 방식 3일, AI로 30분. 시간은 돈입니다"
+- "수강료 ₩2,400,000 → 얼리버드 ₩990,000 (59% 할인)"
+- "1:1 코칭 1회 ₩300,000, 월 구독 ₩49,000으로 무제한 질문"
+
+## Connections
+
+- [[marketing.persuasion.role]] — CO_CREATES (weight: 0.6)
+- [[marketing.persuasion.hook-model]] — CO_CREATES (weight: 0.6)
+- [[marketing.persuasion.nudge]] — CO_CREATES (weight: 0.6)
+- [[marketing.persuasion.social-proof]] — CO_CREATES (weight: 0.6)
+- [[marketing.persuasion.reciprocity]] — CO_CREATES (weight: 0.6)
+- [[marketing.persuasion.authority]] — CO_CREATES (weight: 0.6)
+- [[marketing.persuasion.fogg-model]] — CO_CREATES (weight: 0.6)
+- [[marketing.persuasion.scarcity]] — CO_CREATES (weight: 0.6)
+- [[marketing.persuasion.endowment]] — CO_CREATES (weight: 0.6)
+- [[marketing.persuasion.prospect-theory]] — CO_CREATES (weight: 0.6)
+- [[marketing.copy.cta]] — FEEDS (weight: 0.5)

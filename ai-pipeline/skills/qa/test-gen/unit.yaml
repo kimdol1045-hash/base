@@ -1,0 +1,25 @@
+content: "단위 테스트 (개별 함수/모듈의 정확성을 검증한다):\n\n### AAA 패턴\n```typescript\nimport { describe,\
+  \ it, expect } from 'vitest';\nimport { calculateDiscount } from './pricing';\n\n\
+  describe('calculateDiscount', () => {\n  it('10만원 이상 구매 시 10% 할인 적용', () => {\n\
+  \    // Arrange\n    const price = 150000;\n    const memberLevel = 'standard';\n\
+  \n    // Act\n    const result = calculateDiscount(price, memberLevel);\n\n    //\
+  \ Assert\n    expect(result).toBe(135000);\n  });\n\n  it('음수 금액 시 에러 발생', () =>\
+  \ {\n    expect(() => calculateDiscount(-1000, 'standard'))\n      .toThrow('금액은\
+  \ 0 이상이어야 합니다');\n  });\n\n  it('VIP 회원은 추가 5% 할인', () => {\n    const result =\
+  \ calculateDiscount(100000, 'vip');\n    expect(result).toBe(85000); // 10% + 5%\n\
+  \  });\n});\n```\n\n### 좋은 테스트의 조건\n- 독립적: 다른 테스트에 의존하지 않음\n- 반복 가능: 몇 번이든 같은 결과\n\
+  - 빠름: 단위 테스트 전체 10초 이내\n- 의미 있는 이름: \"~할 때 ~해야 한다\" 형식\n\n### Mock/Stub 기준\n- 외부\
+  \ 의존성(DB, API, 파일)만 mock\n- 내부 구현 mock 금지 (리팩토링 시 테스트 깨짐)\n- vi.fn()으로 호출 횟수/인자\
+  \ 검증\n\n### 테스트 커버리지\n- 행복 경로 (정상 동작) + 에지 케이스 (경계값, null, 빈 배열)\n- 목표: 80% 라인 커버리지\
+  \ (100% 추구 금지 — 유지보수 비용)\n"
+domain: qa
+id: qa.test-gen.unit
+tags:
+- qa
+- test
+- unit-test
+- vitest
+theory: '#123 AAA Pattern (Arrange-Act-Assert)'
+token_estimate: 420
+type: pattern
+version: 1

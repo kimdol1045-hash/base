@@ -1,0 +1,33 @@
+bloom_level: APPLY
+content: "# API 멱등성(Idempotency) 가이드\n\n## 핵심 원칙\n- 동일한 요청을 여러 번 보내도 결과가 동일해야 한다\n\
+  - POST/PATCH 같은 비멱등 메서드에 Idempotency Key를 적용한다\n- 네트워크 장애로 인한 중복 요청을 안전하게 처리한다\n\
+  - 클라이언트가 안전하게 재시도할 수 있는 API를 설계한다\n\n## DO\n- `Idempotency-Key` 요청 헤더를 지원한다\n- 키와\
+  \ 응답을 저장하여 동일 키 요청 시 저장된 응답을 반환한다\n- 키 저장소에 TTL을 설정한다 (보통 24시간)\n- 결제, 주문 생성 등 부작용이\
+  \ 큰 API에 필수 적용한다\n\n## DON'T\n- GET, DELETE는 이미 멱등하므로 별도 키를 요구하지 않는다\n- Idempotency\
+  \ Key를 영구 저장하지 않는다 (TTL 필수)\n- 진행 중인 요청의 동일 키로 중복 실행을 허용하지 않는다\n- 요청 본문이 다른데 같은\
+  \ 키를 재사용하는 것을 허용하지 않는다\n\n## 코드 예시\n```typescript\nasync function idempotencyMiddleware(req:\
+  \ Request, res: Response, next: NextFunction) {\n  const key = req.headers[\"idempotency-key\"\
+  ] as string;\n  if (!key) return next(); // 키 없으면 통과\n\n  const existing = await\
+  \ redis.get(`idempotency:${key}`);\n  if (existing) {\n    const cached = JSON.parse(existing);\n\
+  \    // 요청 본문 해시 비교 (같은 키, 다른 요청 방지)\n    const bodyHash = createHash(\"sha256\"\
+  ).update(JSON.stringify(req.body)).digest(\"hex\");\n    if (cached.bodyHash !==\
+  \ bodyHash) {\n      return res.status(422).json({\n        error: { code: \"IDEMPOTENCY_MISMATCH\"\
+  , message: \"동일 키에 다른 요청 본문\" }\n      });\n    }\n    return res.status(cached.status).json(cached.body);\n\
+  \  }\n\n  // 진행 중 잠금\n  const locked = await redis.set(`idempotency:lock:${key}`,\
+  \ \"1\", \"NX\", \"EX\", 60);\n  if (!locked) {\n    return res.status(409).json({\
+  \ error: { code: \"REQUEST_IN_PROGRESS\" } });\n  }\n\n  const originalJson = res.json.bind(res);\n\
+  \  res.json = (body: unknown) => {\n    const bodyHash = createHash(\"sha256\").update(JSON.stringify(req.body)).digest(\"\
+  hex\");\n    redis.set(`idempotency:${key}`, JSON.stringify({\n      status: res.statusCode,\
+  \ body, bodyHash,\n    }), \"EX\", 86400);\n    redis.del(`idempotency:lock:${key}`);\n\
+  \    return originalJson(body);\n  };\n  next();\n}\n```\n"
+domain: development.backend
+id: dev.backend.api.idempotency
+tags:
+- api
+- idempotency
+- reliability
+- backend
+theory: '#219 Idempotency Patterns (Stripe API Design, 2018)'
+token_estimate: 866
+type: pattern
+version: 1

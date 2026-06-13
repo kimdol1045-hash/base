@@ -1,0 +1,21 @@
+content: "North Star Metric (제품의 핵심 가치를 하나의 지표로 정렬한다):\n\n### 정의\n제품이 고객에게 전달하는 핵심\
+  \ 가치를 가장 잘 반영하는 단일 지표.\n모든 팀이 이 지표를 향해 정렬된다.\n\n### 좋은 North Star 기준\n- 고객 가치를 반영\
+  \ (매출 X, 사용 행동 O)\n- 선행 지표 (매출보다 앞서 움직임)\n- 팀 전체가 기여 가능\n- 측정 가능 + 주기적 추적 가능\n\n\
+  ### 제품 유형별 예시\n| 제품 유형 | North Star | 이유 |\n|----------|-----------|------|\n| SaaS\
+  \ 협업 | 주간 활성 편집자 수 | 협업 가치 반영 |\n| 이커머스 | 주간 거래 완료 수 | 구매 가치 반영 |\n| 콘텐츠 플랫폼 | 일간\
+  \ 콘텐츠 소비 시간 | 참여 가치 반영 |\n| 마켓플레이스 | 주간 성사 매칭 수 | 양면 가치 반영 |\n| 핀테크 | 월간 활성 거래 금액\
+  \ | 금융 가치 반영 |\n\n### Input Metrics (하위 지표)\nNorth Star를 움직이는 레버:\n```\nNorth Star:\
+  \ 주간 활성 편집자 수\n  ├─ 신규 가입자 중 편집 시작률 (Activation)\n  ├─ 기존 사용자 주간 복귀율 (Retention)\n\
+  \  └─ 편집자당 초대한 팀원 수 (Referral)\n```\n\n### 주의사항\n- 매출은 North Star가 아님 (후행 지표)\n\
+  - 분기마다 재검토 (제품 단계에 따라 변할 수 있음)\n- Vanity metric 배제 (총 가입자 수 등)\n"
+domain: planning
+id: planning.prd.north-star
+tags:
+- planning
+- north-star
+- metrics
+- product
+theory: '#178 North Star Metric (Sean Ellis, Amplitude)'
+token_estimate: 400
+type: rule
+version: 1

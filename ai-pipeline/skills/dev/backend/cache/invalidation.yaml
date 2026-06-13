@@ -1,0 +1,29 @@
+bloom_level: ANALYZE
+content: "# 캐시 무효화 가이드\n\n## 핵심 원칙\n- 캐시 무효화는 캐싱에서 가장 어려운 문제이다\n- 데이터 변경 시 관련된 모든\
+  \ 캐시 키를 식별하고 무효화한다\n- 태그 기반 무효화로 관련 캐시를 그룹으로 관리한다\n- 무효화 실패에 대비하여 TTL을 안전장치로 설정한다\n\
+  \n## DO\n- 쓰기 작업 후 해당 엔티티 관련 캐시를 즉시 삭제한다\n- 캐시 키에 버전을 포함하여 스키마 변경 시 자동 무효화한다\n-\
+  \ 태그 기반 캐시 그룹핑으로 관련 캐시를 일괄 무효화한다\n- 이벤트 기반 무효화를 구현하여 서비스 간 캐시 일관성을 유지한다\n\n## DON'T\n\
+  - 캐시 무효화를 누락하여 stale 데이터가 노출되도록 하지 않는다\n- 전체 캐시를 flush하는 방식으로 무효화하지 않는다\n- 캐시 삭제\
+  \ 실패를 무시하지 않는다\n- 복잡한 캐시 의존성 그래프를 만들지 않는다\n\n## 코드 예시\n```typescript\n// 태그 기반 캐시\
+  \ 무효화\nclass TaggedCache {\n  async set(key: string, value: unknown, tags: string[],\
+  \ ttl: number) {\n    await redis.set(key, JSON.stringify(value), \"EX\", ttl);\n\
+  \    for (const tag of tags) {\n      await redis.sadd(`tag:${tag}`, key);\n   \
+  \ }\n  }\n\n  async invalidateByTag(tag: string) {\n    const keys = await redis.smembers(`tag:${tag}`);\n\
+  \    if (keys.length > 0) {\n      await redis.del(...keys);\n    }\n    await redis.del(`tag:${tag}`);\n\
+  \  }\n}\n\n// 사용 예: 사용자 수정 시 관련 캐시 모두 무효화\nasync function updateUser(id: string,\
+  \ data: UpdateUserInput) {\n  const user = await db.users.update(id, data);\n  await\
+  \ taggedCache.invalidateByTag(`user:${id}`);\n  // user:123 태그가 붙은 모든 캐시가 삭제됨\n\
+  \  // 예: user:123:profile, user:123:posts, team:456:members 등\n  return user;\n\
+  }\n\n// 캐시 저장 시 태그 지정\nawait taggedCache.set(\n  `user:${id}:profile`, profile,\n\
+  \  [`user:${id}`, `team:${profile.teamId}`],\n  3600,\n);\n```\n"
+domain: development.backend
+id: dev.backend.cache.invalidation
+tags:
+- cache
+- invalidation
+- consistency
+- backend
+theory: '#214 Cache Invalidation (Phil Karlton, ''Two Hard Things in CS'')'
+token_estimate: 664
+type: pattern
+version: 1

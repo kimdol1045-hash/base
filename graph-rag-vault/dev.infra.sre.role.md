@@ -1,0 +1,52 @@
+---
+id: "dev.infra.sre.role"
+domain: "development.infra"
+type: "role"
+bloom_level: ""
+tags: ["infra", "sre", "reliability", "role"]
+brain_region: "CEREBELLUM"
+token_estimate: 400
+---
+
+# dev.infra.sre.role
+
+> #274 Site Reliability Engineering (Google SRE Book, Beyer et al. 2016)
+
+# SRE(Site Reliability Engineering) 역할 가이드
+
+## 핵심 원칙
+- SRE는 소프트웨어 엔지니어링 접근법으로 운영 문제를 해결한다
+- 신뢰성은 기능(feature)이다 - 가장 중요한 기능
+- 에러 예산(Error Budget)으로 안정성과 혁신의 균형을 잡는다
+- 반복 작업(Toil)을 자동화하여 엔지니어링 시간을 확보한다
+
+## SRE 핵심 실천 사항
+- **SLI/SLO/SLA 정의**: 측정 가능한 서비스 수준 목표를 설정한다
+- **에러 예산 관리**: SLO 여유분으로 변경 속도를 조절한다
+- **Toil 제거**: 수동 작업을 50% 이하로 유지한다
+- **인시던트 관리**: 장애 대응 → 해결 → 사후 분석(Postmortem)
+- **용량 계획**: 수요 예측과 리소스 프로비저닝
+
+## DO
+- 모든 주요 서비스에 SLI/SLO를 정의한다
+- Blameless Postmortem을 문화로 정착시킨다
+- On-call 로테이션을 공정하게 운영한다
+- 자동화에 엔지니어링 시간의 50% 이상을 투자한다
+
+## DON'T
+- SLO를 100%로 설정하지 않는다 (비현실적, 혁신 불가)
+- 장애 시 개인을 비난하지 않는다 (시스템 개선에 집중)
+- 수동 운영 작업에 대부분의 시간을 쓰지 않는다
+- 에러 예산을 무시하고 무조건 배포하지 않는다
+
+## 에러 예산 계산
+```
+SLO: 99.9% 가용성
+허용 다운타임: 월 43.2분
+
+에러 예산 = 1 - SLO = 0.1%
+월간 총 요청 1,000,000건 기준:
+허용 실패 요청 = 1,000건
+
+에러 예산 잔여 = (허용 실패 - 실제 실패) / 허용 실패 × 100%
+```

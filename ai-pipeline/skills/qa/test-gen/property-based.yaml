@@ -1,0 +1,25 @@
+content: "Property-Based Testing (속성을 정의하고 랜덤 입력으로 검증한다):\n\n### 핵심 개념\n- 예시 기반: \"\
+  입력 A → 출력 B\" (특정 케이스)\n- 속성 기반: \"모든 입력에 대해 속성 P가 성립\" (일반화)\n\n### 자주 쓰는 속성 유형\n\
+  | 속성 | 설명 | 예시 |\n|------|------|------|\n| 왕복(Roundtrip) | 변환→역변환 = 원본 | encode(decode(x))\
+  \ === x |\n| 멱등성 | 두 번 적용해도 같음 | sort(sort(x)) === sort(x) |\n| 불변식 | 항상 참인 조건 |\
+  \ sort(x).length === x.length |\n| 모델 비교 | 단순 구현과 결과 비교 | fastSort(x) === simpleSort(x)\
+  \ |\n| 에러 없음 | 어떤 입력이든 크래시 안 남 | parse(randomString) doesn't throw |\n\n### fast-check\
+  \ 예시 (TypeScript)\n```typescript\nimport fc from 'fast-check';\n\n// 정렬 결과 길이가 입력과\
+  \ 같다 (불변식)\ntest('sort 결과 길이 보존', () => {\n  fc.assert(\n    fc.property(fc.array(fc.integer()),\
+  \ (arr) => {\n      const sorted = mySort(arr);\n      return sorted.length ===\
+  \ arr.length;\n    })\n  );\n});\n\n// JSON 직렬화 왕복\ntest('JSON roundtrip', () =>\
+  \ {\n  fc.assert(\n    fc.property(fc.jsonValue(), (value) => {\n      expect(JSON.parse(JSON.stringify(value))).toEqual(value);\n\
+  \    })\n  );\n});\n```\n\n### 적용 대상\n- ✅ 적용: 파서, 직렬화, 정렬, 수학 연산, 데이터 변환\n- ❌ 부적합:\
+  \ UI 테스트, 외부 API 의존 테스트\n\n### Shrinking\n실패 케이스 발견 시 자동으로 최소 반례를 찾아줌.\n예: [3, -1,\
+  \ 99, 0, -5] 실패 → [-1] 최소 반례\n"
+domain: qa
+id: qa.test-gen.property-based
+tags:
+- qa
+- property-based-testing
+- fast-check
+- quickcheck
+theory: '#155 Property-Based Testing (QuickCheck, Claessen & Hughes, 2000)'
+token_estimate: 549
+type: pattern
+version: 1

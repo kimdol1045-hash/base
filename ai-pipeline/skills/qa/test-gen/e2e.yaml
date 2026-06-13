@@ -1,0 +1,42 @@
+content: "E2E 테스트 (사용자 관점에서 전체 시스템의 핵심 경로를 검증한다):\n\n### Testing Trophy에서의 E2E 위치\n\
+  단위 < 통합 < **E2E** (피라미드 최상단)\nE2E는 수가 적되, 핵심 사용자 여정(Critical Path)만 집중한다.\n\n###\
+  \ Page Object Model (POM)\n```typescript\n// DO: POM으로 페이지 로직 캡슐화\nclass LoginPage\
+  \ {\n  constructor(private page: Page) {}\n\n  async goto() {\n    await this.page.goto('/login');\n\
+  \  }\n\n  async login(email: string, password: string) {\n    await this.page.getByLabel('이메일').fill(email);\n\
+  \    await this.page.getByLabel('비밀번호').fill(password);\n    await this.page.getByRole('button',\
+  \ { name: '로그인' }).click();\n  }\n\n  async expectError(message: string) {\n   \
+  \ await expect(this.page.getByRole('alert')).toHaveText(message);\n  }\n}\n```\n\
+  \n### Critical Path 테스트 (로그인→행동→검증)\n```typescript\nimport { test, expect } from\
+  \ '@playwright/test';\n\ntest.describe('주문 플로우', () => {\n  test('로그인 → 상품 추가 →\
+  \ 결제 완료', async ({ page }) => {\n    const loginPage = new LoginPage(page);\n  \
+  \  await loginPage.goto();\n    await loginPage.login('user@test.com', 'password123');\n\
+  \n    // 상품 추가\n    await page.getByRole('link', { name: '상품 목록' }).click();\n \
+  \   await page.getByRole('button', { name: '장바구니 추가' }).first().click();\n    await\
+  \ expect(page.getByTestId('cart-count')).toHaveText('1');\n\n    // 결제\n    await\
+  \ page.getByRole('link', { name: '장바구니' }).click();\n    await page.getByRole('button',\
+  \ { name: '결제하기' }).click();\n    await expect(page.getByText('주문 완료')).toBeVisible();\n\
+  \  });\n});\n```\n\n### 테스트 격리 (Fixtures)\n```typescript\n// DO: fixture로 테스트 데이터\
+  \ 격리\ntest.beforeEach(async ({ page, request }) => {\n  // API로 테스트 데이터 직접 생성 (UI\
+  \ 클릭 최소화)\n  await request.post('/api/test/seed', { data: { scenario: 'checkout'\
+  \ } });\n});\n\ntest.afterEach(async ({ request }) => {\n  await request.post('/api/test/cleanup');\n\
+  });\n```\n\nDON'T:\n```typescript\n// ❌ 구현 상세에 의존하는 셀렉터\nawait page.locator('.MuiButton-root\
+  \ > div:nth-child(2)').click();\nawait page.locator('#__next > main > div:nth-child(3)').click();\n\
+  \n// ❌ 테스트 간 상태 공유\nlet orderId: string; // 이전 테스트에서 생성된 ID에 의존\ntest('주문 확인', async\
+  \ ({ page }) => {\n  await page.goto(`/orders/${orderId}`); // 이전 테스트 실패 시 연쇄 실패\n\
+  });\n```\n\n### Visual Comparison (CI)\n```typescript\n// 스크린샷 비교로 시각적 회귀 검출\nawait\
+  \ expect(page).toHaveScreenshot('checkout-page.png', {\n  maxDiffPixelRatio: 0.01,\n\
+  });\n```\n\n### CI 통합 규칙\n- Playwright 전용 Docker 이미지 사용 (playwright:v1.40.0)\n-\
+  \ 병렬 실행: `workers: 4` (CI에서 속도 최적화)\n- 실패 시 trace/screenshot 자동 저장: `retries: 1`,\
+  \ `trace: 'on-first-retry'`\n- E2E는 전체 테스트의 10-20%만 유지 (유지보수 비용 관리)\n"
+domain: qa
+id: qa.test-gen.e2e
+tags:
+- qa
+- test
+- e2e
+- playwright
+- page-object-model
+theory: '#126 Testing Trophy (Dodds, 2019)'
+token_estimate: 1213
+type: pattern
+version: 1

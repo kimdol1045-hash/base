@@ -1,0 +1,44 @@
+content: "OAuth2 Authorization Code + PKCE Flow (소셜 로그인의 보안 표준):\n\n### 흐름 단계\n1.\
+  \ 클라이언트 → Authorization URL (state + code_challenge)\n2. 사용자 → Provider 로그인 및 동의\n\
+  3. Provider → Redirect URI (authorization code + state)\n4. 서버 → Provider token\
+  \ endpoint (code + code_verifier)\n5. Provider → Access Token + ID Token\n6. 서버\
+  \ → 사용자 생성/연동 + 세션 발급\n\n### PKCE + State 구현\n```typescript\n// DO: PKCE로 code interception\
+  \ 공격 방지, state로 CSRF 방지\nimport crypto from 'crypto';\n\nfunction startOAuthFlow(provider:\
+  \ 'google' | 'github') {\n  const state = crypto.randomBytes(32).toString('hex');\n\
+  \  const codeVerifier = crypto.randomBytes(32).toString('base64url');\n  const codeChallenge\
+  \ = crypto\n    .createHash('sha256').update(codeVerifier).digest('base64url');\n\
+  \n  // 세션에 state, codeVerifier 저장\n  session.set({ state, codeVerifier });\n\n \
+  \ const params = new URLSearchParams({\n    client_id: config[provider].clientId,\n\
+  \    redirect_uri: config[provider].redirectUri,\n    response_type: 'code',\n \
+  \   scope: provider === 'google' ? 'openid email profile' : 'user:email',\n    state,\n\
+  \    code_challenge: codeChallenge,\n    code_challenge_method: 'S256',\n  });\n\
+  \  return `${config[provider].authUrl}?${params}`;\n}\n\n// 콜백 처리: 기존 계정 연동 포함\n\
+  async function handleOAuthCallback(code: string, state: string) {\n  if (state !==\
+  \ session.get('state')) throw new Error('CSRF detected');\n  const tokens = await\
+  \ exchangeCode(code, session.get('codeVerifier'));\n  const profile = await fetchUserProfile(tokens.access_token);\n\
+  \n  // 이메일로 기존 사용자 검색 → 연동 or 생성\n  let user = await db.findByEmail(profile.email);\n\
+  \  if (user) {\n    await db.linkProvider(user.id, provider, profile.providerId);\n\
+  \  } else {\n    if (!profile.email_verified) throw new Error('Email not verified');\n\
+  \    user = await db.createUser({ email: profile.email, name: profile.name });\n\
+  \    await db.linkProvider(user.id, provider, profile.providerId);\n  }\n  return\
+  \ generateSession(user);\n}\n```\n\nDON'T:\n```typescript\n// ❌ Implicit Flow —\
+  \ 토큰이 URL fragment에 노출\nresponse_type: 'token'  // 절대 사용 금지\n\n// ❌ state 파라미터 없음\
+  \ — CSRF 공격 가능\n// ❌ Provider 이메일을 검증 없이 신뢰\nconst user = await db.findOrCreate({\
+  \ email: profile.email }); // email_verified 미확인!\n\n// ❌ PKCE 없이 public client에서\
+  \ 사용 — code interception 가능\n```\n\n### Provider 설정 체크리스트\n| Provider | Scope |\
+  \ Token URL |\n|----------|-------|-----------|\n| Google | openid email profile\
+  \ | oauth2.googleapis.com/token |\n| GitHub | user:email | github.com/login/oauth/access_token\
+  \ |\n| Kakao | account_email profile | kauth.kakao.com/oauth/token |\n\n### 흔한 실수\n\
+  - redirect_uri를 와일드카드로 설정 (open redirect 취약점)\n- 소셜 계정 연동 해제 시 로컬 비밀번호 미설정 확인 누락\n\
+  - Provider 토큰을 DB에 평문 저장 — 암호화 필수\n"
+domain: development.backend
+id: dev.backend.auth.oauth-flow
+tags:
+- backend
+- auth
+- oauth
+- social-login
+theory: '#116 OWASP A07'
+token_estimate: 650
+type: pattern
+version: 1

@@ -1,0 +1,80 @@
+content: "결제 연동 패턴 (카드 번호를 절대 직접 다루지 않는다 -- PCI DSS 준수는 선택이 아니라 법적 의무다):\n\n### Stripe\
+  \ Checkout 흐름\n```\n클라이언트 → 서버(세션 생성) → Stripe(결제 UI) → Webhook(결제 완료) → 서버(주문 확정)\n\
+  ```\n\nDO:\n```typescript\nimport Stripe from \"stripe\";\n\nconst stripe = new\
+  \ Stripe(env.STRIPE_SECRET_KEY, { apiVersion: \"2024-06-20\" });\n\n// 1. Checkout\
+  \ Session 생성\napp.post(\"/api/v1/checkout\", authMiddleware, async (c) => {\n  const\
+  \ { items } = CheckoutSchema.parse(await c.req.json());\n  const userId = c.get(\"\
+  userId\");\n\n  // 주문 생성 (pending 상태)\n  const order = await db.insert(orders).values({\n\
+  \    userId,\n    status: \"pending\",\n    items: JSON.stringify(items),\n    total:\
+  \ calculateTotal(items),\n  }).returning();\n\n  // Stripe Checkout Session\n  const\
+  \ session = await stripe.checkout.sessions.create({\n    mode: \"payment\",\n  \
+  \  customer_email: c.get(\"userEmail\"),\n    client_reference_id: order[0].id,\n\
+  \    line_items: items.map((item) => ({\n      price_data: {\n        currency:\
+  \ \"krw\",\n        product_data: { name: item.name, description: item.description\
+  \ },\n        unit_amount: item.price,  // KRW는 소수점 없음\n      },\n      quantity:\
+  \ item.quantity,\n    })),\n    success_url: `${env.FRONTEND_URL}/orders/${order[0].id}?status=success`,\n\
+  \    cancel_url: `${env.FRONTEND_URL}/orders/${order[0].id}?status=cancelled`,\n\
+  \    metadata: { orderId: order[0].id },\n    // 멱등성 키 (동일 주문 중복 세션 방지)\n    idempotency_key:\
+  \ `checkout-${order[0].id}`,\n  } as Stripe.Checkout.SessionCreateParams);\n\n \
+  \ return c.json({ data: { sessionId: session.id, url: session.url } });\n});\n\n\
+  // 2. Webhook 수신 (결제 완료 처리)\napp.post(\"/webhooks/stripe\", async (c) => {\n  const\
+  \ sig = c.req.header(\"stripe-signature\");\n  if (!sig) return c.json({ error:\
+  \ \"Missing signature\" }, 400);\n\n  let event: Stripe.Event;\n  try {\n    const\
+  \ body = await c.req.text();\n    event = stripe.webhooks.constructEvent(body, sig,\
+  \ env.STRIPE_WEBHOOK_SECRET);\n  } catch (err) {\n    logger.error(\"Stripe webhook\
+  \ signature verification failed\", { error: err });\n    return c.json({ error:\
+  \ \"Invalid signature\" }, 400);\n  }\n\n  // 멱등성: 이벤트 중복 처리 방지\n  const existing\
+  \ = await db.query.stripeEvents.findFirst({\n    where: eq(stripeEvents.eventId,\
+  \ event.id),\n  });\n  if (existing) return c.json({ received: true, duplicate:\
+  \ true });\n\n  // 이벤트 기록\n  await db.insert(stripeEvents).values({\n    eventId:\
+  \ event.id,\n    type: event.type,\n    processedAt: new Date(),\n  });\n\n  switch\
+  \ (event.type) {\n    case \"checkout.session.completed\": {\n      const session\
+  \ = event.data.object as Stripe.Checkout.Session;\n      const orderId = session.metadata?.orderId;\n\
+  \      if (!orderId) break;\n\n      await db.update(orders)\n        .set({\n \
+  \         status: \"paid\",\n          stripeSessionId: session.id,\n          paidAt:\
+  \ new Date(),\n        })\n        .where(eq(orders.id, orderId));\n\n      // 후처리\
+  \ 큐 (이메일, 재고 차감 등)\n      await orderQueue.add(\"post-payment\", { orderId });\n\
+  \      break;\n    }\n\n    case \"charge.refunded\": {\n      const charge = event.data.object\
+  \ as Stripe.Charge;\n      await handleRefund(charge);\n      break;\n    }\n\n\
+  \    default:\n      logger.info(`Unhandled Stripe event: ${event.type}`);\n  }\n\
+  \n  return c.json({ received: true });\n});\n\n// 3. 환불 처리\napp.post(\"/api/v1/orders/:id/refund\"\
+  , authMiddleware, async (c) => {\n  const orderId = c.req.param(\"id\");\n  const\
+  \ { reason } = RefundSchema.parse(await c.req.json());\n\n  const order = await\
+  \ db.query.orders.findFirst({\n    where: and(eq(orders.id, orderId), eq(orders.userId,\
+  \ c.get(\"userId\"))),\n  });\n  if (!order) throw Errors.notFound(\"주문\");\n  if\
+  \ (order.status !== \"paid\") throw Errors.badRequest(\"환불 가능한 상태가 아닙니다\");\n\n\
+  \  // Stripe 환불 요청 (멱등성 키 포함)\n  const refund = await stripe.refunds.create({\n\
+  \    payment_intent: order.stripePaymentIntentId,\n    reason: \"requested_by_customer\"\
+  ,\n    metadata: { orderId, reason },\n  }, {\n    idempotencyKey: `refund-${orderId}`,\n\
+  \  });\n\n  await db.update(orders).set({\n    status: \"refund_pending\",\n   \
+  \ refundId: refund.id,\n  }).where(eq(orders.id, orderId));\n\n  return c.json({\
+  \ data: { refundId: refund.id, status: \"pending\" } });\n});\n```\n\n### 결제 상태\
+  \ 머신\n| 상태 | 전이 조건 | 다음 상태 |\n|------|-----------|-----------|\n| pending | checkout.session.completed\
+  \ | paid |\n| pending | 세션 만료 (30분) | expired |\n| paid | 환불 요청 | refund_pending\
+  \ |\n| refund_pending | charge.refunded | refunded |\n| paid | 부분 환불 | partially_refunded\
+  \ |\n\nDON'T:\n```typescript\n// ❌ 카드 번호 직접 처리 -- PCI DSS 위반, 법적 처벌 대상\napp.post(\"\
+  /api/v1/pay\", async (c) => {\n  const { cardNumber, cvv, expiry } = await c.req.json();\n\
+  \  await stripe.charges.create({ source: cardNumber });  // 절대 금지\n});\n\n// ❌ Webhook\
+  \ 없이 클라이언트 콜백만 신뢰\n// success_url 도달 = 결제 완료로 간주 -> 결제 없이 URL 직접 접근 가능\napp.get(\"\
+  /orders/:id/success\", async (c) => {\n  await db.update(orders).set({ status: \"\
+  paid\" });  // webhook 확인 없이 완료 처리\n});\n\n// ❌ 멱등성 키 없이 결제 요청 -- 네트워크 재시도 시 이중\
+  \ 과금\nawait stripe.charges.create({ amount: 10000, currency: \"krw\" });\n\n// ❌\
+  \ Stripe Secret Key를 클라이언트에 노출\n// STRIPE_SECRET_KEY는 서버에서만, STRIPE_PUBLISHABLE_KEY만\
+  \ 클라이언트\n```\n\n### 흔한 실수\n- success_url 도달을 결제 완료로 간주 -> 반드시 webhook으로 확인\n- 환불\
+  \ 시 Stripe 응답만 확인하고 DB 업데이트 누락 -> webhook(charge.refunded)으로 최종 확인\n- KRW 통화에서 소수점\
+  \ 처리 -> KRW는 zero-decimal currency (100 = 100원)\n- 테스트 환경에서 실제 키 사용 -> STRIPE_SECRET_KEY의\
+  \ sk_test_ 접두어 확인\n- Webhook endpoint에 Rate Limiting 미적용 -> DDoS 공격 벡터\n"
+domain: development.backend
+id: dev.backend.api.payment
+tags:
+- backend
+- api
+- payment
+- stripe
+- webhook
+- idempotency
+- pci
+theory: '#104 Idempotency, #115 Least Privilege'
+token_estimate: 1302
+type: pattern
+version: 1

@@ -1,0 +1,33 @@
+bloom_level: APPLY
+content: "# 메시지 재시도 전략 가이드\n\n## 핵심 원칙\n- 지수 백오프(Exponential Backoff)를 기본 재시도 전략으로\
+  \ 사용한다\n- 지터(Jitter)를 추가하여 동시 재시도로 인한 부하 집중을 방지한다\n- 재시도 가능한 에러와 불가능한 에러를 구분한다\n\
+  - 최대 재시도 횟수를 반드시 설정한다\n\n## DO\n- 일시적 에러(네트워크, 타임아웃, 429)만 재시도한다\n- 재시도 간격: `min(baseDelay\
+  \ * 2^attempt + jitter, maxDelay)`\n- 재시도 횟수를 메시지 메타데이터에 기록한다\n- Circuit Breaker와\
+  \ 조합하여 연쇄 실패를 방지한다\n\n## DON'T\n- 400 Bad Request 같은 클라이언트 에러를 재시도하지 않는다\n- 고정 간격\
+  \ 재시도를 사용하지 않는다 (Thundering Herd 유발)\n- 최대 재시도 없이 무한 재시도를 설정하지 않는다\n- 재시도 중 원본 메시지를\
+  \ 변형하지 않는다\n\n## 코드 예시\n```typescript\ninterface RetryConfig {\n  maxRetries: number;\n\
+  \  baseDelayMs: number;\n  maxDelayMs: number;\n  retryableErrors: string[];\n}\n\
+  \nconst DEFAULT_CONFIG: RetryConfig = {\n  maxRetries: 5,\n  baseDelayMs: 1000,\n\
+  \  maxDelayMs: 60_000,\n  retryableErrors: [\"NETWORK_ERROR\", \"TIMEOUT\", \"RATE_LIMITED\"\
+  , \"SERVICE_UNAVAILABLE\"],\n};\n\nfunction calculateDelay(attempt: number, config:\
+  \ RetryConfig): number {\n  const exponentialDelay = config.baseDelayMs * Math.pow(2,\
+  \ attempt);\n  const jitter = Math.random() * config.baseDelayMs;\n  return Math.min(exponentialDelay\
+  \ + jitter, config.maxDelayMs);\n}\n\nfunction isRetryable(error: AppError, config:\
+  \ RetryConfig): boolean {\n  return config.retryableErrors.includes(error.code);\n\
+  }\n\nasync function processWithRetry<T>(\n  handler: () => Promise<T>,\n  config\
+  \ = DEFAULT_CONFIG,\n): Promise<T> {\n  for (let attempt = 0; attempt <= config.maxRetries;\
+  \ attempt++) {\n    try {\n      return await handler();\n    } catch (error) {\n\
+  \      if (attempt === config.maxRetries || !isRetryable(error, config)) throw error;\n\
+  \      await sleep(calculateDelay(attempt, config));\n    }\n  }\n  throw new Error(\"\
+  Unreachable\");\n}\n```\n"
+domain: development.backend
+id: dev.backend.queue.retry-strategy
+tags:
+- queue
+- retry
+- backoff
+- reliability
+theory: '#212 Exponential Backoff and Retry (AWS Architecture Blog, 2015)'
+token_estimate: 812
+type: pattern
+version: 1

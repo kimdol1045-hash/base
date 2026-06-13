@@ -1,0 +1,35 @@
+bloom_level: APPLY
+content: "# 접근성(Accessibility) 테스트 가이드\n\n## 핵심 원칙\n- WCAG 2.1 AA 수준을 최소 준수 기준으로 한다\n\
+  - 자동 검사와 수동 검사를 병행한다 (자동 검사는 30% 정도만 커버)\n- 키보드 네비게이션, 스크린리더 호환성을 필수 검증한다\n- CI에서\
+  \ 자동 접근성 검사를 실행한다\n\n## DO\n- `axe-core`를 테스트 파이프라인에 통합한다\n- 시맨틱 HTML 요소를 사용한다 (div\
+  \ 대신 button, nav, main)\n- 모든 이미지에 의미 있는 alt 텍스트를 제공한다\n- 색상 대비를 4.5:1 이상으로 유지한다\n\
+  - 키보드 탭 순서가 논리적인지 확인한다\n\n## DON'T\n- `div`에 onClick을 직접 달지 않는다 (button 사용)\n- aria\
+  \ 속성을 잘못 사용하는 것보다 안 쓰는 게 낫다\n- 자동 테스트 통과만으로 접근성을 보장한다고 판단하지 않는다\n- 포커스 아웃라인(outline)을\
+  \ 제거하지 않는다\n\n## 코드 예시\n```tsx\n// vitest + axe-core 접근성 테스트\nimport { render }\
+  \ from \"@testing-library/react\";\nimport { axe, toHaveNoViolations } from \"jest-axe\"\
+  ;\n\nexpect.extend(toHaveNoViolations);\n\ndescribe(\"LoginForm 접근성\", () => {\n\
+  \  it(\"접근성 위반이 없어야 한다\", async () => {\n    const { container } = render(<LoginForm\
+  \ onSubmit={vi.fn()} />);\n    const results = await axe(container);\n    expect(results).toHaveNoViolations();\n\
+  \  });\n});\n```\n\n```typescript\n// Playwright 접근성 테스트\nimport { test, expect\
+  \ } from \"@playwright/test\";\nimport AxeBuilder from \"@axe-core/playwright\"\
+  ;\n\ntest(\"홈페이지 접근성\", async ({ page }) => {\n  await page.goto(\"/\");\n  const\
+  \ results = await new AxeBuilder({ page })\n    .withTags([\"wcag2a\", \"wcag2aa\"\
+  ])\n    .analyze();\n\n  expect(results.violations).toEqual([]);\n});\n\n// 키보드\
+  \ 네비게이션 테스트\ntest(\"탭 순서가 올바르다\", async ({ page }) => {\n  await page.goto(\"/login\"\
+  );\n  await page.keyboard.press(\"Tab\");\n  await expect(page.getByRole(\"textbox\"\
+  , { name: /이메일/i })).toBeFocused();\n  await page.keyboard.press(\"Tab\");\n  await\
+  \ expect(page.getByLabelText(/비밀번호/i)).toBeFocused();\n  await page.keyboard.press(\"\
+  Tab\");\n  await expect(page.getByRole(\"button\", { name: /로그인/i })).toBeFocused();\n\
+  });\n```\n"
+domain: development.frontend
+id: dev.frontend.testing.accessibility-testing
+tags:
+- frontend
+- testing
+- accessibility
+- a11y
+- wcag
+theory: '#259 Web Accessibility Testing (WCAG 2.1, W3C 2018)'
+token_estimate: 828
+type: pattern
+version: 1

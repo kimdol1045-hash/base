@@ -1,0 +1,27 @@
+content: "관측성 (시스템 내부 상태를 외부에서 추론 가능하게 한다):\n\n### 3 Pillars\n| 필러 | 설명 | 도구 |\n|------|------|------|\n\
+  | Logs | 이벤트 기록 (구조화 JSON) | Loki, ELK, CloudWatch |\n| Metrics | 수치 시계열 데이터 | Prometheus,\
+  \ Datadog, CloudWatch |\n| Traces | 요청의 전체 경로 추적 | Jaeger, Zipkin, Tempo |\n\n###\
+  \ 구조화 로깅 (필수)\n```json\n{\n  \"timestamp\": \"2024-03-15T10:30:00Z\",\n  \"level\"\
+  : \"error\",\n  \"message\": \"Payment failed\",\n  \"service\": \"payment-api\"\
+  ,\n  \"traceId\": \"abc123\",\n  \"userId\": \"user-456\",\n  \"errorCode\": \"\
+  INSUFFICIENT_FUNDS\",\n  \"amount\": 50000\n}\n```\n- 절대 금지: 비밀번호, 토큰, 카드번호 로깅\n\
+  - 필수: traceId (분산 추적 연결), 구조화 JSON\n\n### OpenTelemetry 계측\n```typescript\nimport\
+  \ { trace } from '@opentelemetry/api';\n\nconst tracer = trace.getTracer('order-service');\n\
+  const span = tracer.startSpan('createOrder');\nspan.setAttribute('order.amount',\
+  \ amount);\ntry {\n  // 비즈니스 로직\n} catch (error) {\n  span.recordException(error);\n\
+  \  span.setStatus({ code: SpanStatusCode.ERROR });\n} finally {\n  span.end();\n\
+  }\n```\n\n### Four Golden Signals (Google SRE)\n| 신호 | 설명 | 알림 기준 |\n|------|------|----------|\n\
+  | Latency | 요청 응답시간 | P99 > 2초 |\n| Traffic | 요청 수 | RPM 급증/급감 |\n| Errors | 에러율\
+  \ | > 1% |\n| Saturation | 리소스 포화도 | CPU/Memory > 80% |\n\n### 대시보드 설계\n- L0: 전체\
+  \ 시스템 상태 (SLO 준수 여부)\n- L1: 서비스별 상태 (각 서비스 Golden Signals)\n- L2: 상세 디버깅 (로그, 트레이스)\n"
+domain: development.infra
+id: dev.infra.deploy.observability
+tags:
+- infra
+- observability
+- opentelemetry
+- monitoring
+theory: '#165 Three Pillars of Observability + OpenTelemetry'
+token_estimate: 626
+type: pattern
+version: 1

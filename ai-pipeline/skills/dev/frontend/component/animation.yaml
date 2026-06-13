@@ -1,0 +1,59 @@
+content: "애니메이션 패턴 (사용자 인지 흐름을 돕고 인터랙션 품질을 높인다):\n\n### 애니메이션 시간 기준\n- 즉각 반응 (hover,\
+  \ press): 100-150ms\n- 상태 전환 (토글, 탭 전환): 200-300ms\n- 진입/퇴장 (모달, 드로어): 300-400ms\n\
+  - 복잡한 전환 (페이지, 레이아웃): 400-500ms (Doherty 상한)\n- 500ms 초과: 사용자가 \"느리다\"고 인지 → 절대\
+  \ 금지\n\n### 1. Framer Motion — 선언적 애니메이션\n\nDO:\n```tsx\n// ✅ 기본 진입 애니메이션\nimport\
+  \ { motion, AnimatePresence } from \"framer-motion\";\n\nfunction FadeIn({ children\
+  \ }: { children: React.ReactNode }) {\n  return (\n    <motion.div\n      initial={{\
+  \ opacity: 0, y: 20 }}\n      animate={{ opacity: 1, y: 0 }}\n      transition={{\
+  \ duration: 0.3, ease: \"easeOut\" }}\n    >\n      {children}\n    </motion.div>\n\
+  \  );\n}\n\n// ✅ AnimatePresence — 퇴장 애니메이션 (unmount 시)\nfunction Modal({ isOpen,\
+  \ onClose }: ModalProps) {\n  return (\n    <AnimatePresence>\n      {isOpen &&\
+  \ (\n        <>\n          <motion.div\n            className=\"fixed inset-0 bg-black/50\"\
+  \n            initial={{ opacity: 0 }}\n            animate={{ opacity: 1 }}\n \
+  \           exit={{ opacity: 0 }}\n            onClick={onClose}\n          />\n\
+  \          <motion.div\n            className=\"fixed inset-x-4 top-1/2 -translate-y-1/2\
+  \ bg-white rounded-xl p-6\"\n            initial={{ opacity: 0, scale: 0.95 }}\n\
+  \            animate={{ opacity: 1, scale: 1 }}\n            exit={{ opacity: 0,\
+  \ scale: 0.95 }}\n            transition={{ duration: 0.2 }}\n          >\n    \
+  \        {/* 모달 내용 */}\n          </motion.div>\n        </>\n      )}\n    </AnimatePresence>\n\
+  \  );\n}\n\n// ✅ layout 애니메이션 — 리스트 순서 변경, 필터링\nfunction FilterableList({ items\
+  \ }: { items: Item[] }) {\n  return (\n    <motion.ul layout className=\"space-y-2\"\
+  >\n      <AnimatePresence>\n        {items.map((item) => (\n          <motion.li\n\
+  \            key={item.id}\n            layout                    // 위치 변경 시 부드럽게\n\
+  \            initial={{ opacity: 0 }}\n            animate={{ opacity: 1 }}\n  \
+  \          exit={{ opacity: 0 }}\n            transition={{ layout: { duration:\
+  \ 0.3 } }}\n          >\n            {item.name}\n          </motion.li>\n     \
+  \   ))}\n      </AnimatePresence>\n    </motion.ul>\n  );\n}\n```\n\n### 2. CSS\
+  \ Transition — 단순 상태 전환\n\n```tsx\n// ✅ CSS만으로 충분한 경우 (hover, focus, 색상 변화)\nfunction\
+  \ Button({ children }: { children: React.ReactNode }) {\n  return (\n    <button\
+  \ className=\"\n      transform transition-all duration-200 ease-out\n      hover:scale-105\
+  \ hover:shadow-md\n      active:scale-95\n      focus-visible:ring-2 focus-visible:ring-primary\n\
+  \    \">\n      {children}\n    </button>\n  );\n}\n```\n\n### 3. Reduced Motion\
+  \ 존중 (접근성 필수)\n\nDO:\n```tsx\n// ✅ prefers-reduced-motion 미디어 쿼리 체크\nimport { useReducedMotion\
+  \ } from \"framer-motion\";\n\nfunction AnimatedCard({ children }: { children: React.ReactNode\
+  \ }) {\n  const shouldReduceMotion = useReducedMotion();\n\n  return (\n    <motion.div\n\
+  \      initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}\n      animate={{\
+  \ opacity: 1, y: 0 }}\n      transition={{ duration: shouldReduceMotion ? 0 : 0.3\
+  \ }}\n    >\n      {children}\n    </motion.div>\n  );\n}\n\n// ✅ Tailwind — motion-safe\
+  \ / motion-reduce 유틸리티\n// <div className=\"motion-safe:animate-bounce motion-reduce:animate-none\"\
+  >\n```\n\n### 성능 규칙: GPU 가속 속성만 애니메이션\n\nDO: `transform` (translate, scale, rotate),\
+  \ `opacity` — GPU 가속, 리페인트 없음\nDON'T: `width`, `height`, `top`, `left`, `margin`,\
+  \ `padding` — 레이아웃 재계산 발생\n\nDON'T:\n```tsx\n// ❌ 레이아웃 속성 애니메이션 — 매 프레임 레이아웃 재계산\
+  \ (jank)\n<motion.div\n  animate={{ width: isOpen ? 300 : 0 }}  // ❌ width 변경\n\
+  \  // 대신: scaleX 또는 translateX 사용\n/>\n\n// ❌ reduced-motion 무시 — 전정 장애 사용자에게 어지러움\
+  \ 유발\n// ❌ will-change 남발 — GPU 메모리 과다 사용\n// will-change는 실제 성능 문제가 측정된 요소에만 적용\n\
+  ```\n"
+domain: development.frontend
+id: dev.frontend.component.animation
+tags:
+- frontend
+- animation
+- framer-motion
+- css-transition
+- reduced-motion
+- performance
+- accessibility
+theory: '#35 Doherty Threshold (Doherty & Kelisky, 1979) — 400ms 이내 응답'
+token_estimate: 870
+type: pattern
+version: 1

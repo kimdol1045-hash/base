@@ -1,0 +1,208 @@
+bloom_level: APPLY
+content: '# Supabase RLS (Row Level Security) 정책 가이드
+
+
+  ## 핵심 원칙
+
+  - RLS는 DB 레벨 접근 제어이다 — 애플리케이션 로직 우회를 방지한다
+
+  - 테이블에 RLS를 활성화하면 명시적 정책 없이는 모든 접근이 차단된다
+
+  - anonymous 역할에 INSERT/UPDATE/DELETE를 허용하지 않는다
+
+  - service_role은 RLS를 우회한다 — 서버사이드 전용, 클라이언트 노출 금지
+
+
+  ## RLS 기본 설정
+
+
+  ### 1. RLS 활성화
+
+  ```sql
+
+  -- 모든 테이블에 RLS 활성화
+
+  ALTER TABLE public.pets ENABLE ROW LEVEL SECURITY;
+
+  ALTER TABLE public.health_records ENABLE ROW LEVEL SECURITY;
+
+  ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
+
+  ```
+
+
+  ### 2. 역할별 정책
+
+
+  #### 인증된 사용자 (authenticated)
+
+  ```sql
+
+  -- 자신의 데이터만 조회
+
+  CREATE POLICY "users_select_own" ON public.pets
+    FOR SELECT
+    TO authenticated
+    USING (user_id = auth.uid());
+
+
+  -- 자신의 데이터만 생성
+
+  CREATE POLICY "users_insert_own" ON public.pets
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (user_id = auth.uid());
+
+
+  -- 자신의 데이터만 수정
+
+  CREATE POLICY "users_update_own" ON public.pets
+    FOR UPDATE
+    TO authenticated
+    USING (user_id = auth.uid())
+    WITH CHECK (user_id = auth.uid());
+
+
+  -- 자신의 데이터만 삭제
+
+  CREATE POLICY "users_delete_own" ON public.pets
+    FOR DELETE
+    TO authenticated
+    USING (user_id = auth.uid());
+
+  ```
+
+
+  #### 비인증 사용자 (anon)
+
+  ```sql
+
+  -- ❌ DON''T: anonymous에 INSERT 허용
+
+  CREATE POLICY "anon_insert" ON public.pets
+    FOR INSERT TO anon WITH CHECK (true);  -- 스팸 데이터 대량 생성 가능
+
+
+  -- ✅ DO: 공개 데이터 읽기만 허용 (필요한 경우)
+
+  CREATE POLICY "anon_select_public" ON public.pets
+    FOR SELECT
+    TO anon
+    USING (is_public = true);
+
+
+  -- ✅ DO: 데이터 생성은 service_role만 (서버사이드)
+
+  -- anonymous INSERT 정책 없음 = INSERT 차단
+
+  ```
+
+
+  #### 서비스 역할 (service_role)
+
+  ```typescript
+
+  // service_role은 RLS를 우회 — 서버 사이드에서만 사용
+
+  import { createClient } from "@supabase/supabase-js";
+
+
+  // ✅ 서버 전용 — 절대 클라이언트에 노출하지 않음
+
+  const supabaseAdmin = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,  // 서버 환경변수에만 존재
+  );
+
+
+  // ❌ 클라이언트에서 service_role 키 사용
+
+  // NEXT_PUBLIC_SUPABASE_SERVICE_KEY  ← 절대 금지
+
+  ```
+
+
+  ## 관계 테이블 RLS
+
+  ```sql
+
+  -- 건강 기록: 반려동물 소유자만 접근
+
+  CREATE POLICY "health_records_via_pet" ON public.health_records
+    FOR SELECT
+    TO authenticated
+    USING (
+      pet_id IN (
+        SELECT id FROM public.pets WHERE user_id = auth.uid()
+      )
+    );
+
+  ```
+
+
+  ## RLS 디버깅
+
+  ```sql
+
+  -- 현재 활성 정책 확인
+
+  SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
+  FROM pg_policies
+  WHERE schemaname = ''public''
+  ORDER BY tablename, policyname;
+
+
+  -- RLS가 활성화된 테이블 확인
+
+  SELECT relname, relrowsecurity
+  FROM pg_class
+  WHERE relnamespace = ''public''::regnamespace AND relrowsecurity = true;
+
+
+  -- 특정 사용자로 쿼리 테스트
+
+  SET request.jwt.claims = ''{"sub": "user-uuid-here"}'';
+
+  SELECT * FROM public.pets;
+
+  ```
+
+
+  ## 흔한 실수
+
+  - RLS 활성화 후 정책을 안 만들어서 모든 접근이 차단됨
+
+  - USING과 WITH CHECK 차이를 모름: USING은 읽기 필터, WITH CHECK은 쓰기 검증
+
+  - service_role 키를 클라이언트 환경변수(NEXT_PUBLIC_*)에 설정
+
+  - JOIN 테이블에 RLS를 적용하지 않아 간접 접근 가능
+
+
+  ## 체크리스트
+
+  - [ ] 모든 사용자 데이터 테이블에 RLS가 활성화되었는가?
+
+  - [ ] anonymous 역할에 INSERT/UPDATE/DELETE 정책이 없는가?
+
+  - [ ] service_role 키가 서버 환경변수에만 존재하는가?
+
+  - [ ] 관계 테이블(FK)에도 RLS가 적용되었는가?
+
+  - [ ] USING과 WITH CHECK이 올바르게 설정되었는가?
+
+  '
+domain: development.backend
+id: dev.backend.database.rls-policy
+tags:
+- backend
+- database
+- rls
+- supabase
+- security
+- postgres
+- access-control
+theory: '#Supabase RLS Docs + PostgreSQL Row Security Policies'
+token_estimate: 750
+type: pattern
+version: 1

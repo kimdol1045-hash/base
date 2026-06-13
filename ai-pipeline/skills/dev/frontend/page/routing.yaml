@@ -1,0 +1,51 @@
+content: "Next.js App Router 라우팅 규칙 (예측 가능한 URL 구조와 최적화된 네비게이션):\n\n### 1. 파일 기반 라우팅\n\
+  디렉토리 구조가 곧 URL이다. 명확한 RESTful 패턴을 따른다.\n\n```\napp/\n  page.tsx                \
+  \    → /\n  about/page.tsx              → /about\n  users/\n    page.tsx       \
+  \           → /users          (목록)\n    [id]/\n      page.tsx                → /users/123\
+  \      (상세)\n      edit/page.tsx           → /users/123/edit (수정)\n  dashboard/\n\
+  \    layout.tsx                → 대시보드 공유 레이아웃\n    page.tsx                  → /dashboard\n\
+  \    settings/page.tsx         → /dashboard/settings\n  (auth)/\n    login/page.tsx\
+  \            → /login          (Route Group)\n    register/page.tsx         → /register\n\
+  \  api/\n    users/route.ts            → /api/users      (API Route)\n```\n\n###\
+  \ 2. 동적 라우트 패턴\n\nDO:\n```tsx\n// ✅ 동적 세그먼트 — app/posts/[slug]/page.tsx\nexport\
+  \ default async function PostPage({\n  params,\n}: {\n  params: { slug: string };\n\
+  }) {\n  const post = await getPostBySlug(params.slug);\n  if (!post) notFound();\n\
+  \  return <PostContent post={post} />;\n}\n\n// ✅ 정적 경로 생성 (빌드 타임)\nexport async\
+  \ function generateStaticParams() {\n  const posts = await getAllPosts();\n  return\
+  \ posts.map((post) => ({ slug: post.slug }));\n}\n\n// ✅ Catch-all 세그먼트 — app/docs/[...slug]/page.tsx\n\
+  // /docs/intro, /docs/guide/setup 등 모두 매칭\nexport default function DocsPage({\n\
+  \  params,\n}: {\n  params: { slug: string[] };\n}) {\n  const path = params.slug.join(\"\
+  /\");\n  return <DocContent path={path} />;\n}\n```\n\nDON'T:\n```tsx\n// ❌ query\
+  \ string으로 ID 전달 (App Router에서 비권장)\n// /users?id=123 대신 /users/123 사용\nexport default\
+  \ function UserPage() {\n  const searchParams = useSearchParams();\n  const id =\
+  \ searchParams.get(\"id\"); // ❌\n}\n```\n\n### 3. Route Group — 레이아웃 분리\n괄호 `(group)`은\
+  \ URL에 영향 없이 레이아웃을 공유한다.\n\n```\napp/\n  (marketing)/              → URL에 포함되지 않음\n\
+  \    layout.tsx              → 마케팅 레이아웃 (헤더, 푸터)\n    page.tsx                →\
+  \ /\n    pricing/page.tsx        → /pricing\n  (dashboard)/\n    layout.tsx    \
+  \          → 대시보드 레이아웃 (사이드바)\n    dashboard/page.tsx      → /dashboard\n    settings/page.tsx\
+  \       → /settings\n```\n\n### 4. Parallel Routes & Intercepting Routes\n\n```\n\
+  // Parallel Routes — 동시에 여러 슬롯 렌더링\napp/\n  layout.tsx                → children\
+  \ + @modal 슬롯 모두 렌더링\n  @modal/\n    (.)photo/[id]/page.tsx  → 모달로 인터셉트\n  photo/[id]/page.tsx\
+  \       → 직접 접근 시 전체 페이지\n```\n\n### 5. 네비게이션\nDO:\n```tsx\n// ✅ Link 컴포넌트 (프리페칭\
+  \ 자동)\nimport Link from \"next/link\";\n<Link href=\"/users/123\" className=\"text-primary\
+  \ hover:underline\">\n  사용자 프로필\n</Link>\n\n// ✅ 프로그래매틱 네비게이션\n\"use client\";\n\
+  import { useRouter } from \"next/navigation\";\nconst router = useRouter();\nrouter.push(\"\
+  /dashboard\");\nrouter.replace(\"/login\");  // 히스토리 대체\nrouter.back();\n```\n\n\
+  DON'T:\n```tsx\n// ❌ a 태그 직접 사용 (프리페칭 없음, full reload)\n<a href=\"/users\">Users</a>\n\
+  \n// ❌ next/router (pages/ 전용, App Router에서 사용 불가)\nimport { useRouter } from \"\
+  next/router\";\n```\n\n### Edge Cases\n- `loading.tsx`는 해당 경로 이하 모든 하위 페이지에 적용된다.\n\
+  - `layout.tsx`는 리렌더링되지 않는다 (상태 유지). 페이지 전환 시 초기화 필요하면 `template.tsx` 사용.\n- `searchParams`는\
+  \ Server Component에서 `page.tsx`의 props로 받는다.\n- Middleware는 `middleware.ts` (루트)에서\
+  \ 인증, 리다이렉트 등 처리.\n"
+domain: development.frontend
+id: dev.frontend.page.routing
+tags:
+- frontend
+- page
+- routing
+- nextjs
+- app-router
+- navigation
+token_estimate: 1517
+type: rule
+version: 1

@@ -1,0 +1,39 @@
+---
+id: "dev.infra.deploy.scaling"
+domain: "development.infra"
+type: "rule"
+bloom_level: ""
+tags: ["infra", "scaling", "architecture"]
+brain_region: "CEREBELLUM"
+token_estimate: 380
+---
+
+# dev.infra.deploy.scaling
+
+스케일링 전략 (트래픽 증가에 대응한다):
+
+### 수직 vs 수평 스케일링
+| | 수직 (Scale Up) | 수평 (Scale Out) |
+|--|----------------|-----------------|
+| 방법 | 서버 사양 증가 | 서버 수 증가 |
+| 장점 | 간단, 코드 변경 없음 | 무한 확장, 고가용성 |
+| 단점 | 한계 있음, 단일 장애점 | Stateless 필요, 복잡 |
+| 적합 | DB, 초기 단계 | 웹 서버, API |
+
+### Stateless 설계 (수평 스케일링 전제조건)
+- 세션: 서버 메모리 ❌ → Redis ✅
+- 파일: 로컬 디스크 ❌ → S3/R2 ✅
+- 캐시: 인메모리 Map ❌ → Redis ✅
+- 로그: 파일 ❌ → stdout → 외부 수집 ✅
+
+### Auto-Scaling 기준
+- CPU 사용률 > 70% → 인스턴스 추가
+- 응답 시간 p95 > 1초 → 인스턴스 추가
+- 큐 대기열 > 1000 → 워커 추가
+- 쿨다운: 5분 (빈번한 스케일 인/아웃 방지)
+
+### 단계별 전략
+1. **0-1000 DAU**: 단일 서버, 수직 스케일링
+2. **1K-10K DAU**: 로드밸런서 + 2-3대, Redis 추가
+3. **10K-100K DAU**: Auto-scaling, CDN, DB 리플리카
+4. **100K+ DAU**: 마이크로서비스 고려, 멀티리전

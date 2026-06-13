@@ -1,0 +1,90 @@
+bloom_level: APPLY
+content: '# UX 규칙: 접근성 + 터치/인터랙션 (Priority 1-2)
+
+  Source: ui-ux-pro-max (nextlevelbuilder)
+
+
+  ## §1 접근성 (CRITICAL)
+
+
+  - `color-contrast`: 일반 텍스트 4.5:1, 큰 텍스트 3:1 대비 (WCAG AA)
+
+  - `focus-states`: 인터랙티브 요소에 2-4px 포커스 링 필수
+
+  - `alt-text`: 의미 있는 이미지에 설명적 alt 텍스트 필수
+
+  - `aria-labels`: 아이콘 전용 버튼에 aria-label 필수
+
+  - `keyboard-nav`: Tab 순서 = 시각 순서, 완전한 키보드 지원
+
+  - `form-labels`: 모든 입력에 for 속성으로 연결된 label 필수
+
+  - `skip-links`: 키보드 사용자를 위한 "본문으로 건너뛰기" 링크
+
+  - `heading-hierarchy`: h1→h6 순서대로 사용, 레벨 건너뛰기 금지
+
+  - `color-not-only`: 색상만으로 정보 전달 금지 — 아이콘/텍스트 병행
+
+  - `dynamic-type`: 시스템 텍스트 스케일링 지원, 잘림 방지
+
+  - `reduced-motion`: prefers-reduced-motion 미디어 쿼리 존중
+
+  - `voiceover-sr`: 스크린 리더에 의미 있는 레이블과 논리적 읽기 순서
+
+  - `escape-routes`: 모달/다단계 흐름에서 취소/뒤로가기 옵션 필수
+
+  - `keyboard-shortcuts`: 시스템 단축키 보존, 드래그 앤 드롭에 키보드 대안 제공
+
+
+  ## §2 터치 & 인터랙션 (CRITICAL)
+
+
+  - `touch-target-size`: 최소 44pt (iOS) / 48dp (Material)
+
+  - `touch-spacing`: 타겟 간 최소 8px/8dp 간격
+
+  - `hover-vs-tap`: 클릭/탭이 기본, hover에만 의존 금지
+
+  - `loading-buttons`: 비동기 처리 중 비활성화 + 스피너/프로그레스 표시
+
+  - `error-feedback`: 문제 필드 근처에 명확한 에러 메시지
+
+  - `cursor-pointer`: 웹 클릭 가능 요소에 cursor: pointer 추가
+
+  - `gesture-conflicts`: 메인 콘텐츠에서 수평 스와이프 충돌 방지
+
+  - `tap-delay`: touch-action: manipulation으로 300ms 지연 제거
+
+  - `standard-gestures`: 플랫폼 표준 제스처 일관 사용
+
+  - `system-gestures`: Control Center, 뒤로 스와이프 등 시스템 제스처 차단 금지
+
+  - `press-feedback`: 누름 시 시각적 피드백 (리플/하이라이트)
+
+  - `haptic-feedback`: 확인 시 햅틱 사용, 남용 금지
+
+  - `gesture-alternative`: 중요 액션에 제스처 외 가시적 컨트롤 제공
+
+  - `safe-area-awareness`: 노치, Dynamic Island, 제스처 바 영역 회피
+
+  - `no-precision-required`: 작은 아이콘에 정밀 탭 요구 금지
+
+  - `swipe-clarity`: 스와이프 액션에 어포던스/힌트 표시
+
+  - `drag-threshold`: 실수 방지를 위한 드래그 시작 임계값 설정
+
+  '
+domain: design
+id: design.ux-rules.accessibility-touch
+tags:
+- design
+- ux
+- accessibility
+- touch
+- wcag
+- interaction
+- mobile
+theory: '#ui-ux-pro-max Priority 1-2 (WCAG 2.1 AA + Apple HIG + Material Design)'
+token_estimate: 680
+type: rule
+version: 1

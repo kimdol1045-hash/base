@@ -1,0 +1,56 @@
+bloom_level: ANALYZE
+content: '# Self-Consistency 프롬프팅
+
+
+  ## 적용 상황
+
+  - 수학, 논리, 코딩 등 정답이 명확한 추론 문제에서 정확도를 높이고 싶을 때
+
+  - 단일 추론 경로의 실수를 줄이고 싶을 때
+
+  - Chain-of-Thought 프롬프팅의 품질을 한 단계 높이고 싶을 때
+
+  - 중요한 의사결정에서 답변 신뢰도를 검증하고 싶을 때
+
+
+  ## 구현 방법
+
+  - 동일 문제에 대해 temperature 0.7-1.0으로 다수의 추론 경로 생성
+
+  - 최소 3-5개 경로를 샘플링 (복잡한 문제는 5-10개 권장)
+
+  - 각 경로에서 Chain-of-Thought로 중간 단계를 명시적으로 추론
+
+  - 최종 답변을 다수결(majority vote)로 결정
+
+  - 경로별 중간 단계의 논리적 일관성을 교차 확인
+
+  - 합의도(agreement ratio) 계산: 동의 경로 수 / 전체 경로 수
+
+  - 합의도가 낮으면(< 60%) 문제를 더 작은 단위로 분해하거나 프롬프트 개선
+
+
+  ## 주의사항
+
+  - 단일 경로 결과만 신뢰하지 말 것. 특히 복잡한 추론 문제에서는 오류 확률 높음
+
+  - 너무 적은 샘플(1-2개)로 합의를 판단하면 통계적 의미 없음
+
+  - 모든 경로가 동일한 답이면 temperature가 너무 낮거나 문제가 단순한 것
+
+  - API 호출 비용이 선형 증가. 비용 대비 정확도 향상 트레이드오프 고려
+
+  - 열린 결말 문제(에세이, 창작)에서는 다수결이 의미 없음. 추론 문제에 적합
+
+  '
+domain: meta
+id: meta.self-consistency
+tags:
+- self-consistency
+- reasoning
+- ensemble
+- prompting
+theory: Self-Consistency Prompting (Wang et al., 2022) — 다수 추론 경로의 합의 활용
+token_estimate: 346
+type: pattern
+version: 1

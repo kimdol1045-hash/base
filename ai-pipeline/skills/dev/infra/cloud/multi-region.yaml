@@ -1,0 +1,39 @@
+bloom_level: ANALYZE
+content: "# 멀티 리전 아키텍처 가이드\n\n## 핵심 원칙\n- 지리적으로 분산된 리전에 서비스를 배포하여 가용성을 극대화한다\n- 데이터\
+  \ 복제 전략(동기/비동기)을 요구사항에 맞게 선택한다\n- RPO(Recovery Point Objective)와 RTO(Recovery Time\
+  \ Objective)를 명확히 정의한다\n- 비용과 복잡성 대비 비즈니스 필요성을 평가한다\n\n## 배포 전략\n| 전략 | RPO | RTO\
+  \ | 비용 | 복잡도 |\n|------|-----|-----|------|--------|\n| Active-Passive | 분~시간 |\
+  \ 분~시간 | 중 | 중 |\n| Active-Active | 거의 0 | 거의 0 | 높음 | 높음 |\n| Pilot Light | 분 |\
+  \ 10분~1시간 | 낮음 | 낮음 |\n\n## DO\n- Route 53 헬스체크로 자동 페일오버를 구성한다\n- 데이터베이스 복제 지연(Replication\
+  \ Lag)을 모니터링한다\n- 각 리전에서 독립적으로 동작할 수 있도록 설계한다\n- 정기적으로 페일오버 테스트(Game Day)를 수행한다\n\
+  \n## DON'T\n- 모든 서비스에 멀티 리전을 적용하지 않는다 (비용 대비 효과 평가)\n- 동기 복제로 인한 지연시간 증가를 무시하지 않는다\n\
+  - 리전 간 데이터 일관성 문제를 간과하지 않는다\n- 페일오버 테스트 없이 운영하지 않는다\n\n## 코드 예시\n```hcl\n# Terraform\
+  \ - Active-Passive 멀티 리전\n# Primary: ap-northeast-2 (서울)\nmodule \"primary\" {\n\
+  \  source      = \"./modules/app-stack\"\n  region      = \"ap-northeast-2\"\n \
+  \ is_primary  = true\n  providers   = { aws = aws.primary }\n}\n\n# Secondary: ap-northeast-1\
+  \ (도쿄)\nmodule \"secondary\" {\n  source      = \"./modules/app-stack\"\n  region\
+  \      = \"ap-northeast-1\"\n  is_primary  = false\n  providers   = { aws = aws.secondary\
+  \ }\n}\n\n# Route 53 페일오버 라우팅\nresource \"aws_route53_record\" \"primary\" {\n \
+  \ zone_id = var.zone_id\n  name    = \"api.example.com\"\n  type    = \"A\"\n  set_identifier\
+  \ = \"primary\"\n  failover_routing_policy { type = \"PRIMARY\" }\n  alias {\n \
+  \   name    = module.primary.alb_dns_name\n    zone_id = module.primary.alb_zone_id\n\
+  \  }\n  health_check_id = aws_route53_health_check.primary.id\n}\n\nresource \"\
+  aws_route53_record\" \"secondary\" {\n  zone_id = var.zone_id\n  name    = \"api.example.com\"\
+  \n  type    = \"A\"\n  set_identifier = \"secondary\"\n  failover_routing_policy\
+  \ { type = \"SECONDARY\" }\n  alias {\n    name    = module.secondary.alb_dns_name\n\
+  \    zone_id = module.secondary.alb_zone_id\n  }\n}\n\n# RDS 교차 리전 읽기 복제본\nresource\
+  \ \"aws_rds_cluster\" \"secondary\" {\n  provider               = aws.secondary\n\
+  \  replication_source_identifier = module.primary.rds_cluster_arn\n  engine    \
+  \             = \"aurora-postgresql\"\n}\n```\n"
+domain: development.infra
+id: dev.infra.cloud.multi-region
+tags:
+- infra
+- cloud
+- multi-region
+- disaster-recovery
+- high-availability
+theory: '#268 Multi-Region Architecture (AWS Multi-Region Best Practices, 2023)'
+token_estimate: 988
+type: pattern
+version: 1

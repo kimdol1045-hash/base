@@ -1,0 +1,28 @@
+content: "React 컴포넌트 패턴 (재사용성과 유연성을 높인다):\n\n### Compound Components\n```tsx\n// 부모가\
+  \ 상태를 관리, 자식이 소비\n<Select value={selected} onChange={setSelected}>\n  <Select.Trigger>{selected\
+  \ || \"선택하세요\"}</Select.Trigger>\n  <Select.Options>\n    <Select.Option value=\"\
+  a\">옵션 A</Select.Option>\n    <Select.Option value=\"b\">옵션 B</Select.Option>\n\
+  \  </Select.Options>\n</Select>\n```\n- Context로 암묵적 상태 공유\n- 사용처: Accordion, Tabs,\
+  \ Menu, Dialog\n\n### Custom Hook 패턴 (권장)\n```tsx\nfunction useToggle(initial =\
+  \ false) {\n  const [on, setOn] = useState(initial);\n  const toggle = useCallback(()\
+  \ => setOn(prev => !prev), []);\n  return { on, toggle, setOn };\n}\n```\n- 로직 재사용의\
+  \ 기본 방법\n- 테스트 용이 (renderHook)\n\n### Container/Presentational 분리\n```tsx\n// Container:\
+  \ 데이터 + 로직\nfunction UserListContainer() {\n  const { data, isLoading } = useUsers();\n\
+  \  return <UserList users={data} loading={isLoading} />;\n}\n// Presentational:\
+  \ UI만\nfunction UserList({ users, loading }: Props) {\n  if (loading) return <Skeleton\
+  \ />;\n  return <ul>{users.map(u => <li key={u.id}>{u.name}</li>)}</ul>;\n}\n```\n\
+  \n### 패턴 선택 가이드\n| 상황 | 패턴 |\n|------|------|\n| 로직 재사용 | Custom Hook |\n| 유연한 UI\
+  \ 조합 | Compound Components |\n| 데이터/UI 분리 | Container/Presentational |\n| 횡단 관심사\
+  \ | Custom Hook (HOC보다 권장) |\n\n### 안티패턴\n- Prop Drilling 5단계 이상 → Context 또는 상태관리\
+  \ 도입\n- God Component (300줄+) → 분리\n- useEffect 내 비즈니스 로직 → Custom Hook으로 추출\n"
+domain: development.frontend
+id: dev.frontend.component.react-patterns
+tags:
+- frontend
+- react
+- patterns
+- component
+theory: '#160 React Component Patterns (Compound, HOC, Render Props)'
+token_estimate: 664
+type: pattern
+version: 1

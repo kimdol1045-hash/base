@@ -1,0 +1,161 @@
+bloom_level: APPLY
+content: '# UX 규칙: 차트/데이터 시각화 + 납품 전 체크리스트 (Priority 10)
+
+  Source: ui-ux-pro-max (nextlevelbuilder)
+
+
+  ## §10 차트 & 데이터 시각화 (LOW)
+
+
+  - `chart-type`: 데이터에 맞는 유형 선택 (트렌드→라인, 비교→바, 비율→파이)
+
+  - `color-guidance`: 접근성 팔레트 사용, 빨강/초록만 쌍 금지
+
+  - `data-table`: 접근성을 위한 테이블 대안 제공
+
+  - `pattern-texture`: 색상에 패턴/텍스처/모양 보완
+
+  - `legend-visible`: 범례를 차트 근처에 항상 표시, fold 아래 분리 금지
+
+  - `tooltip-on-interact`: 웹은 hover, 모바일은 tap 시 툴팁/라벨
+
+  - `axis-labels`: 축에 단위와 읽기 쉬운 스케일 라벨
+
+  - `responsive-chart`: 작은 화면에서 차트 리플로우/단순화
+
+  - `empty-data-state`: "아직 데이터 없음" + 안내 메시지
+
+  - `loading-chart`: 로딩 시 스켈레톤/쉬머, 빈 축 프레임 표시 금지
+
+  - `animation-optional`: 진입 애니메이션은 prefers-reduced-motion 존중
+
+  - `large-dataset`: 1000+ 포인트는 집계/샘플링 + 드릴다운 제공
+
+  - `number-formatting`: 로케일 인식 숫자/날짜/통화 포맷
+
+  - `touch-target-chart`: 인터랙티브 요소 ≥44pt 또는 터치 시 확장
+
+  - `no-pie-overuse`: 5개 이상 카테고리 파이 금지 → 바 차트로 전환
+
+  - `contrast-data`: 데이터 vs 배경 ≥3:1, 라벨 ≥4.5:1
+
+  - `legend-interactive`: 범례 클릭으로 시리즈 토글 가능
+
+  - `direct-labeling`: 작은 데이터셋은 값을 직접 라벨링
+
+  - `tooltip-keyboard`: 키보드로 접근 가능, hover 전용 금지
+
+  - `sortable-table`: 정렬 지원 + aria-sort로 상태 표시
+
+  - `data-density`: 차트당 정보 밀도 제한, 필요시 분할
+
+  - `trend-emphasis`: 장식보다 트렌드 강조
+
+  - `gridline-subtle`: 저대비(gray-200)로 데이터와 경쟁하지 않게
+
+  - `export-option`: 데이터 중심 제품에 CSV/이미지 내보내기 제공
+
+  - `screen-reader-summary`: 핵심 인사이트를 설명하는 텍스트 요약 또는 aria-label
+
+
+  ## 납품 전 체크리스트
+
+
+  ### 시각 품질
+
+  - [ ] 이모지를 아이콘으로 사용하지 않았는가? (SVG 사용)
+
+  - [ ] 아이콘 패밀리와 스타일이 일관적인가?
+
+  - [ ] 공식 브랜드 에셋이 올바른 비율로 사용되었는가?
+
+  - [ ] 누른 상태에서 레이아웃 쉬프트/지터가 없는가?
+
+  - [ ] 시맨틱 테마 토큰이 일관되게 사용되었는가?
+
+
+  ### 인터랙션
+
+  - [ ] 터치 가능 요소에 명확한 누름 피드백이 있는가?
+
+  - [ ] 터치 타겟 ≥44×44pt (iOS) / ≥48×48dp (Android)?
+
+  - [ ] 마이크로 인터랙션 타이밍 150-300ms + 네이티브 이징?
+
+  - [ ] 비활성 상태가 시각적으로 명확하고 인터랙션 불가?
+
+  - [ ] 스크린 리더 포커스 순서 = 시각 순서, 설명적 라벨?
+
+
+  ### 라이트/다크 모드
+
+  - [ ] 양쪽 모드에서 Primary 텍스트 대비 ≥4.5:1?
+
+  - [ ] 양쪽 모드에서 Secondary 텍스트 대비 ≥3:1?
+
+  - [ ] 양쪽 모드에서 구분선/보더가 식별 가능?
+
+  - [ ] 모달 스크림 투명도 40-60% 블랙?
+
+  - [ ] 양쪽 테마를 배포 전 테스트했는가?
+
+
+  ### 레이아웃
+
+  - [ ] Safe area가 헤더, 탭바, 하단 바에서 존중되는가?
+
+  - [ ] 스크롤 콘텐츠가 고정 바 뒤에 숨겨지지 않는가?
+
+  - [ ] 작은 폰/큰 폰/태블릿 (세로+가로) 검증?
+
+  - [ ] 4/8dp 스페이싱 리듬이 계층 전체에서 유지되는가?
+
+
+  ### 접근성
+
+  - [ ] 의미 있는 이미지/아이콘에 접근성 라벨이 있는가?
+
+  - [ ] 색상이 유일한 정보 전달 수단이 아닌가?
+
+  - [ ] reduced-motion과 dynamic text size 지원?
+
+
+  ## 흔한 프로 UI 실수
+
+  | 카테고리 | 안티패턴 | 해결 |
+
+  |----------|---------|------|
+
+  | 아이콘 | 이모지를 구조 아이콘으로 사용 | SVG (Lucide, Heroicons) |
+
+  | 인터랙션 | 탭 피드백 없음 | 80-150ms 내 리플/투명도/엘리베이션 |
+
+  | 인터랙션 | 즉각적 상태 전환 | 150-300ms 네이티브 이징 애니메이션 |
+
+  | 대비 | 저대비 회색 텍스트 | 일반 ≥4.5:1, 큰 텍스트 ≥3:1 |
+
+  | 대비 | 다크모드에서 라이트 값 그대로 사용 | 테마별 대비 별도 테스트 |
+
+  | 레이아웃 | 노치/제스처 영역에 고정 UI | 모든 고정 요소에 safe area 존중 |
+
+  | 레이아웃 | 랜덤 간격 | 4/8dp 스페이싱 시스템 일관 사용 |
+
+  | 모션 | 장식 전용 애니메이션 | 인과관계를 표현하는 애니메이션만 |
+
+  | 모션 | width/height 애니메이션 | transform/opacity만 사용 |
+
+  '
+domain: design
+id: design.ux-rules.charts-checklist
+tags:
+- design
+- ux
+- charts
+- data-visualization
+- checklist
+- quality
+- pre-delivery
+theory: '#ui-ux-pro-max Priority 10 + Pre-Delivery Checklist'
+token_estimate: 800
+type: verify
+version: 1

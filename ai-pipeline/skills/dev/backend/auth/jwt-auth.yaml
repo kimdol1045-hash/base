@@ -1,0 +1,36 @@
+content: "JWT 인증 심화 (Access/Refresh 토큰 이중 구조로 보안과 UX를 동시에 확보한다):\n\n### 토큰 설계\n| 토큰\
+  \ | 만료 | 저장 위치 | 용도 |\n|------|------|-----------|------|\n| Access Token | 15분\
+  \ | 메모리 (JS 변수) | API 인가 |\n| Refresh Token | 7일 | httpOnly secure cookie | Access\
+  \ 재발급 |\n\n### Access + Refresh 흐름\n```typescript\n// DO: verify()로 검증, httpOnly\
+  \ cookie에 refresh 저장\nimport jwt from 'jsonwebtoken';\n\nfunction generateTokenPair(userId:\
+  \ string, role: string) {\n  const accessToken = jwt.sign(\n    { sub: userId, role\
+  \ },\n    process.env.JWT_ACCESS_SECRET!,\n    { expiresIn: '15m', algorithm: 'RS256'\
+  \ }\n  );\n  const refreshToken = jwt.sign(\n    { sub: userId, tokenVersion: 1\
+  \ },\n    process.env.JWT_REFRESH_SECRET!,\n    { expiresIn: '7d', algorithm: 'RS256'\
+  \ }\n  );\n  return { accessToken, refreshToken };\n}\n\n// Refresh 엔드포인트: 토큰 회전(rotation)\
+  \ 적용\nasync function refresh(req: Request, res: Response) {\n  const token = req.cookies.refreshToken;\n\
+  \  const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);\n  // 블랙리스트\
+  \ 확인 (로그아웃된 토큰 차단)\n  if (await redis.get(`blacklist:${token}`)) throw new Error('Revoked');\n\
+  \  // 이전 refresh token 블랙리스트 등록 (rotation)\n  await redis.set(`blacklist:${token}`,\
+  \ '1', 'EX', 7 * 86400);\n  const pair = generateTokenPair(payload.sub, payload.role);\n\
+  \  res.cookie('refreshToken', pair.refreshToken, {\n    httpOnly: true, secure:\
+  \ true, sameSite: 'strict', maxAge: 7 * 86400 * 1000\n  });\n  return res.json({\
+  \ accessToken: pair.accessToken });\n}\n```\n\nDON'T:\n```typescript\n// ❌ localStorage에\
+  \ 토큰 저장 (XSS 취약)\nlocalStorage.setItem('token', accessToken);\n\n// ❌ decode()만\
+  \ 사용 — 서명 검증 없음\nconst payload = jwt.decode(token); // 누구나 조작 가능!\n\n// ❌ Refresh\
+  \ rotation 없음 — 탈취 시 7일간 무제한 사용\n// ❌ 로그아웃 시 블랙리스트 미등록 — 토큰 여전히 유효\n```\n\n### 로그아웃\
+  \ 처리\n- Access Token: 짧은 만료로 자연 소멸 (15분)\n- Refresh Token: Redis 블랙리스트에 등록 (TTL\
+  \ = 남은 만료 시간)\n- Cookie 삭제: `res.clearCookie('refreshToken')`\n\n### 흔한 실수\n- HS256\
+  \ 사용 시 secret이 약하면 brute force 가능 → RS256 권장\n- JWT payload에 민감 정보(비밀번호, 카드번호) 포함\n\
+  - Access Token을 30일로 설정 — 탈취 시 피해 기간 과도\n"
+domain: development.backend
+id: dev.backend.auth.jwt-auth
+tags:
+- backend
+- auth
+- jwt
+- token
+theory: '#115 Saltzer Least Privilege'
+token_estimate: 983
+type: pattern
+version: 1

@@ -1,0 +1,28 @@
+bloom_level: APPLY
+content: "# 프롬프트 엔지니어링 가이드\n\n## 핵심 원칙\n- 명확하고 구체적인 지시를 제공한다\n- 역할(Role), 맥락(Context),\
+  \ 형식(Format)을 구조화한다\n- Few-shot 예시로 기대 출력을 보여준다\n- 반복 실험으로 최적의 프롬프트를 찾는다\n\n## DO\n\
+  - 시스템 프롬프트에 역할과 제약 조건을 명시한다\n- 구분자(```, ---, ###)로 입력 데이터를 분리한다\n- 출력 형식을 JSON Schema\
+  \ 등으로 명확히 지정한다\n- Chain-of-Thought(CoT)로 복잡한 추론을 유도한다\n- 프롬프트를 버전 관리하고 성능을 측정한다\n\
+  \n## DON'T\n- 모호한 지시(\"잘 해줘\")를 사용하지 않는다\n- 하나의 프롬프트에 너무 많은 작업을 요구하지 않는다\n- 프롬프트를\
+  \ 코드에 하드코딩하지 않는다 (설정 파일로 분리)\n- 프롬프트 인젝션 방어를 무시하��� 않는다\n\n## 코드 예시\n```typescript\n\
+  // 구조화된 프롬프트 템플릿\nconst systemPrompt = `당신은 코드 리뷰 전문가입니다.\n\n## 역할\n주어진 코드의 잠재적\
+  \ 문제를 찾아 개선안을 제시합니다.\n\n## 출력 형식\n반드시 아래 JSON 형식으로 응답하세요:\n{\n  \"issues\": [\n\
+  \    {\n      \"severity\": \"critical\" | \"warning\" | \"info\",\n      \"line\"\
+  : number,\n      \"description\": \"문제 설명\",\n      \"suggestion\": \"개선 코드\"\n\
+  \    }\n  ],\n  \"summary\": \"전체 코드 품질 요약 (1-2문장)\"\n}\n\n## 제약 조건\n- 최대 5개의 이슈만\
+  \ 보고합니다\n- 스타일 관련 이슈는 제외합니다\n- 보안 이슈는 반드시 포함합니다`;\n\nconst userPrompt = `다음 코드를\
+  \ 리뷰해주세요:\n\n\\`\\`\\`typescript\n${code}\n\\`\\`\\``;\n\nconst response = await\
+  \ llm.chat({\n  messages: [\n    { role: \"system\", content: systemPrompt },\n\
+  \    { role: \"user\", content: userPrompt },\n  ],\n  response_format: { type:\
+  \ \"json_object\" },\n  temperature: 0.2, // 일관성을 위해 낮은 temperature\n});\n```\n"
+domain: development.ai
+id: dev.ai.prompt-engineering
+tags:
+- ai
+- prompt-engineering
+- llm
+- gpt
+theory: '#279 Prompt Engineering (OpenAI Best Practices, 2023)'
+token_estimate: 586
+type: pattern
+version: 1

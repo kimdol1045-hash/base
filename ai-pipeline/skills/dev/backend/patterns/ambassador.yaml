@@ -1,0 +1,36 @@
+bloom_level: ANALYZE
+content: "# Ambassador 패턴 가이드\n\n## 핵심 원칙\n- 애플리케이션 대신 외부 서비스와의 통신을 대리(proxy)하는 패턴이다\n\
+  - 재시도, 로깅, 라우팅, 인증 등을 Ambassador가 처리한다\n- 주 애플리케이션은 localhost로만 통신하여 외부 서비스의 복잡성을\
+  \ 감춘다\n- Sidecar 패턴의 특수한 형태로, 네트워크 프록시 역할에 집중한다\n\n## DO\n- 외부 API 호출의 재시도, Circuit\
+  \ Breaker를 Ambassador에서 처리한다\n- TLS 종료를 Ambassador에서 수행한다\n- 요청/응답 로깅을 Ambassador\
+  \ 레벨에서 일괄 처리한다\n- Ambassador를 통해 서비스 디스커버리를 추상화한다\n\n## DON'T\n- 단순한 직접 호출만 필요한\
+  \ 경우 Ambassador를 도입하지 않는다\n- Ambassador에 비즈니스 로직을 넣지 않는다\n- Ambassador의 지연시간 오버헤드를\
+  \ 무시하지 않는다\n- 모든 서비스에 무조건 Ambassador를 적용하지 않는다\n\n## 코드 예시\n```typescript\n// Ambassador\
+  \ 프록시 서버 (로컬 포트에서 실행)\nimport { Hono } from \"hono\";\n\nconst ambassador = new\
+  \ Hono();\n\n// 외부 결제 API Ambassador\nambassador.all(\"/payment/*\", async (c) =>\
+  \ {\n  const path = c.req.path.replace(\"/payment\", \"\");\n  const maxRetries\
+  \ = 3;\n\n  for (let attempt = 0; attempt < maxRetries; attempt++) {\n    try {\n\
+  \      const response = await fetch(`${PAYMENT_API_URL}${path}`, {\n        method:\
+  \ c.req.method,\n        headers: {\n          \"Authorization\": `Bearer ${await\
+  \ getServiceToken()}`,\n          \"Content-Type\": \"application/json\",\n    \
+  \      \"X-Request-Id\": c.req.header(\"x-request-id\") ?? generateId(),\n     \
+  \   },\n        body: c.req.method !== \"GET\" ? await c.req.text() : undefined,\n\
+  \        signal: AbortSignal.timeout(5_000),\n      });\n\n      // 로깅\n      logger.info(\"\
+  외부 API 호출\", {\n        service: \"payment\", path, status: response.status, attempt,\n\
+  \      });\n\n      if (response.ok || response.status < 500) {\n        return\
+  \ c.json(await response.json(), response.status);\n      }\n    } catch (err) {\n\
+  \      logger.warn(\"외부 API 호출 실패\", { attempt, error: err });\n      if (attempt\
+  \ === maxRetries - 1) throw err;\n      await sleep(1000 * Math.pow(2, attempt));\n\
+  \    }\n  }\n});\n\n// 앱에서는 localhost로 호출\n// fetch(\"http://localhost:9000/payment/charge\"\
+  , { ... })\n```\n"
+domain: development.backend
+id: dev.backend.patterns.ambassador
+tags:
+- patterns
+- ambassador
+- proxy
+- microservices
+theory: '#223 Ambassador Pattern (Burns, Designing Distributed Systems 2018)'
+token_estimate: 896
+type: pattern
+version: 1

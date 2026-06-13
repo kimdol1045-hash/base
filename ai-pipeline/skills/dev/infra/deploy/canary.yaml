@@ -1,0 +1,35 @@
+bloom_level: ANALYZE
+content: "# 카나리 배포(Canary Deployment) 가이드\n\n## 핵심 원칙\n- 새 버전을 소수의 트래픽(1-10%)에 먼저\
+  \ 노출하여 안전성을 검증한다\n- 핵심 메트릭(에러율, 지연시간)을 자동 모니터링하여 배포를 판단한다\n- 문제 발생 시 자동으로 롤백한다 (Automated\
+  \ Rollback)\n- 점진적으로 트래픽 비율을 증가시킨다 (Progressive Delivery)\n\n## DO\n- Argo Rollouts\
+  \ 또는 Flagger로 자동화된 카나리를 구현한다\n- 성공 기준(SLI)을 명확히 정의한다 (에러율 < 1%, p99 < 500ms)\n-\
+  \ 분석 단계(Analysis)를 자동화하여 사람의 개입을 최소화한다\n- 카나리 트래픽의 메트릭을 별도로 추적한다\n\n## DON'T\n-\
+  \ 메트릭 없이 수동으로만 카나리 배포를 판단하지 않는다\n- 카나리 비율을 처음부터 높게 설정하지 않는다\n- 롤백 기준을 설정하지 않고 카나리를\
+  \ 진행하지 않는다\n- 데이터베이스 스키마 변경과 카나리 배포를 동시에 하지 않는다\n\n## 코드 예시\n```yaml\n# Argo Rollouts\
+  \ 카나리 설정\napiVersion: argoproj.io/v1alpha1\nkind: Rollout\nmetadata:\n  name: my-app\n\
+  spec:\n  replicas: 10\n  strategy:\n    canary:\n      steps:\n        - setWeight:\
+  \ 5          # 5% 트래픽\n        - pause: { duration: 5m }\n        - analysis:\n\
+  \            templates:\n              - templateName: success-rate\n          \
+  \  args:\n              - name: service-name\n                value: my-app\n  \
+  \      - setWeight: 20         # 20% 트래픽\n        - pause: { duration: 10m }\n \
+  \       - analysis:\n            templates:\n              - templateName: success-rate\n\
+  \        - setWeight: 50         # 50% 트래픽\n        - pause: { duration: 10m }\n\
+  \        - setWeight: 100        # 전체 전환\n      canaryService: my-app-canary\n \
+  \     stableService: my-app-stable\n\n# 분석 템플릿\napiVersion: argoproj.io/v1alpha1\n\
+  kind: AnalysisTemplate\nmetadata:\n  name: success-rate\nspec:\n  metrics:\n   \
+  \ - name: success-rate\n      interval: 60s\n      successCondition: result[0] >=\
+  \ 0.99\n      failureLimit: 3\n      provider:\n        prometheus:\n          address:\
+  \ http://prometheus:9090\n          query: |\n            sum(rate(http_requests_total{service=\"\
+  {{args.service-name}}\",status=~\"2..\"}[5m]))\n            /\n            sum(rate(http_requests_total{service=\"\
+  {{args.service-name}}\"}[5m]))\n```\n"
+domain: development.infra
+id: dev.infra.deploy.canary
+tags:
+- infra
+- canary
+- deploy
+- progressive-delivery
+theory: '#263 Canary Deployment (Netflix, 2013)'
+token_estimate: 891
+type: pattern
+version: 1

@@ -1,0 +1,55 @@
+---
+id: "qa.test-gen.regression"
+domain: "qa"
+type: "rule"
+region: EGO
+token_estimate: 370
+theory: "#186 Regression Testing Strategy"
+tags: [qa, regression, testing, ci-cd]
+---
+
+# qa.test-gen.regression
+
+> **Region**: 🔵 [[EGO]]  
+> **Domain**: `qa`  
+> **Type**: `rule`  
+> **Theory**: #186 Regression Testing Strategy  
+> **Tokens**: 370
+
+## Content
+
+회귀 테스트 (기존 기능이 새 변경으로 깨지지 않았는지 확인한다):
+
+### 전략
+1. **버그 수정 시**: 해당 버그를 재현하는 테스트 추가 (회귀 방지)
+2. **기능 추가 시**: 관련 기존 기능의 테스트 실행
+3. **리팩토링 시**: 전체 테스트 스위트 실행
+
+### 회귀 테스트 선택 기준
+| 우선순위 | 대상 |
+|---------|------|
+| P0 | 핵심 비즈니스 경로 (가입, 결제, 인증) |
+| P1 | 변경된 모듈과 의존 관계 있는 코드 |
+| P2 | 최근 6개월 내 버그가 발생한 영역 |
+| P3 | 나머지 기능 |
+
+### CI 통합 전략
+```
+PR 생성 → [P0 + P1 자동 실행] → Merge
+매일 새벽 → [P0~P3 전체 실행] → 리포트
+릴리즈 전 → [전체 + 수동 탐색 테스트]
+```
+
+### Flaky Test 관리
+- 3회 연속 불안정 → 격리(quarantine) 후 수정
+- 원인: 타이밍, 외부 의존성, 테스트 간 의존
+- 해결: 재시도(retry)는 임시방편, 근본 원인 수정
+
+### 테스트 유지보수
+- 사용하지 않는 테스트 정기 정리
+- 실행 시간 > 10초인 테스트 최적화
+- 커버리지 감소 시 알림
+
+## Connections
+
+*Connections will be populated by Graph RAG ingest.*

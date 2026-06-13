@@ -1,0 +1,32 @@
+bloom_level: APPLY
+content: "# 비주얼 리그레션 테스트 가이드\n\n## 핵심 원칙\n- UI의 시각적 변화를 스크린샷 비교로 자동 감지한다\n- 의도치 않은\
+  \ 스타일 변경이나 레이아웃 깨짐을 방지한다\n- Playwright 또는 Chromatic으로 구현한다\n- CI에서 자동으로 실행하고 PR에\
+  \ 결과를 첨부한다\n\n## DO\n- 주요 페이지와 핵심 컴포넌트에 비주얼 테스트를 적용한다\n- 다양한 뷰포트 크기(모바일, 태블릿, 데스크탑)에서\
+  \ 캡처한다\n- 다크 모드/라이트 모드 양쪽을 테스트한다\n- 동적 콘텐츠(날짜, 랜덤 데이터)를 고정하여 안정적인 스냅샷을 확보한다\n\n\
+  ## DON'T\n- 모든 컴포넌트에 비주얼 테스트를 적용하지 않는다 (핵심 UI만)\n- 애니메이션이 진행 중인 상태를 캡처하지 않는다\n-\
+  \ 외부 리소스(이미지, 폰트) 로딩을 기다리지 않고 캡처하지 않는다\n- 허용 임계값(threshold)을 너무 민감하게 설정하지 않는다\n\n\
+  ## 코드 예시\n```typescript\n// Playwright 비주얼 리그레션 테스트\nimport { test, expect } from\
+  \ \"@playwright/test\";\n\ntest.describe(\"랜딩 페이지 비주얼\", () => {\n  test.beforeEach(async\
+  \ ({ page }) => {\n    // 동적 콘텐츠 고정\n    await page.clock.setFixedTime(new Date(\"\
+  2024-01-15T10:00:00\"));\n  });\n\n  const viewports = [\n    { name: \"mobile\"\
+  , width: 375, height: 812 },\n    { name: \"tablet\", width: 768, height: 1024 },\n\
+  \    { name: \"desktop\", width: 1440, height: 900 },\n  ];\n\n  for (const vp of\
+  \ viewports) {\n    test(`히어로 섹션 - ${vp.name}`, async ({ page }) => {\n      await\
+  \ page.setViewportSize({ width: vp.width, height: vp.height });\n      await page.goto(\"\
+  /\");\n      await page.waitForLoadState(\"networkidle\");\n\n      await expect(page.locator(\"\
+  [data-testid=hero]\")).toHaveScreenshot(\n        `hero-${vp.name}.png`,\n     \
+  \   { maxDiffPixelRatio: 0.01 },\n      );\n    });\n  }\n\n  test(\"다크 모드\", async\
+  \ ({ page }) => {\n    await page.emulateMedia({ colorScheme: \"dark\" });\n   \
+  \ await page.goto(\"/\");\n    await expect(page).toHaveScreenshot(\"landing-dark.png\"\
+  );\n  });\n});\n```\n"
+domain: development.frontend
+id: dev.frontend.testing.visual-regression
+tags:
+- frontend
+- testing
+- visual-regression
+- screenshot
+theory: '#257 Visual Regression Testing (Chromatic, Storybook 2019)'
+token_estimate: 746
+type: pattern
+version: 1

@@ -1,0 +1,61 @@
+content: 'DORA 메트릭 (소프트웨어 딜리버리 성능을 측정한다):
+
+
+  ### Four Key Metrics
+
+  | 지표 | 설명 | Elite 기준 | Low 기준 |
+
+  |------|------|----------|---------|
+
+  | Deployment Frequency | 배포 빈도 | 하루 여러 번 | 월 1회 미만 |
+
+  | Lead Time for Changes | 커밋→배포 소요시간 | 1시간 미만 | 6개월 이상 |
+
+  | Change Failure Rate | 배포 실패율 | 0-15% | 46-60% |
+
+  | Time to Restore | 장애 복구 시간 | 1시간 미만 | 6개월 이상 |
+
+
+  ### 측정 방법
+
+  - Deployment Frequency: CI/CD 파이프라인 배포 이벤트 카운트
+
+  - Lead Time: 첫 커밋 타임스탬프 → 프로덕션 배포 타임스탬프
+
+  - Change Failure Rate: 핫픽스/롤백 배포 수 / 전체 배포 수
+
+  - MTTR: 장애 알림 시각 → 서비스 복구 확인 시각
+
+
+  ### 개선 전략
+
+  - 배포 빈도 ↑: 작은 배치, 피처 플래그, trunk-based development
+
+  - 리드 타임 ↓: 자동 테스트, 코드 리뷰 병목 제거, CI 최적화
+
+  - 실패율 ↓: 카나리 배포, 자동 롤백, 통합 테스트 강화
+
+  - MTTR ↓: 관측성 강화, 런북 자동화, 온콜 프로세스 정비
+
+
+  ### 주의사항
+
+  - 지표를 KPI로 사용 시 Goodhart''s Law 주의 (지표가 목표가 되면 왜곡)
+
+  - 팀 비교 금지 — 같은 팀의 시간별 추이만 비교
+
+  - 4개 지표를 개별이 아닌 세트로 평가 (빠른 배포 + 높은 실패율 = 위험)
+
+  '
+domain: analytics
+id: analytics.dora-metrics
+tags:
+- analytics
+- dora
+- devops
+- deployment
+- metrics
+theory: '#142 DORA Metrics (Forsgren, Humble, Kim — Accelerate, 2018)'
+token_estimate: 450
+type: pattern
+version: 1

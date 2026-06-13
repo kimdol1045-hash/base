@@ -1,0 +1,24 @@
+content: "Infrastructure as Code (인프라를 코드로 관리하여 재현성을 보장한다):\n\n### 핵심 원칙\n- 모든 인프라를\
+  \ 코드로 정의 (수동 변경 금지)\n- 버전 관리 (Git) 필수\n- 멱등성: 같은 코드 여러 번 실행해도 결과 동일\n- 불변 인프라: 수정\
+  \ 대신 교체 (서버 패치 X → 새 이미지 배포)\n\n### 도구 비교\n| 도구 | 용도 | 접근 방식 |\n|------|------|----------|\n\
+  | Terraform | 인프라 프로비저닝 | 선언적 (HCL) |\n| Pulumi | 인프라 프로비저닝 | 명령적 (TS/Python) |\n\
+  | Ansible | 구성 관리 | 절차적 (YAML) |\n| Docker Compose | 로컬 오케스트레이션 | 선언적 (YAML) |\n\
+  \n### Terraform 예시\n```hcl\nresource \"aws_instance\" \"app\" {\n  ami         \
+  \  = \"ami-xxx\"\n  instance_type = \"t3.micro\"\n\n  tags = {\n    Name       \
+  \ = \"app-server\"\n    Environment = var.environment\n  }\n}\n```\n\n### 디렉토리 구조\n\
+  ```\ninfra/\n  modules/          # 재사용 가능한 모듈\n    networking/\n    compute/\n \
+  \ environments/     # 환경별 설정\n    dev/\n    staging/\n    prod/\n  variables.tf\
+  \      # 변수 정의\n  outputs.tf        # 출력 정의\n```\n\n### 주의사항\n- State 파일 원격 저장 (S3\
+  \ + DynamoDB Lock)\n- 시크릿은 코드에 포함 금지 (Vault, AWS Secrets Manager)\n- Plan → Review\
+  \ → Apply 워크플로우 필수\n- 환경별 변수 분리 (tfvars)\n"
+domain: development.infra
+id: dev.infra.deploy.iac
+tags:
+- infra
+- iac
+- terraform
+- devops
+theory: '#151 Infrastructure as Code (Kief Morris, 2016)'
+token_estimate: 420
+type: pattern
+version: 1

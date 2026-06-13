@@ -1,0 +1,47 @@
+content: "소셜 미디어 마케팅 — 플랫폼 특성에 맞는 네이티브 콘텐츠로 도달, 참여, 전환을 최적화:\n\n### 플랫폼별 콘텐츠 전략\n\
+  | 플랫폼 | 최적 포맷 | 길이 | 게시 빈도 | 핵심 전략 |\n|--------|----------|------|----------|----------|\n\
+  | Twitter/X | 스레드, 짧은 인사이트 | 280자 x 5~10개 | 일 1~3회 | 스레드 첫 트윗이 Hook |\n| LinkedIn\
+  \ | 롱폼 텍스트, 캐러셀 | 1,300자 | 주 3~5회 | 전문성 + 개인 경험 |\n| Instagram | 릴스, 캐러셀 | 릴스 30~60초\
+  \ | 주 4~5회 | 비주얼 + 짧은 교육 |\n| YouTube | 롱폼 영상, Shorts | 8~15분 / 60초 | 주 1~2회 | 썸네일\
+  \ CTR > 10% |\n| TikTok | 숏폼 영상 | 15~60초 | 일 1~2회 | 처음 3초에 Hook |\n\n### Twitter/X\
+  \ 스레드 패턴\n```\nDO: Hook → Value → CTA 구조\n\n1/ [Hook] 매출 0원에서 MRR 5,000만원까지 12개월.\n\
+  아무도 안 알려주는 SaaS 성장 전략 7가지:\n\U0001F9F5\U0001F447\n\n2/ 전략 1: 무료 도구로 리드 확보\n가격 계산기,\
+  \ ROI 시뮬레이터 등 무료 도구를 만들어\n자연 유입 트래픽을 확보했습니다.\n→ 월 3,000명 유입 (유료 광고 0원)\n\n...\n\n\
+  10/ 요약:\n1. 무료 도구 → 자연 유입\n2. 온보딩 이메일 → 활성화\n3. 고객 성공 사례 → 신뢰\n...\n\n11/ 이 전략을\
+  \ 더 자세히 알고 싶다면\n[링크] 에서 전체 가이드를 받아보세요.\n\n이 스레드가 도움이 됐다면 RT 부탁드려요 \U0001F64F\n```\n\
+  \n### Open Graph 최적화 (링크 공유 시 미리보기)\n```typescript\n// DO: 플랫폼별 OG 태그 최적화\nexport\
+  \ const metadata: Metadata = {\n  openGraph: {\n    title: \"SaaS 성장 전략 7가지 — 0\
+  \ → MRR 5천만원\",  // 60자 이내\n    description: \"12개월간 검증된 실전 그로스 해킹 전략\",   // 155자\
+  \ 이내\n    images: [{\n      url: \"/og/growth-strategy.png\",\n      width: 1200,\
+  \                    // Facebook/LinkedIn 권장\n      height: 630,\n      alt: \"\
+  SaaS 성장 전략 인포그래픽\",\n    }],\n    type: \"article\",\n    siteName: \"AppName Blog\"\
+  ,\n  },\n  twitter: {\n    card: \"summary_large_image\",      // 큰 이미지 카드\n   \
+  \ title: \"SaaS 성장 전략 7가지\",\n    description: \"0 → MRR 5천만원, 12개월 실전 가이드\",\n\
+  \    images: [\"/og/growth-strategy-twitter.png\"],  // 2:1 비율\n  },\n};\n```\n\n\
+  ### 바이럴 메커닉스 (공유 트리거)\n```\n사람들이 공유하는 5가지 이유 (Jonah Berger, Contagious):\n\n1. Social\
+  \ Currency (사회적 화폐)\n   → \"이걸 공유하면 내가 똑똑해 보여\"\n   → 데이터, 인사이트, 독점 정보 콘텐츠\n\n2.\
+  \ Triggers (연상 촉발)\n   → 일상에서 자연스럽게 떠오르는 연결고리\n   → \"매주 월요일\" \"매일 아침\" 루틴 연결\n\
+  \n3. Emotion (감정 자극)\n   → 경외감, 놀라움, 분노 (고각성 감정이 공유율 높음)\n   → 저각성 감정(슬픔, 만족)은 공유율\
+  \ 낮음\n\n4. Public (가시성)\n   → 사용하는 모습이 다른 사람에게 보임\n   → \"Powered by AppName\" 배지,\
+  \ 공유 가능한 대시보드\n\n5. Practical Value (실용적 가치)\n   → \"이거 유용하니까 알려줘야지\"\n   → How-to\
+  \ 가이드, 체크리스트, 템플릿\n```\n\n### 커뮤니티 빌딩 전략\n```\nLevel 1: 일방향 콘텐츠 발행 (팔로워 확보)\nLevel\
+  \ 2: 댓글/DM 적극 응답 (관계 형성)\nLevel 3: UGC 유도 — 해시태그 챌린지, 사례 공유\nLevel 4: 전용 커뮤니티 —\
+  \ Slack, Discord, 카카오 오픈채팅\nLevel 5: 앰배서더 프로그램 — 핵심 팬 10~30명 관리\n```\n\nDON'T:\n\
+  ```\n❌ 모든 플랫폼에 동일 콘텐츠 복사:\nLinkedIn 글을 그대로 Twitter에 → 300자 잘림, 포맷 깨짐\n→ 각 플랫폼 네이티브\
+  \ 포맷에 맞게 재가공\n\n❌ OG 태그 미설정:\n링크 공유 시 제목/이미지 없이 URL만 표시\n→ CTR 50% 이상 하락\n\n❌ Engagement\
+  \ bait:\n\"좋아요 누르면 행운이!\" \"이거 공유 안 하면 불행이!\"\n→ 알고리즘 패널티 + 브랜드 신뢰 하락\n\n❌ 불규칙한\
+  \ 게시:\n한 달에 10개 → 2개월 공백 → 다시 폭발 게시\n→ 일관된 스케줄이 알고리즘 + 팔로워 기대 형성\n```\n"
+domain: marketing
+id: marketing.growth.social-media
+tags:
+- marketing
+- growth
+- social-media
+- og-tags
+- viral
+- community
+- content
+theory: '#64 Social Proof (Cialdini, 1984)'
+token_estimate: 1238
+type: rule
+version: 1

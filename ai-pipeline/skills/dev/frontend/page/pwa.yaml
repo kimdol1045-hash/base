@@ -1,0 +1,64 @@
+content: "PWA 패턴 (오프라인 대응, 설치 가능한 웹 앱을 구축한다):\n\n### PWA 핵심 요소\n1. **Service Worker**:\
+  \ 네트워크 프록시, 캐싱, 백그라운드 동기화\n2. **Web App Manifest**: 설치, 아이콘, 시작 URL, 디스플레이 모드\n\
+  3. **HTTPS**: Service Worker는 HTTPS 필수 (localhost 제외)\n\n### 1. next-pwa 설정\n\n\
+  DO:\n```typescript\n// ✅ next.config.ts — next-pwa 설정\nimport withPWA from \"next-pwa\"\
+  ;\n\nconst config = withPWA({\n  dest: \"public\",\n  register: true,\n  skipWaiting:\
+  \ true,\n  disable: process.env.NODE_ENV === \"development\", // 개발 시 비활성화\n  runtimeCaching:\
+  \ [\n    {\n      // 정적 에셋 — Cache First (변경 거의 없음)\n      urlPattern: /\\.(?:js|css|woff2|png|jpg|svg)$/i,\n\
+  \      handler: \"CacheFirst\",\n      options: {\n        cacheName: \"static-assets\"\
+  ,\n        expiration: {\n          maxEntries: 200,\n          maxAgeSeconds: 30\
+  \ * 24 * 60 * 60, // 30일\n        },\n      },\n    },\n    {\n      // API 요청 —\
+  \ Network First (최신 데이터 우선)\n      urlPattern: /\\/api\\/.*$/i,\n      handler:\
+  \ \"NetworkFirst\",\n      options: {\n        cacheName: \"api-cache\",\n     \
+  \   networkTimeoutSeconds: 5,   // 5초 타임아웃 후 캐시\n        expiration: {\n       \
+  \   maxEntries: 100,\n          maxAgeSeconds: 5 * 60,    // 5분\n        },\n  \
+  \    },\n    },\n    {\n      // 페이지 네비게이션 — Stale While Revalidate\n      urlPattern:\
+  \ /^https:\\/\\/.*\\.html$/i,\n      handler: \"StaleWhileRevalidate\",\n      options:\
+  \ {\n        cacheName: \"pages-cache\",\n        expiration: {\n          maxEntries:\
+  \ 50,\n          maxAgeSeconds: 24 * 60 * 60, // 24시간\n        },\n      },\n  \
+  \  },\n  ],\n});\n```\n\n### 2. Web App Manifest\n\n```typescript\n// ✅ public/manifest.json\n\
+  // {\n//   \"name\": \"My App\",\n//   \"short_name\": \"App\",\n//   \"start_url\"\
+  : \"/\",\n//   \"display\": \"standalone\",\n//   \"background_color\": \"#ffffff\"\
+  ,\n//   \"theme_color\": \"#000000\",\n//   \"icons\": [\n//     { \"src\": \"/icons/icon-192.png\"\
+  , \"sizes\": \"192x192\", \"type\": \"image/png\" },\n//     { \"src\": \"/icons/icon-512.png\"\
+  , \"sizes\": \"512x512\", \"type\": \"image/png\" },\n//     { \"src\": \"/icons/icon-maskable.png\"\
+  , \"sizes\": \"512x512\", \"type\": \"image/png\", \"purpose\": \"maskable\" }\n\
+  //   ]\n// }\n```\n\n### 3. 오프라인 폴백 페이지\n\n```tsx\n// ✅ app/offline/page.tsx — 오프라인\
+  \ 시 표시\nexport default function OfflinePage() {\n  return (\n    <div className=\"\
+  flex min-h-screen items-center justify-center p-4\">\n      <div className=\"text-center\
+  \ space-y-4\">\n        <WifiOffIcon className=\"mx-auto h-16 w-16 text-muted-foreground\"\
+  \ />\n        <h1 className=\"text-2xl font-bold\">오프라인 상태</h1>\n        <p className=\"\
+  text-muted-foreground\">\n          인터넷 연결을 확인하고 다시 시도해주세요.\n        </p>\n    \
+  \    <Button onClick={() => window.location.reload()}>\n          다시 시도\n      \
+  \  </Button>\n      </div>\n    </div>\n  );\n}\n```\n\n### 4. 설치 프롬프트 (A2HS)\n\n\
+  ```typescript\n// ✅ 커스텀 설치 배너 (기본 브라우저 프롬프트 대체)\nfunction useInstallPrompt() {\n\
+  \  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent\
+  \ | null>(null);\n\n  useEffect(() => {\n    const handler = (e: Event) => {\n \
+  \     e.preventDefault();\n      setDeferredPrompt(e as BeforeInstallPromptEvent);\n\
+  \    };\n    window.addEventListener(\"beforeinstallprompt\", handler);\n    return\
+  \ () => window.removeEventListener(\"beforeinstallprompt\", handler);\n  }, []);\n\
+  \n  const install = async () => {\n    if (!deferredPrompt) return;\n    await deferredPrompt.prompt();\n\
+  \    const result = await deferredPrompt.userChoice;\n    if (result.outcome ===\
+  \ \"accepted\") {\n      setDeferredPrompt(null); // 설치 완료\n    }\n  };\n\n  return\
+  \ { canInstall: !!deferredPrompt, install };\n}\n```\n\n### 5. 캐싱 전략 요약\n\n| 전략\
+  \ | 패턴 | 적합 대상 |\n|------|------|-----------|\n| Cache First | 캐시 → 없으면 네트워크 | 정적\
+  \ 에셋, 폰트, 이미지 |\n| Network First | 네트워크 → 실패 시 캐시 | API, 동적 데이터 |\n| Stale While\
+  \ Revalidate | 캐시 반환 + 백그라운드 갱신 | 페이지, 자주 변경되는 콘텐츠 |\n| Network Only | 항상 네트워크 |\
+  \ 인증, 결제 등 실시간 필수 |\n| Cache Only | 캐시에서만 | 오프라인 전용 콘텐츠 |\n\nDON'T:\n```typescript\n\
+  // ❌ 모든 응답을 무조건 캐싱 — 인증 토큰, 개인정보 노출 위험\n// handler: \"CacheFirst\" // 인증 API에 적용?\
+  \ → 다른 사용자 데이터 노출\n\n// ❌ 캐시 무효화 없음 — 오래된 데이터 계속 표시\n// maxAgeSeconds 미설정 → 영구 캐시\n\
+  \n// ❌ 오프라인 UX 미고려 — 네트워크 에러만 표시\n// 오프라인 폴백 페이지 없이 빈 화면 또는 에러 표시\n```\n"
+domain: development.frontend
+id: dev.frontend.page.pwa
+tags:
+- frontend
+- pwa
+- service-worker
+- offline
+- caching
+- install-prompt
+- manifest
+theory: '#35 Doherty Threshold (Doherty & Kelisky, 1979) — 400ms 이내 응답'
+token_estimate: 979
+type: pattern
+version: 1

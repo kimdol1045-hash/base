@@ -1,0 +1,115 @@
+bloom_level: APPLY
+content: '# UX 규칙: 스타일 선택 + 타이포/색상 + 애니메이션 (Priority 4, 6, 7)
+
+  Source: ui-ux-pro-max (nextlevelbuilder)
+
+
+  ## §4 스타일 선택 (HIGH)
+
+
+  - `style-match`: 제품 유형에 맞는 디자인 시스템 룩업
+
+  - `consistency`: 모든 페이지에서 동일 스타일 유지
+
+  - `no-emoji-icons`: SVG 아이콘 사용 (Heroicons, Lucide), 이모지 아이콘 금지
+
+  - `color-palette-from-product`: 제품에 적합한 팔레트에서 선택
+
+  - `effects-match-style`: 그림자/블러/라운딩을 선택한 스타일에 맞춤
+
+  - `platform-adaptive`: iOS HIG vs Material Design 관용 존중
+
+  - `state-clarity`: hover/pressed/disabled 상태가 스타일 내에서 구분 가능
+
+  - `elevation-consistent`: 일관된 그림자 스케일 사용, 랜덤 값 금지
+
+  - `dark-mode-pairing`: 라이트/다크를 함께 설계, 브랜드와 대비 유지
+
+  - `icon-style-consistent`: 제품 전체에 하나의 아이콘 세트/시각 언어
+
+  - `blur-purpose`: 블러는 배경 해제 표시용, 장식 아님
+
+  - `primary-action`: 화면당 Primary CTA 1개, 나머지는 보조
+
+
+  ## §6 타이포그래피 & 색상 (MEDIUM)
+
+
+  - `line-height`: 본문 텍스트 1.5-1.75
+
+  - `line-length`: 한 줄 65-75자 (한국어 35-40자)
+
+  - `font-pairing`: 제목/본문 폰트 성격 매칭
+
+  - `font-scale`: 일관된 스케일 (12 14 16 18 24 32)
+
+  - `contrast-readability`: 밝은 배경에 어두운 텍스트 (slate-900 on white)
+
+  - `weight-hierarchy`: 제목 Bold(600-700), 본문 Regular(400), 라벨 Medium(500)
+
+  - `color-semantic`: 시맨틱 토큰 정의 (primary, error, surface), 컴포넌트에 raw hex 금지
+
+  - `color-dark-mode`: 채도 낮춘/밝게 변형, 반전 아님. 별도 테스트 필수
+
+  - `color-accessible-pairs`: 전경/배경 4.5:1(AA) 또는 7:1(AAA) 충족
+
+  - `truncation-strategy`: 줄바꿈 우선, 말줄임 시 툴팁 제공
+
+  - `number-tabular`: 데이터 컬럼에 등폭 숫자(tabular figures) 사용
+
+  - `whitespace-balance`: 의도적 여백으로 항목 그룹화 및 분리
+
+
+  ## §7 애니메이션 (MEDIUM)
+
+
+  - `duration-timing`: 마이크로 인터랙션 150-300ms, 복잡한 것 ≤400ms, >500ms 금지
+
+  - `transform-performance`: transform/opacity만 애니메이션, width/height/position 금지
+
+  - `loading-states`: 300ms 초과 로딩 시 스켈레톤/프로그레스
+
+  - `excessive-motion`: 뷰당 1-2개 핵심 요소만 애니메이션
+
+  - `easing`: 진입 ease-out, 퇴장 ease-in, linear 금지
+
+  - `motion-meaning`: 모든 애니메이션이 인과관계를 표현, 장식 아님
+
+  - `state-transition`: 상태 변경은 부드러운 전환, 스냅 아님
+
+  - `spring-physics`: 자연스러운 느낌을 위한 스프링/물리 기반 커브 선호
+
+  - `exit-faster-than-enter`: 퇴장 = 진입 시간의 60-70%
+
+  - `stagger-sequence`: 리스트 항목 30-50ms/항목 간격으로 순차 등장
+
+  - `interruptible`: 애니메이션 중 사용자 탭으로 즉시 취소 가능
+
+  - `no-blocking-animation`: 애니메이션 중 UI 인터랙티브 유지
+
+  - `scale-feedback`: 카드/버튼 누름 시 미묘한 스케일 (0.95-1.05)
+
+  - `gesture-feedback`: 드래그/스와이프/핀치 시 실시간 추적 응답
+
+  - `modal-motion`: 모달은 트리거 소스에서 애니메이션 (scale+fade 또는 slide)
+
+  - `navigation-direction`: 전진은 왼쪽/위, 후퇴는 오른쪽/아래
+
+  - `layout-shift-avoid`: 애니메이션이 리플로우나 CLS를 유발하지 않도록
+
+  '
+domain: design
+id: design.ux-rules.visual-design
+tags:
+- design
+- ux
+- style
+- typography
+- color
+- animation
+- motion
+- dark-mode
+theory: '#ui-ux-pro-max Priority 4,6,7 (Material Design + Apple HIG)'
+token_estimate: 740
+type: rule
+version: 1

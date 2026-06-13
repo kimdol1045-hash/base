@@ -1,0 +1,51 @@
+---
+id: "qa.test-gen.contract-testing"
+domain: "qa"
+type: "pattern"
+bloom_level: "계약 테스트(Contract Testing)는 서비스 간 API 인터페이스의 호환성을 검증하는 테스트 기법이다. Consumer-Driven Contract(CDC) 패턴이 대표적이며, Pact가 주요 도구이다. 마이크로서비스 환경에서 통합 테스트의 비용을 크게 줄인다."
+tags: ["contract-testing", "pact", "api", "microservices"]
+brain_region: "CEREBELLUM"
+token_estimate: 400
+---
+
+# qa.test-gen.contract-testing
+
+> 계약 테스트(Contract Testing)는 서비스 간 API 인터페이스의 호환성을 검증하는 테스트 기법이다. Consumer-Driven Contract(CDC) 패턴이 대표적이며, Pact가 주요 도구이다. 마이크로서비스 환경에서 통합 테스트의 비용을 크게 줄인다.
+
+# 계약 테스트 가이드
+
+## 핵심 원칙
+- 소비자(Consumer)가 기대하는 API 계약을 정의
+- 제공자(Provider)가 계약을 충족하는지 검증
+- 서비스 간 독립적 배포 가능성 보장
+- 통합 테스트 환경 의존도 감소
+
+## Consumer-Driven Contract 패턴
+1. **Consumer 측**: 기대하는 요청/응답을 계약(Pact)으로 정의
+2. **Pact Broker**: 계약 파일을 중앙에 저장
+3. **Provider 측**: 저장된 계약을 기반으로 자동 검증
+4. **CI 통합**: 양측 빌드에서 자동 실행
+
+## 계약 정의 요소
+| 요소 | 설명 |
+|------|------|
+| 요청 경로 | HTTP 메서드 + URL |
+| 요청 헤더 | Content-Type, Authorization 등 |
+| 요청 바디 | JSON 스키마 또는 예시 |
+| 응답 상태 | HTTP 상태 코드 |
+| 응답 바디 | 필수 필드 + 타입 매칭 |
+
+## 적용 시나리오
+- 마이크로서비스 간 REST/gRPC 통신
+- 프론트엔드 → 백엔드 API 계약
+- 외부 서비스 연동 검증
+
+## DO
+- 계약에 필수 필드만 포함 (느슨한 매칭)
+- CI/CD 파이프라인에 계약 검증 통합
+- Pact Broker로 계약 버전 관리
+
+## DON'T
+- 모든 필드를 정확히 매칭하지 않기 (깨지기 쉬움)
+- 통합 테스트를 완전히 대체하지 않기
+- 계약 변경 시 소비자와 협의 없이 진행하지 않기

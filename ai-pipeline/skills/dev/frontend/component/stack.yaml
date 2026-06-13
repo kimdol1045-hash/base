@@ -1,0 +1,42 @@
+content: "기술 스택 규칙 (일관성을 유지하고 번들 크기를 최소화한다):\n\n### 1. Next.js 14+ App Router\n- `app/`\
+  \ 디렉토리만 사용한다 (`pages/` 금지).\n- Server Component가 기본이다. `'use client'`는 인터랙션이 필요할\
+  \ 때만 추가한다.\n- `'use client'`는 **가능한 한 하위 컴포넌트에** 적용한다 (트리의 말단으로).\n\nDO:\n```tsx\n\
+  // ✅ Server Component (기본) — 데이터 페칭 가능\n// app/users/page.tsx\nexport default async\
+  \ function UsersPage() {\n  const users = await getUsers(); // 직접 async/await\n\
+  \  return <UserList users={users} />;\n}\n\n// ✅ Client Component는 인터랙션 부분만\n//\
+  \ components/LikeButton.tsx\n\"use client\";\nexport function LikeButton({ postId\
+  \ }: { postId: string }) {\n  const [liked, setLiked] = useState(false);\n  return\
+  \ <button onClick={() => setLiked(!liked)}>♥</button>;\n}\n```\n\nDON'T:\n```tsx\n\
+  // ❌ 페이지 전체를 Client Component로 만들기\n\"use client\";\nexport default function UsersPage()\
+  \ {\n  const [users, setUsers] = useState([]);\n  useEffect(() => { fetchUsers().then(setUsers);\
+  \ }, []);\n  return <div>{users.map(u => <UserCard key={u.id} user={u} />)}</div>;\n\
+  }\n```\n\n### 2. TypeScript Strict\n- `tsconfig.json`에서 `strict: true` 필수.\n- `any`\
+  \ 타입 금지. 타입 불확실 시 `unknown` + type guard 사용.\n- 외부 API 응답은 반드시 zod로 runtime validation\
+  \ 수행.\n\nDO:\n```tsx\n// ✅ unknown + type guard\nfunction isUser(data: unknown):\
+  \ data is User {\n  return typeof data === \"object\" && data !== null && \"id\"\
+  \ in data;\n}\n\n// ✅ zod로 API 응답 검증\nconst UserSchema = z.object({\n  id: z.string().uuid(),\n\
+  \  name: z.string().min(1),\n  email: z.string().email(),\n});\ntype User = z.infer<typeof\
+  \ UserSchema>;\nconst user = UserSchema.parse(await res.json());\n```\n\n### 3.\
+  \ Tailwind CSS\n- 유틸리티 클래스만 사용한다 (인라인 style 금지, CSS 모듈 금지).\n- 조건부 클래스는 `cn()` 유틸리티\
+  \ (clsx + tailwind-merge) 사용.\n- 반응형은 `sm → md → lg → xl` 순서로 mobile-first 작성.\n\
+  \nDO:\n```tsx\n// ✅ cn() 유틸리티로 조건부 클래스\nimport { cn } from \"@/lib/utils\";\n<div\
+  \ className={cn(\n  \"rounded-lg border p-4\",\n  isActive && \"border-primary bg-primary/10\"\
+  ,\n  className\n)} />\n```\n\nDON'T:\n```tsx\n// ❌ 인라인 스타일 + CSS 모듈\n<div style={{\
+  \ padding: 16, borderRadius: 8 }} />\nimport styles from \"./Card.module.css\";\n\
+  ```\n\n### 4. 이미지 처리\n- `next/image`만 사용한다 (`<img>` 태그 금지).\n- `width`, `height`\
+  \ 또는 `fill` 속성을 반드시 지정한다.\n- 외부 이미지 도메인은 `next.config.js`의 `images.remotePatterns`에\
+  \ 등록한다.\n\n### 5. 환경변수\n- 클라이언트 노출: `NEXT_PUBLIC_` 접두사 필수.\n- 서버 전용: 접두사 없이 사용 (API\
+  \ Route, Server Component에서만 접근).\n- 하드코딩 금지. `.env.local` 파일로 관리하고 `.env.example`\
+  \ 유지.\n"
+domain: development.frontend
+id: dev.frontend.component.stack
+tags:
+- frontend
+- component
+- nextjs
+- tailwind
+- typescript
+- stack
+token_estimate: 1146
+type: rule
+version: 1

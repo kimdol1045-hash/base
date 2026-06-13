@@ -1,0 +1,42 @@
+content: "Blue-Green / Canary 배포 — 무중단 배포로 사용자 영향 없이 새 버전을 릴리즈하는 전략:\n\n### Blue-Green\
+  \ 배포 흐름\n```\n┌──────────────┐     DNS/LB     ┌──────────────┐\n│  Blue (v1)   │\
+  \ ◀── 100% ──── │   Load        │\n│  (현재 운영)  │               │   Balancer    │\n\
+  └──────────────┘               └──────┬───────┘\n┌──────────────┐              \
+  \        │\n│  Green (v2)  │ ◀── 0% (대기) ──────┘\n│  (새 버전)    │\n└──────────────┘\n\
+  \n전환 절차:\n1. Green 환경에 v2 배포 + smoke test 실행\n2. Health check 통과 확인 (HTTP 200, DB\
+  \ 연결, 의존 서비스)\n3. LB 트래픽을 Green으로 전환 (DNS TTL: 60초 이하)\n4. 5분 모니터링 → 이상 없으면 Blue\
+  \ 환경 제거\n5. 이상 시 → LB를 Blue로 즉시 복귀 (롤백 < 30초)\n```\n\n### Canary 배포 — 트래픽 점진적 분할\n\
+  ```yaml\n# Kubernetes Ingress Canary 설정 예시\napiVersion: networking.k8s.io/v1\nkind:\
+  \ Ingress\nmetadata:\n  name: app-canary\n  annotations:\n    nginx.ingress.kubernetes.io/canary:\
+  \ \"true\"\n    nginx.ingress.kubernetes.io/canary-weight: \"5\"\nspec:\n  rules:\n\
+  \    - host: app.example.com\n      http:\n        paths:\n          - path: /\n\
+  \            backend:\n              service:\n                name: app-v2\n  \
+  \              port:\n                  number: 80\n\n# 트래픽 분할 단계\n# 5% → 에러율/레이턴시\
+  \ 확인 (15분)\n# 25% → 비즈니스 지표 확인 (30분)\n# 50% → 전체 안정성 확인 (1시간)\n# 100% → 완전 전환\n\
+  ```\n\n### DO: 안전한 배포 규칙\n```typescript\n// Backward-compatible DB migration (v1,\
+  \ v2 동시 호환)\n// Step 1 (v2 배포 전): 새 컬럼 추가 (nullable)\nALTER TABLE users ADD COLUMN\
+  \ display_name VARCHAR(255);\n\n// Step 2 (v2 배포 후): 데이터 마이그레이션\nUPDATE users SET\
+  \ display_name = name WHERE display_name IS NULL;\n\n// Step 3 (v1 완전 제거 후): 기존\
+  \ 컬럼 제거\nALTER TABLE users DROP COLUMN name;\n```\n\n```bash\n# Health check 통과\
+  \ 후에만 트래픽 전환\ncurl -f http://green:3000/health || exit 1\ncurl -f http://green:3000/readiness\
+  \ || exit 1\n# smoke test\ncurl -f http://green:3000/api/v1/status || exit 1\n```\n\
+  \nDON'T:\n```sql\n-- ❌ 배포 중 Breaking DB 변경\nALTER TABLE users RENAME COLUMN name\
+  \ TO display_name;\n-- v1이 아직 트래픽 받는 중이면 즉시 장애\n\n-- ❌ NOT NULL 제약조건 즉시 추가\nALTER\
+  \ TABLE orders ADD COLUMN tracking_id VARCHAR(255) NOT NULL;\n-- v1에서 INSERT 시 에러\
+  \ 발생\n```\n\n```bash\n# ❌ 헬스체크 없이 빅뱅 전환\nkubectl set image deployment/app app=app:v2\
+  \  # 롤백 불가\n```\n\n### 자동 롤백 기준\n| 지표 | 임계값 | 조치 |\n|------|--------|------|\n|\
+  \ 에러율 (5xx) | > 1% | 즉시 롤백 |\n| p99 레이턴시 | > 2초 | 트래픽 증가 중단 |\n| CPU 사용률 | > 80%\
+  \ | 스케일아웃 후 재평가 |\n| 비즈니스 지표 | 전환율 10% 하락 | 수동 판단 후 롤백 |\n"
+domain: development.infra
+id: dev.infra.deploy.blue-green
+tags:
+- infra
+- deploy
+- blue-green
+- canary
+- zero-downtime
+- rollback
+theory: '#133 Zero-Downtime Deployment'
+token_estimate: 1113
+type: pattern
+version: 1

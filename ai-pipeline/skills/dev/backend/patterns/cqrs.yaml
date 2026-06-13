@@ -1,0 +1,27 @@
+content: "CQRS (읽기와 쓰기 모델을 분리하여 각각 최적화한다):\n\n### 핵심 개념\n- Command: 상태를 변경 (Create,\
+  \ Update, Delete). 반환값 없거나 ID만.\n- Query: 상태를 조회. 부수 효과 없음.\n- 두 모델의 스키마/DB가 다를\
+  \ 수 있다.\n\n### Command 구현\n```typescript\n// Command 정의\ninterface CreateOrderCommand\
+  \ {\n  userId: string;\n  items: { productId: string; quantity: number }[];\n}\n\
+  \n// Command Handler\nasync function handleCreateOrder(cmd: CreateOrderCommand):\
+  \ Promise<string> {\n  const order = Order.create(cmd.userId, cmd.items);\n  await\
+  \ orderRepository.save(order);\n  await eventBus.publish(new OrderCreatedEvent(order.id));\n\
+  \  return order.id;  // ID만 반환\n}\n```\n\n### Query 구현\n```typescript\n// Query는\
+  \ 읽기 최적화된 별도 모델\ninterface OrderSummaryQuery {\n  userId: string;\n  status?: string;\n\
+  \  page: number;\n}\n\nasync function getOrderSummaries(query: OrderSummaryQuery)\
+  \ {\n  // 읽기 전용 뷰/테이블에서 직접 조회 (JOIN 최소화)\n  return db.query(`\n    SELECT id, total_amount,\
+  \ status, created_at\n    FROM order_summaries\n    WHERE user_id = $1 AND ($2::text\
+  \ IS NULL OR status = $2)\n    ORDER BY created_at DESC\n    LIMIT 20 OFFSET $3\n\
+  \  `, [query.userId, query.status, (query.page - 1) * 20]);\n}\n```\n\n### 적용 판단\
+  \ 기준\n- ✅ 적용: 읽기/쓰기 비율 불균형(10:1+), 복잡한 조회, 높은 확장성 필요\n- ❌ 부적합: 단순 CRUD, 실시간 일관성\
+  \ 필수, 소규모 프로젝트\n\n### 흔한 실수\n- 모든 엔드포인트에 CQRS 적용 (과도한 복잡성)\n- Command에서 조회 결과 반환\
+  \ (분리 원칙 위반)\n- 읽기/쓰기 모델 동기화 지연 미고려\n"
+domain: development.backend
+id: dev.backend.patterns.cqrs
+tags:
+- backend
+- architecture
+- cqrs
+theory: '#105 CQRS (Young, 2010)'
+token_estimate: 641
+type: pattern
+version: 1

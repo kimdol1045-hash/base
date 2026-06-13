@@ -1,0 +1,63 @@
+content: "React 성능 최적화 패턴 (불필요한 리렌더링을 방지하고 런타임 비용을 줄인다):\n\n### 1. React.memo — 리렌더링\
+  \ 방지\n부모가 리렌더링되어도 props가 변하지 않으면 자식은 건너뛴다.\n**사용 기준**: props가 자주 같은 값으로 전달되는 중간~무거운\
+  \ 컴포넌트에 적용.\n\nDO:\n```tsx\n// ✅ 비용이 큰 리스트 아이템에 memo 적용\nconst UserCard = memo(function\
+  \ UserCard({ user }: { user: User }) {\n  return (\n    <div className=\"rounded-lg\
+  \ border p-4\">\n      <h3 className=\"text-lg font-semibold\">{user.name}</h3>\n\
+  \      <p className=\"text-muted-foreground\">{user.email}</p>\n    </div>\n  );\n\
+  });\n\n// ✅ 커스텀 비교 함수 (깊은 비교 필요 시)\nconst Chart = memo(\n  function Chart({ data\
+  \ }: { data: ChartData }) {\n    return <canvas>{/* ... */}</canvas>;\n  },\n  (prev,\
+  \ next) => prev.data.id === next.data.id && prev.data.version === next.data.version\n\
+  );\n```\n\nDON'T:\n```tsx\n// ❌ 모든 컴포넌트에 무분별하게 memo 적용 (오버헤드만 추가)\nconst Label =\
+  \ memo(({ text }: { text: string }) => <span>{text}</span>);\n// ❌ children을 받는\
+  \ 컴포넌트에 memo (children은 매번 새 참조)\nconst Card = memo(({ children }: { children: React.ReactNode\
+  \ }) => <div>{children}</div>);\n```\n\n### 2. useMemo — 비싼 계산 캐싱\n**사용 기준**: 계산\
+  \ 비용이 O(n) 이상이거나 1ms 이상 걸리는 연산에만 적용.\n\nDO:\n```tsx\n// ✅ 정렬 + 필터 (O(n log n))\n\
+  const filteredUsers = useMemo(\n  () => users\n    .filter(u => u.name.toLowerCase().includes(query.toLowerCase()))\n\
+  \    .sort((a, b) => a.name.localeCompare(b.name)),\n  [users, query]\n);\n\n//\
+  \ ✅ 파생 객체 (하위 memo 컴포넌트에 전달 시)\nconst chartConfig = useMemo(\n  () => ({ labels:\
+  \ data.map(d => d.label), values: data.map(d => d.value) }),\n  [data]\n);\n```\n\
+  \nDON'T:\n```tsx\n// ❌ 단순 계산에 useMemo (오버헤드 > 이득)\nconst fullName = useMemo(() =>\
+  \ `${first} ${last}`, [first, last]);\n// ❌ 의존성 배열 부정확 (stale data 버그)\nconst result\
+  \ = useMemo(() => compute(a, b), [a]); // b 누락!\n```\n\n### 3. useCallback — 함수\
+  \ 참조 안정화\n**사용 기준**: memo된 자식에게 함수를 props로 넘길 때만 사용.\n\nDO:\n```tsx\n// ✅ memo된\
+  \ 자식에게 전달하는 핸들러\nconst handleDelete = useCallback(\n  (userId: string) => {\n  \
+  \  deleteUser(userId);\n    toast.success(\"삭제 완료\");\n  },\n  [deleteUser]\n);\n\
+  \nreturn <UserList users={users} onDelete={handleDelete} />;\n// UserList는 memo\
+  \ 적용됨\n```\n\nDON'T:\n```tsx\n// ❌ memo 안 된 자식에게 useCallback (효과 없음)\nconst handleClick\
+  \ = useCallback(() => setCount(c => c + 1), []);\nreturn <button onClick={handleClick}>+1</button>;\
+  \ // button은 memo 아님\n```\n\n### 4. 리스트 가상화 (Virtualization)\n**사용 기준**: 리스트 아이템이\
+  \ 100개 이상일 때 적용.\n\nDO:\n```tsx\n// ✅ @tanstack/react-virtual 사용\nimport { useVirtualizer\
+  \ } from \"@tanstack/react-virtual\";\n\nfunction VirtualList({ items }: { items:\
+  \ Item[] }) {\n  const parentRef = useRef<HTMLDivElement>(null);\n  const virtualizer\
+  \ = useVirtualizer({\n    count: items.length,\n    getScrollElement: () => parentRef.current,\n\
+  \    estimateSize: () => 64, // 아이템 예상 높이(px)\n    overscan: 5, // 화면 밖 미리 렌더링 수\n\
+  \  });\n\n  return (\n    <div ref={parentRef} className=\"h-[600px] overflow-auto\"\
+  >\n      <div style={{ height: virtualizer.getTotalSize(), position: \"relative\"\
+  \ }}>\n        {virtualizer.getVirtualItems().map(virtualRow => (\n          <div\n\
+  \            key={virtualRow.key}\n            style={{\n              position:\
+  \ \"absolute\",\n              top: virtualRow.start,\n              height: virtualRow.size,\n\
+  \              width: \"100%\",\n            }}\n          >\n            <ItemCard\
+  \ item={items[virtualRow.index]} />\n          </div>\n        ))}\n      </div>\n\
+  \    </div>\n  );\n}\n```\n\n### 5. 리렌더링 디버깅\n```tsx\n// 개발 환경에서 리렌더링 원인 추적\nimport\
+  \ { useRef, useEffect } from \"react\";\n\nfunction useWhyDidYouRender(name: string,\
+  \ props: Record<string, unknown>) {\n  const prevProps = useRef(props);\n  useEffect(()\
+  \ => {\n    const changes = Object.entries(props).filter(\n      ([key, val]) =>\
+  \ prevProps.current[key] !== val\n    );\n    if (changes.length > 0) {\n      console.log(`[${name}]\
+  \ rerender:`, changes.map(([k]) => k));\n    }\n    prevProps.current = props;\n\
+  \  });\n}\n```\n\n### 판단 기준 요약\n| 도구 | 언제 사용 | 언제 불필요 |\n|------|----------|------------|\n\
+  | React.memo | props 자주 같은 중~무거운 컴포넌트 | 가벼운 컴포넌트, children 받는 경우 |\n| useMemo |\
+  \ O(n) 이상 계산, memo 자식에 전달 | 단순 문자열 연산, 원시 값 |\n| useCallback | memo 자식에 함수 전달 |\
+  \ memo 안 된 요소에 전달 |\n| 가상화 | 아이템 100개 이상 리스트 | 아이템 50개 미만 |\n"
+domain: development.frontend
+id: dev.frontend.component.performance
+tags:
+- frontend
+- component
+- performance
+- react
+- memo
+- virtualization
+theory: '#73 React Reconciliation (Facebook, 2013)'
+token_estimate: 1984
+type: pattern
+version: 1

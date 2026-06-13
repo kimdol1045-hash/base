@@ -1,0 +1,60 @@
+content: "구조화 로깅과 관측성 패턴 (문제가 발생했을 때 원인을 추적할 수 없다면, 로깅이 없는 것과 같다):\n\n### 로그 레벨 기준\n\
+  | 레벨 | 사용 시점 | 프로덕션 기본 출력 | 예시 |\n|------|-----------|-------------------|------|\n\
+  | `error` | 즉시 조치가 필요한 오류 | O | DB 연결 실패, 결제 처리 실패 |\n| `warn` | 잠재적 문제, 당장은 아님\
+  \ | O | Rate limit 근접, deprecated API 호출 |\n| `info` | 정상 비즈니스 이벤트 | O | 사용자 가입,\
+  \ 주문 생성, 배포 완료 |\n| `debug` | 개발/디버깅용 상세 정보 | X | SQL 쿼리, 캐시 hit/miss, 함수 인자 |\n\
+  \n### 구조화 로깅 (Structured Logging)\nJSON 형태로 로그를 남겨 검색과 분석을 용이하게 한다.\n\nDO:\n```typescript\n\
+  // 구조화된 로그 -- 파싱/검색 가능\nconst logger = {\n  info: (message: string, context: Record<string,\
+  \ unknown> = {}) => {\n    console.log(JSON.stringify({\n      level: \"info\",\n\
+  \      message,\n      timestamp: new Date().toISOString(),\n      ...context,\n\
+  \    }));\n  },\n  error: (message: string, error: unknown, context: Record<string,\
+  \ unknown> = {}) => {\n    console.error(JSON.stringify({\n      level: \"error\"\
+  ,\n      message,\n      timestamp: new Date().toISOString(),\n      error: error\
+  \ instanceof Error ? {\n        name: error.name,\n        message: error.message,\n\
+  \        stack: error.stack,\n      } : String(error),\n      ...context,\n    }));\n\
+  \  },\n};\n\n// 사용\nlogger.info(\"사용자 생성 완료\", { userId: user.id, email: user.email\
+  \ });\nlogger.error(\"결제 처리 실패\", err, { orderId, amount });\n```\n\nDON'T:\n```typescript\n\
+  // ❌ 비구조화 로그 -- 검색/분석 불가능\nconsole.log(\"User created: \" + user.id);\nconsole.log(`Error:\
+  \ ${err}`);\n\n// ❌ 객체를 그대로 출력 -- 형식이 일관되지 않음\nconsole.log(\"user:\", user);  //\
+  \ [object Object]가 출력될 수 있음\n```\n\n### 요청 로깅 미들웨어\n```typescript\nasync function\
+  \ requestLogger(c: Context, next: Next) {\n  const requestId = c.get(\"requestId\"\
+  ) ?? crypto.randomUUID();\n  const start = performance.now();\n\n  logger.info(\"\
+  요청 수신\", {\n    requestId,\n    method: c.req.method,\n    path: c.req.path,\n \
+  \   userAgent: c.req.header(\"User-Agent\"),\n    ip: c.req.header(\"x-forwarded-for\"\
+  ),\n  });\n\n  await next();\n\n  const duration = Math.round(performance.now()\
+  \ - start);\n  const status = c.res.status;\n\n  const logFn = status >= 500 ? logger.error\
+  \ : logger.info;\n  logFn(\"요청 완료\", null as any, {\n    requestId,\n    method:\
+  \ c.req.method,\n    path: c.req.path,\n    status,\n    duration,\n  });\n}\n```\n\
+  \n### 민감 정보 마스킹\n로그에 절대 평문으로 남기면 안 되는 데이터를 마스킹한다.\n\n```typescript\nconst SENSITIVE_FIELDS\
+  \ = new Set([\n  \"password\", \"token\", \"secret\", \"authorization\",\n  \"creditCard\"\
+  , \"ssn\", \"accessToken\", \"refreshToken\",\n]);\n\nfunction maskSensitive(obj:\
+  \ Record<string, unknown>): Record<string, unknown> {\n  const masked: Record<string,\
+  \ unknown> = {};\n  for (const [key, value] of Object.entries(obj)) {\n    if (SENSITIVE_FIELDS.has(key.toLowerCase()))\
+  \ {\n      masked[key] = \"***MASKED***\";\n    } else if (typeof value === \"object\"\
+  \ && value !== null) {\n      masked[key] = maskSensitive(value as Record<string,\
+  \ unknown>);\n    } else {\n      masked[key] = value;\n    }\n  }\n  return masked;\n\
+  }\n\n// 사용\nlogger.info(\"로그인 시도\", maskSensitive({ email, password, ip }));\n//\
+  \ 출력: { email: \"user@test.com\", password: \"***MASKED***\", ip: \"1.2.3.4\" }\n\
+  ```\n\n### Request ID를 통한 추적\n하나의 요청이 여러 서비스/함수를 거칠 때 Request ID로 전체 흐름을 추적한다.\n\
+  \n```typescript\n// 미들웨어에서 Request ID 설정\napp.use(\"*\", async (c, next) => {\n\
+  \  const requestId = c.req.header(\"X-Request-Id\") ?? crypto.randomUUID();\n  c.set(\"\
+  requestId\", requestId);\n  c.header(\"X-Request-Id\", requestId);\n  await next();\n\
+  });\n\n// 서비스 레이어에서도 requestId를 전달\nasync function createOrder(input: CreateOrderInput,\
+  \ requestId: string) {\n  logger.info(\"주문 생성 시작\", { requestId, userId: input.userId\
+  \ });\n  // ... 로직\n  logger.info(\"주문 생성 완료\", { requestId, orderId: order.id });\n\
+  }\n```\n\n### 흔한 실수\n- 비밀번호, JWT 토큰을 로그에 평문으로 남김\n- `console.log(err)` -- Error\
+  \ 객체는 JSON.stringify하면 빈 객체 `{}`가 됨\n- 로그 레벨 없이 모두 `console.log` 사용 -> 프로덕션에서 노이즈\
+  \ 과다\n- 요청 ID 없이 로깅 -> 동시 요청 시 어떤 요청의 로그인지 구분 불가\n- 과도한 debug 로그를 프로덕션에서 켜놓음 ->\
+  \ 성능 저하 + 스토리지 낭비\n"
+domain: development.backend
+id: dev.backend.api.logging
+tags:
+- backend
+- api
+- logging
+- observability
+- security
+theory: '#130 Observability (Sridharan, 2018)'
+token_estimate: 1866
+type: pattern
+version: 1

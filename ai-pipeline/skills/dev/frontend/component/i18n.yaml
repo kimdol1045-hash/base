@@ -1,0 +1,56 @@
+content: "국제화(i18n) 패턴 (다국어, 날짜/숫자 포맷, RTL을 체계적으로 지원한다):\n\n### 1. next-intl 기본 설정\
+  \ (Next.js App Router)\n\nDO:\n```typescript\n// ✅ 메시지 파일 구조 — messages/ko.json\n\
+  {\n  \"common\": {\n    \"save\": \"저장\",\n    \"cancel\": \"취소\",\n    \"delete\"\
+  : \"삭제\",\n    \"loading\": \"로딩 중...\"\n  },\n  \"auth\": {\n    \"login\": {\n\
+  \      \"title\": \"로그인\",\n      \"email\": \"이메일\",\n      \"password\": \"비밀번호\"\
+  ,\n      \"submit\": \"로그인\",\n      \"noAccount\": \"계정이 없으신가요? {signupLink}\"\
+  ,\n      \"error\": \"이메일 또는 비밀번호가 올바르지 않습니다.\"\n    }\n  },\n  \"dashboard\": {\n\
+  \    \"welcome\": \"{name}님, 환영합니다!\",\n    \"projects\": {\n      \"count\": \"\
+  {count, plural, =0 {프로젝트 없음} one {프로젝트 1개} other {프로젝트 {count}개}}\"\n    }\n  }\n\
+  }\n\n// ✅ 컴포넌트에서 사용\nimport { useTranslations } from \"next-intl\";\n\nfunction\
+  \ LoginForm() {\n  const t = useTranslations(\"auth.login\");\n  return (\n    <form>\n\
+  \      <h1>{t(\"title\")}</h1>\n      <Input placeholder={t(\"email\")} />\n   \
+  \   <Input type=\"password\" placeholder={t(\"password\")} />\n      <Button>{t(\"\
+  submit\")}</Button>\n    </form>\n  );\n}\n```\n\n### 2. 키 네이밍 컨벤션\n\n| 패턴 | 예시\
+  \ | 설명 |\n|------|------|------|\n| `page.section.element` | `dashboard.header.title`\
+  \ | 위치 기반 (권장) |\n| `feature.action` | `auth.login` | 기능 기반 |\n| `common.*` | `common.save`\
+  \ | 공통 (재사용) |\n\n네임스페이스 깊이 최대 3단계. 4단계 이상은 인지 부하 증가.\n\n### 3. 복수형 처리 (ICU MessageFormat)\n\
+  \n```typescript\n// ✅ ICU 복수형 — 언어별 규칙 자동 적용\n// ko.json: \"items\": \"{count, plural,\
+  \ =0 {항목 없음} other {{count}개 항목}}\"\n// en.json: \"items\": \"{count, plural, =0\
+  \ {No items} one {{count} item} other {{count} items}}\"\n// ar.json: 아랍어는 6가지 복수형\
+  \ (zero, one, two, few, many, other)\n\nt(\"dashboard.projects.count\", { count:\
+  \ projects.length });\n```\n\n### 4. 날짜/숫자 포맷 — Intl API\n\nDO:\n```typescript\n\
+  // ✅ Intl.DateTimeFormat — 로케일 자동 포맷\nimport { useFormatter } from \"next-intl\"\
+  ;\n\nfunction DateDisplay({ date }: { date: Date }) {\n  const format = useFormatter();\n\
+  \  return (\n    <time dateTime={date.toISOString()}>\n      {format.dateTime(date,\
+  \ {\n        year: \"numeric\",\n        month: \"long\",\n        day: \"numeric\"\
+  ,\n      })}\n      {/* ko: \"2024년 3월 15일\", en: \"March 15, 2024\" */}\n    </time>\n\
+  \  );\n}\n\n// ✅ 숫자/통화 포맷\nformat.number(1234567.89, { style: \"currency\", currency:\
+  \ \"KRW\" });\n// → \"₩1,234,568\"\nformat.number(0.156, { style: \"percent\" });\n\
+  // → \"16%\" (ko), \"16%\" (en)\n\n// ✅ 상대 시간\nformat.relativeTime(new Date(\"2024-03-10\"\
+  ), new Date(\"2024-03-15\"));\n// → \"5일 전\" (ko), \"5 days ago\" (en)\n```\n\n\
+  ### 5. RTL 지원 (아랍어, 히브리어)\n\n```tsx\n// ✅ CSS logical properties — LTR/RTL 자동 전환\n\
+  // margin-inline-start 대신 Tailwind: ms-4\n<div className=\"ms-4 ps-2 text-start\"\
+  >\n  {/* ms = margin-start, ps = padding-start, text-start */}\n  {/* LTR: margin-left,\
+  \ RTL: margin-right 자동 전환 */}\n</div>\n\n// ✅ html dir 속성 설정\n// <html lang={locale}\
+  \ dir={locale === \"ar\" ? \"rtl\" : \"ltr\"}>\n```\n\nDON'T:\n```typescript\n//\
+  \ ❌ 하드코딩 문자열 — 번역 불가\n<h1>환영합니다!</h1>\n\n// ❌ 문자열 연결로 번역 문장 조합 — 어순이 언어마다 다름\nt(\"\
+  hello\") + \" \" + name + t(\"welcome\") // 어순 깨짐\n\n// ❌ 수동 날짜 포맷 — 로케일 규칙 무시\n\
+  `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`\n// 미국: MM/DD/YYYY,\
+  \ 한국: YYYY.MM.DD → Intl API 사용\n\n// ❌ margin-left/right 고정 — RTL에서 깨짐\n<div className=\"\
+  ml-4\" /> // → ms-4 사용\n```\n"
+domain: development.frontend
+id: dev.frontend.component.i18n
+tags:
+- frontend
+- i18n
+- internationalization
+- next-intl
+- rtl
+- icu
+- intl-api
+- locale
+theory: '#7 Jakob''s Law — 사용자는 자신의 언어와 문화 관습을 기대한다 (Nielsen, 2000)'
+token_estimate: 1528
+type: pattern
+version: 1

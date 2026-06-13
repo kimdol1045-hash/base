@@ -1,0 +1,21 @@
+content: "피크엔드 규칙 (경험의 최고점과 마지막 순간이 전체 평가를 결정한다):\n\n### UX 적용\n\n**피크 순간 강화:**\n\
+  - 핵심 성공 인터랙션에 마이크로 애니메이션:\n  결제 완료 → confetti, 목표 달성 → 축하 모션\n- 예상치 못한 즐거움(Delight):\
+  \ 이스터에그, 유머러스한 에러 메시지\n- \"와!\" 순간 설계: 첫 데이터 로딩 완료, 첫 수익 발생\n\n**마지막 순간 강화:**\n\
+  ```tsx\n// 결제 완료 페이지 — 마지막 인상이 전체 경험을 좌우\n<div className=\"flex flex-col items-center\
+  \ gap-6 py-12\">\n  <CheckCircle className=\"h-16 w-16 text-green-500 animate-bounce\"\
+  \ />\n  <h1 className=\"text-2xl font-bold\">주문 완료!</h1>\n  <p className=\"text-muted-foreground\"\
+  >3일 내 배송됩니다</p>\n  <div className=\"rounded-lg bg-muted p-4 text-center\">\n   \
+  \ <p className=\"text-sm\">주문번호: #A12345</p>\n  </div>\n  <Button variant=\"outline\"\
+  >주문 상세 보기</Button>\n</div>\n```\n\n**나쁜 끝 방지:**\n- 에러 메시지를 친절하게 (기술 코드 ❌ → 안내 메시지\
+  \ ✅)\n- 로그아웃 시 따뜻한 인사 \"다음에 또 만나요\"\n- 구독 해지 시 협박 금지, 깔끔한 프로세스\n"
+domain: design
+id: design.ux-psychology.peak-end
+tags:
+- design
+- ux
+- peak-end
+- experience
+theory: '#49 Peak-End Rule (Kahneman et al., 1993)'
+token_estimate: 380
+type: rule
+version: 1

@@ -1,0 +1,56 @@
+---
+id: "planning.ice-scoring"
+domain: "planning"
+type: "pattern"
+bloom_level: "ICE 스코어링은 Sean Ellis가 개발한 간결한 우선순위 프레임워크이다. Impact(영향도), Confidence(확신도), Ease(실행 용이성) 3가지를 1-10 척도로 평가하여 빠른 의사결정에 적합하다."
+tags: ["ice", "prioritization", "growth-hacking"]
+brain_region: "PREFRONTAL"
+token_estimate: 380
+---
+
+# planning.ice-scoring
+
+> ICE 스코어링은 Sean Ellis가 개발한 간결한 우선순위 프레임워크이다. Impact(영향도), Confidence(확신도), Ease(실행 용이성) 3가지를 1-10 척도로 평가하여 빠른 의사결정에 적합하다.
+
+# ICE 스코어링 가이드
+
+## 핵심 원칙
+- RICE보다 단순, 빠른 의사결정에 적합
+- 1-10 척도로 직관적 평가
+- 그로스 해킹 실험 우선순위에 최적
+- 팀 합의 기반 평가
+
+## ICE 공식
+ICE Score = Impact x Confidence x Ease
+
+## 요소별 기준
+| 요소 | 정의 | 1 | 5 | 10 |
+|------|------|---|---|-----|
+| Impact | 목표 지표에 미치는 영향 | 미미 | 보통 | 게임 체인저 |
+| Confidence | 성공 확률 추정 | 추측 | 일부 근거 | 데이터 기반 |
+| Ease | 구현 용이성 | 수개월 | 수주 | 수일 |
+
+## RICE vs ICE 비교
+| 기준 | RICE | ICE |
+|------|------|-----|
+| 복잡도 | 중간 | 낮음 |
+| 정량화 | Reach 별도 산출 | 직관적 점수 |
+| 적합 대상 | 기능 우선순위 | 실험 우선순위 |
+| 소요 시간 | 30분+ | 10분 |
+
+## 적용 프로세스
+1. 후보 아이디어 목록 작성
+2. 각 아이디어에 팀원별 ICE 점수 부여
+3. 평균 점수 산출
+4. 상위 3-5개 실행
+5. 결과 측정 후 Confidence 업데이트
+
+## DO
+- 주간 그로스 미팅에서 ICE 스코어링 실시
+- 실험 결과를 기록하여 Confidence 정확도 개선
+- Impact 기준을 팀에서 사전 합의
+
+## DON'T
+- 한 사람이 독단적으로 점수 매기지 않기
+- 10점 만점을 남발하지 않기 (상대 평가)
+- ICE만으로 전략적 결정을 내리지 않기

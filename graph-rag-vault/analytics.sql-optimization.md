@@ -1,0 +1,53 @@
+---
+id: "analytics.sql-optimization"
+domain: "analytics"
+type: "pattern"
+bloom_level: "SQL 최적화는 쿼리 성능을 개선하여 대용량 데이터 분석의 응답 시간을 단축하는 기술이다. 실행 계획(EXPLAIN) 분석, 인덱스 전략, 쿼리 리팩토링이 핵심이다."
+tags: ["sql", "optimization", "query-performance", "database"]
+brain_region: "THALAMUS"
+token_estimate: 420
+---
+
+# analytics.sql-optimization
+
+> SQL 최적화는 쿼리 성능을 개선하여 대용량 데이터 분석의 응답 시간을 단축하는 기술이다. 실행 계획(EXPLAIN) 분석, 인덱스 전략, 쿼리 리팩토링이 핵심이다.
+
+# SQL 최적화 가이드
+
+## 핵심 원칙
+- EXPLAIN으로 실행 계획을 먼저 확인
+- 인덱스 설계가 쿼리 성능의 80%를 결정
+- 필요한 데이터만 조회 (SELECT * 지양)
+- 서브쿼리보다 JOIN 또는 CTE 선호
+
+## 최적화 체크리스트
+1. **SELECT**: 필요한 컬럼만 명시
+2. **WHERE**: 인덱스 컬럼 우선 조건 배치
+3. **JOIN**: 작은 테이블을 드라이빙 테이블로
+4. **INDEX**: 카디널리티 높은 컬럼에 인덱스
+5. **LIMIT**: 페이지네이션으로 결과 제한
+6. **EXPLAIN**: 풀 테이블 스캔 여부 확인
+
+## 인덱스 전략
+- 복합 인덱스: WHERE 조건 순서와 일치
+- 커버링 인덱스: SELECT 컬럼까지 포함
+- 부분 인덱스: 특정 조건의 행만 인덱싱
+
+## 안티패턴
+| 안티패턴 | 개선 방법 |
+|---------|----------|
+| SELECT * | 필요한 컬럼만 명시 |
+| WHERE에 함수 적용 | 컬럼 원본 비교로 변경 |
+| OR 조건 남용 | UNION ALL로 분리 |
+| 상관 서브쿼리 | JOIN으로 변환 |
+| N+1 쿼리 | 배치 조회로 통합 |
+
+## DO
+- 쿼리 실행 전 EXPLAIN ANALYZE 확인
+- 슬로우 쿼리 로그 모니터링 체계 구축
+- 대용량 테이블은 파티셔닝 검토
+
+## DON'T
+- 프로덕션 DB에서 직접 무거운 쿼리 실행하지 않기
+- 인덱스를 과도하게 생성하지 않기 (쓰기 성능 저하)
+- 힌트(HINT)에 과도하게 의존하지 않기

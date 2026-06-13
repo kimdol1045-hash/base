@@ -1,0 +1,29 @@
+bloom_level: APPLY
+content: "# WebSocket 룸(채널) 관리 가이드\n\n## 핵심 원칙\n- 룸은 메시지 브로드캐스트의 논리적 단위이다\n- 룸 참여/퇴장은\
+  \ 명시적 이벤트로 처리한다\n- 룸 단위로 권한을 검사한다\n- 메모리 누수 방지를 위해 빈 룸은 자동 정리한다\n\n## DO\n- 룸 ID를\
+  \ 리소스 기반으로 설계한다 (예: `project:123`, `chat:456`)\n- 룸별 참여자 목록을 관리하고 presence 정보를 제공한다\n\
+  - 메시지 전송 시 발신자를 제외하는 옵션을 제공한다\n- 룸 크기 제한을 설정한다\n\n## DON'T\n- 모든 사용자를 하나의 글로벌 룸에\
+  \ 넣지 않는다\n- 룸 참여 시 권한 검사를 생략하지 않는다\n- 룸 상태를 서버 메모리에만 저장하지 않는다 (Redis 활용)\n- 대용량\
+  \ 파일을 WebSocket 룸으로 전송하지 않는다\n\n## 코드 예시\n```typescript\nclass RoomManager {\n \
+  \ private rooms = new Map<string, Set<string>>();\n\n  join(roomId: string, connId:\
+  \ string): void {\n    if (!this.rooms.has(roomId)) {\n      this.rooms.set(roomId,\
+  \ new Set());\n    }\n    this.rooms.get(roomId)!.add(connId);\n    this.broadcast(roomId,\
+  \ {\n      type: \"user:joined\",\n      connId,\n      memberCount: this.rooms.get(roomId)!.size,\n\
+  \    }, connId);\n  }\n\n  leave(roomId: string, connId: string): void {\n    this.rooms.get(roomId)?.delete(connId);\n\
+  \    if (this.rooms.get(roomId)?.size === 0) {\n      this.rooms.delete(roomId);\
+  \ // 빈 룸 정리\n    }\n  }\n\n  broadcast(roomId: string, message: unknown, excludeId?:\
+  \ string): void {\n    const members = this.rooms.get(roomId);\n    if (!members)\
+  \ return;\n    const data = JSON.stringify(message);\n    for (const connId of members)\
+  \ {\n      if (connId === excludeId) continue;\n      getConnection(connId)?.send(data);\n\
+  \    }\n  }\n}\n```\n"
+domain: development.backend
+id: dev.backend.websocket.room
+tags:
+- websocket
+- room
+- pubsub
+- realtime
+theory: '#207 Pub/Sub Messaging Pattern (Enterprise Integration Patterns, Hohpe 2003)'
+token_estimate: 662
+type: pattern
+version: 1

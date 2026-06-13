@@ -1,0 +1,32 @@
+bloom_level: APPLY
+content: "# Helm 차트 설계 가이드\n\n## 핵심 원칙\n- Helm은 Kubernetes 리소스의 패키지 매니저이다\n- values.yaml로\
+  \ 환경별 설정을 분리한다\n- 차트를 재사용 가능하고 구성 가능하게 설계한다\n- Chart.lock으로 의존성 버전을 고정한다\n\n## DO\n\
+  - 환경별(dev, staging, prod) values 파일을 분리한다\n- 필수 값에 required 검증을 추가한다\n- _helpers.tpl에\
+  \ 공통 라벨, 이름 생성 로직을 정의한다\n- Chart 버전과 appVersion을 분리 관리한다\n\n## DON'T\n- values.yaml에\
+  \ 시크릿을 평문으로 포함하지 않는다\n- 하나의 차트에 너무 많은 리소스를 포함하지 않는다\n- Helm hooks를 남용하지 않는다\n- `helm\
+  \ install --set`으로 많은 값을 오버라이드하지 않는다 (values 파일 사용)\n\n## 코드 예시\n```yaml\n# Chart.yaml\n\
+  apiVersion: v2\nname: my-app\nversion: 1.2.0\nappVersion: \"2.5.0\"\ndependencies:\n\
+  \  - name: postgresql\n    version: \"12.x.x\"\n    repository: \"https://charts.bitnami.com/bitnami\"\
+  \n\n# values.yaml\nreplicaCount: 2\nimage:\n  repository: my-app\n  tag: \"\"  #\
+  \ CI에서 주입\n  pullPolicy: IfNotPresent\nresources:\n  requests:\n    cpu: 100m\n\
+  \    memory: 128Mi\n  limits:\n    cpu: 500m\n    memory: 512Mi\nautoscaling:\n\
+  \  enabled: false\n  minReplicas: 2\n  maxReplicas: 10\n\n# templates/deployment.yaml\n\
+  apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: {{ include \"my-app.fullname\"\
+  \ . }}\n  labels: {{- include \"my-app.labels\" . | nindent 4 }}\nspec:\n  replicas:\
+  \ {{ .Values.replicaCount }}\n  template:\n    spec:\n      containers:\n      \
+  \  - name: {{ .Chart.Name }}\n          image: \"{{ .Values.image.repository }}:{{\
+  \ .Values.image.tag | default .Chart.AppVersion }}\"\n          resources: {{- toYaml\
+  \ .Values.resources | nindent 14 }}\n```\n\n```bash\n# 환경별 배포\nhelm upgrade --install\
+  \ my-app ./charts/my-app \\\n  -f values/production.yaml \\\n  --set image.tag=$CI_COMMIT_SHA\
+  \ \\\n  --namespace production\n```\n"
+domain: development.infra
+id: dev.infra.deploy.helm
+tags:
+- infra
+- helm
+- kubernetes
+- deploy
+theory: '#261 Helm Charts (CNCF, Helm 3 Documentation 2019)'
+token_estimate: 770
+type: pattern
+version: 1

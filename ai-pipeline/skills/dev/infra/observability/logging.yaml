@@ -1,0 +1,32 @@
+bloom_level: APPLY
+content: "# 구조화된 로깅 가이드\n\n## 핵심 원칙\n- 모든 로그를 JSON 형식의 구조화된 데이터로 출력한다\n- 로그 레벨을 일관되게\
+  \ 사용한다 (ERROR, WARN, INFO, DEBUG)\n- 요청 ID(Correlation ID)를 모든 로그에 포함한다\n- 로그를 stdout으로\
+  \ 출력하고, 수집은 인프라 레벨에서 처리한다\n\n## DO\n- 구조화된 로그 라이브러리(pino, winston)를 사용한다\n- 요청별\
+  \ 컨텍스트(userId, requestId, traceId)를 자동 주입한다\n- 에러 로그에 스택 트레이스를 포함한다\n- 민감 정보(비밀번호,\
+  \ 토큰)를 로그에서 마스킹한다\n\n## DON'T\n- `console.log`를 프로덕션에서 사용하지 않는다\n- 로그에 개인정보(PII)를\
+  \ 평문으로 기록하지 않는다\n- DEBUG 레벨 로그를 프로덕션에서 활성화하지 않는다\n- 로그 파일을 애플리케이션에서 직접 관리하지 않는다\
+  \ (stdout → 수집기)\n\n## 코드 예시\n```typescript\nimport pino from \"pino\";\n\nconst\
+  \ logger = pino({\n  level: process.env.LOG_LEVEL ?? \"info\",\n  formatters: {\n\
+  \    level: (label) => ({ level: label }),\n  },\n  redact: {\n    paths: [\"password\"\
+  , \"token\", \"authorization\", \"cookie\"],\n    censor: \"[REDACTED]\",\n  },\n\
+  });\n\n// 요청별 자식 로거\nfunction requestLogger(req: Request) {\n  return logger.child({\n\
+  \    requestId: req.headers.get(\"x-request-id\") ?? generateId(),\n    userId:\
+  \ req.user?.id,\n    method: req.method,\n    url: req.url,\n  });\n}\n\n// 미들웨어\n\
+  app.use(async (req, res, next) => {\n  const log = requestLogger(req);\n  req.log\
+  \ = log;\n  const start = performance.now();\n\n  res.on(\"finish\", () => {\n \
+  \   const duration = performance.now() - start;\n    log.info({ statusCode: res.statusCode,\
+  \ duration }, \"요청 완료\");\n  });\n\n  next();\n});\n\n// 사용\nreq.log.info({ orderId:\
+  \ order.id }, \"주문 생성 완료\");\nreq.log.error({ err, orderId }, \"주문 처리 실패\");\n\n\
+  // 출력 예시\n// {\"level\":\"info\",\"requestId\":\"abc-123\",\"userId\":\"user-1\"\
+  ,\"orderId\":\"ord-456\",\"msg\":\"주문 생성 완료\"}\n```\n"
+domain: development.infra
+id: dev.infra.observability.logging
+tags:
+- infra
+- observability
+- logging
+- structured-log
+theory: '#269 Structured Logging (12-Factor App, Factor XI: Logs)'
+token_estimate: 740
+type: pattern
+version: 1

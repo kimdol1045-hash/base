@@ -1,0 +1,50 @@
+content: "에러 핸들링 패턴 (에러는 숨기는 것이 아니라 제어하는 것이다):\n\n### 커스텀 에러 클래스 정의\n비즈니스 로직에서 발생하는\
+  \ 에러를 HTTP 에러와 분리한다.\n\n```typescript\n// errors/app-error.ts\nexport class AppError\
+  \ extends Error {\n  constructor(\n    public readonly code: string,\n    public\
+  \ readonly statusCode: number,\n    message: string,\n    public readonly details?:\
+  \ unknown,\n  ) {\n    super(message);\n    this.name = \"AppError\";\n  }\n}\n\n\
+  // 자주 쓰는 에러 팩토리\nexport const Errors = {\n  notFound: (resource: string) =>\n  \
+  \  new AppError(\"NOT_FOUND\", 404, `${resource}을(를) 찾을 수 없습니다`),\n  conflict: (message:\
+  \ string) =>\n    new AppError(\"CONFLICT\", 409, message),\n  forbidden: (message\
+  \ = \"접근 권한이 없습니다\") =>\n    new AppError(\"FORBIDDEN\", 403, message),\n  validation:\
+  \ (details: unknown) =>\n    new AppError(\"VALIDATION_ERROR\", 422, \"입력값 검증에 실패했습니다\"\
+  , details),\n} as const;\n```\n\n### 글로벌 에러 핸들러\n```typescript\n// middleware/error-handler.ts\
+  \ (Hono)\napp.onError((err, c) => {\n  // Zod 검증 에러\n  if (err instanceof ZodError)\
+  \ {\n    return c.json({\n      error: {\n        code: \"VALIDATION_ERROR\",\n\
+  \        message: \"입력값 검증에 실패했습니다\",\n        details: err.issues.map((i) => ({\n\
+  \          field: i.path.join(\".\"),\n          message: i.message,\n        })),\n\
+  \      },\n    }, 422);\n  }\n\n  // 비즈니스 에러\n  if (err instanceof AppError) {\n\
+  \    return c.json({\n      error: { code: err.code, message: err.message, details:\
+  \ err.details },\n    }, err.statusCode);\n  }\n\n  // 예상치 못한 에러 -- 내부 정보 노출 금지\n\
+  \  console.error(\"[UNHANDLED]\", err);\n  return c.json({\n    error: { code: \"\
+  INTERNAL\", message: \"서버 오류가 발생했습니다\" },\n  }, 500);\n});\n```\n\n### 핸들러에서의 사용\n\
+  DO:\n```typescript\napp.get(\"/users/:id\", async (c) => {\n  const { id } = IdParamSchema.parse(c.req.param());\n\
+  \  const user = await userService.findById(id);\n  if (!user) throw Errors.notFound(\"\
+  사용자\");\n  return c.json({ data: user });\n});\n```\n\nDON'T:\n```typescript\n//\
+  \ ❌ 모든 핸들러에 try-catch 중복\napp.get(\"/users/:id\", async (c) => {\n  try {\n    const\
+  \ user = await getUser(id);\n    return c.json(user);\n  } catch (e) {\n    return\
+  \ c.json({ error: e.message }, 500); // 내부 에러 메시지 노출!\n  }\n});\n\n// ❌ 에러 삼키기\n\
+  try { await riskyOperation(); } catch {} // 빈 catch = 디버깅 지옥\n\n// ❌ 일관성 없는 에러 형식\n\
+  return c.json({ msg: \"not found\" }, 404);      // msg? error? message?\nreturn\
+  \ c.json({ error: \"not found\" }, 404);     // string? object?\n```\n\n### 에러 코드\
+  \ 표준\n| 코드 | HTTP | 설명 |\n|------|------|------|\n| AUTH_REQUIRED | 401 | 인증 토큰\
+  \ 없음/만료 |\n| AUTH_INVALID | 401 | 토큰 서명 검증 실패 |\n| FORBIDDEN | 403 | 권한 부족 |\n|\
+  \ NOT_FOUND | 404 | 리소스 없음 |\n| VALIDATION_ERROR | 422 | 입력 검증 실패 |\n| CONFLICT\
+  \ | 409 | 중복/충돌 |\n| RATE_LIMITED | 429 | 요청 한도 초과 |\n| INTERNAL | 500 | 예상치 못한\
+  \ 서버 오류 |\n\n### 비동기 에러 처리\n```typescript\n// 프로세스 레벨 안전장치 (서버 시작 시)\nprocess.on(\"\
+  unhandledRejection\", (reason) => {\n  console.error(\"[UnhandledRejection]\", reason);\n\
+  \  // 프로덕션에서는 graceful shutdown 고려\n});\n```\n\n### 흔한 실수\n- 스택 트레이스를 클라이언트에 노출:\
+  \ `c.json({ error: err.stack })` -- 절대 금지\n- 404와 403 혼동: 존재하지만 권한 없을 때 404를 반환하는\
+  \ 것이 보안상 나을 수 있음 (정보 유출 방지)\n- Zod 에러를 그대로 던지면 글로벌 핸들러에서 잡히지만, `safeParse` 사용 시\
+  \ 수동 처리 필요\n"
+domain: development.backend
+id: dev.backend.api.error
+tags:
+- backend
+- api
+- error-handling
+- pattern
+theory: '#72 방어적 프로그래밍 (Defensive Programming)'
+token_estimate: 1485
+type: pattern
+version: 1

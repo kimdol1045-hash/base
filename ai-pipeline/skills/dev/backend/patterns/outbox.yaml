@@ -1,0 +1,37 @@
+bloom_level: APPLY
+content: "# Transactional Outbox 패턴 가이드\n\n## 핵심 원칙\n- DB 쓰기와 이벤트 발행의 원자성을 보장한다\n\
+  - 비즈니스 데이터와 이벤트를 같은 트랜잭션에서 저장한다\n- 별도의 Relay 프로세스가 Outbox 테이블에서 이벤트를 발행한다\n- 최소\
+  \ 한 번(at-least-once) 전달을 보장하므로 컨슈머는 멱등해야 한다\n\n## DO\n- 비즈니스 엔티티와 Outbox 이벤트를 같은\
+  \ DB 트랜잭션에서 저장한다\n- CDC(Change Data Capture) 또는 폴링으로 Outbox Relay를 구현한다\n- 이벤트에\
+  \ aggregate_id를 포함하여 순서를 보장한다\n- 발행 완료된 이벤트를 주기적으로 정리(아카이브)한다\n- 컨슈머 측에서 멱등성을 반드시\
+  \ 구현한다\n\n## DON'T\n- DB 커밋 후 별도 트랜잭션에서 이벤트를 발행하지 않는다 (불일치 위험)\n- Outbox 테이블을 무한정\
+  \ 쌓이게 방치하지 않는다\n- 이벤트 페이로드에 대용량 데이터를 넣지 않는다 (참조만 저장)\n- Relay 프로세스 장애 시 이벤트가 영구\
+  \ 누락되도록 하지 않는다\n\n## 코드 예시\n```typescript\n// 트랜잭션 내 Outbox 저장\nasync function createOrder(input:\
+  \ CreateOrderInput) {\n  return db.transaction(async (tx) => {\n    // 1. 비즈니스 데이터\
+  \ 저장\n    const order = await tx.insert(orders).values({\n      userId: input.userId,\n\
+  \      items: input.items,\n      totalAmount: input.totalAmount,\n      status:\
+  \ \"created\",\n    }).returning();\n\n    // 2. 같은 트랜잭션에서 Outbox에 이벤트 저장\n    await\
+  \ tx.insert(outboxEvents).values({\n      id: generateId(),\n      aggregateType:\
+  \ \"Order\",\n      aggregateId: order[0].id,\n      eventType: \"OrderCreated\"\
+  ,\n      payload: { orderId: order[0].id, userId: input.userId, totalAmount: input.totalAmount\
+  \ },\n    });\n\n    return order[0];\n  });\n}\n\n// Outbox Relay (폴링 방식)\nasync\
+  \ function relayOutboxEvents() {\n  const events = await db.select()\n    .from(outboxEvents)\n\
+  \    .where(isNull(outboxEvents.publishedAt))\n    .orderBy(outboxEvents.createdAt)\n\
+  \    .limit(100);\n\n  for (const event of events) {\n    try {\n      await messageBroker.publish(event.eventType,\
+  \ event.payload);\n      await db.update(outboxEvents)\n        .set({ publishedAt:\
+  \ new Date() })\n        .where(eq(outboxEvents.id, event.id));\n    } catch (err)\
+  \ {\n      logger.error({ eventId: event.id, err }, \"Outbox 이벤트 발행 실패\");\n   \
+  \   break; // 순서 보장을 위해 중단\n    }\n  }\n}\n\n// 30초마다 Relay 실행\nsetInterval(relayOutboxEvents,\
+  \ 30_000);\n```\n"
+domain: development.backend
+id: dev.backend.patterns.outbox
+tags:
+- patterns
+- outbox
+- event-driven
+- consistency
+theory: '#291 Transactional Outbox Pattern (Chris Richardson, Microservices Patterns
+  2018)'
+token_estimate: 932
+type: pattern
+version: 1

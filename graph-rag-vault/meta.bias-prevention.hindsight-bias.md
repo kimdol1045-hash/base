@@ -1,0 +1,57 @@
+---
+id: "meta.bias-prevention.hindsight-bias"
+domain: "meta"
+type: "pattern"
+bloom_level: "사후 확신 편향은 결과를 알고 난 후 처음부터 알았다고 느끼는 인지 편향이다. 사건 발생 후 예측 가능했다고 착각하여 학습을 방해하고 책임을 부정하게 만든다."
+tags: ["hindsight-bias", "cognitive-bias", "retrospective"]
+brain_region: "PREFRONTAL"
+token_estimate: 380
+---
+
+# meta.bias-prevention.hindsight-bias
+
+> 사후 확신 편향은 결과를 알고 난 후 처음부터 알았다고 느끼는 인지 편향이다. 사건 발생 후 예측 가능했다고 착각하여 학습을 방해하고 책임을 부정하게 만든다.
+
+# 사후 확신 편향 방지 가이드
+
+## 정의
+결과를 알고 나면 "그럴 줄 알았다"고 느끼는 편향.
+예: 장애 발생 후 "그 코드가 문제일 줄 알았어" (사전에 아무도 지적 안 함)
+
+## 발생 시나리오
+- 포스트모템: 원인을 "당연한 것"으로 치부
+- 프로젝트 실패: "처음부터 무리였다" (사전에 반대 안 함)
+- 의사결정 평가: 결과로 과정의 질을 판단
+- 채용 평가: 퇴사 후 "원래 안 맞았다"
+
+## 방지 전략
+1. **사전 기록**: 의사결정 시점의 근거와 불확실성 기록
+2. **프리모템**: 프로젝트 시작 전 "실패했다면 왜?" 시뮬레이션
+3. **결과와 과정 분리**: 나쁜 결과 ≠ 나쁜 결정
+4. **당시 정보 복원**: 결정 시점에 알 수 있었던 정보만으로 평가
+
+## 체크리스트
+- [ ] 결정 시점에 이 정보를 알 수 있었는가?
+- [ ] 결과가 달랐어도 같은 평가를 했을 것인가?
+- [ ] 의사결정 과정이 합리적이었는가? (결과와 무관하게)
+- [ ] 사전 기록(의사결정 로그)과 비교했는가?
+
+## DO
+- 의사결정 저널 유지 (당시 근거 + 불확실성 기록)
+- 회고(Retrospective)에서 "당시 맥락" 복원부터 시작
+- 과정의 질을 결과와 분리하여 평가
+
+## DON'T
+- 결과를 알고 과거 결정을 비난하지 않기
+- "그럴 줄 알았다"를 학습의 대체물로 쓰지 않기
+
+## Connections
+
+- [[meta.bias-prevention.role]] — CO_CREATES (weight: 0.6)
+- [[meta.bias-prevention.confirmation-bias]] — CO_CREATES (weight: 0.6)
+- [[meta.bias-prevention.survivorship-bias]] — CO_CREATES (weight: 0.6)
+- [[meta.bias-prevention.availability-bias]] — CO_CREATES (weight: 0.6)
+- [[meta.bias-prevention.dunning-kruger]] — CO_CREATES (weight: 0.6)
+- [[meta.bias-prevention.framing-effect]] — CO_CREATES (weight: 0.6)
+- [[meta.bias-prevention.sunk-cost]] — CO_CREATES (weight: 0.6)
+- [[meta.output-validator]] — FEEDS (weight: 0.5)

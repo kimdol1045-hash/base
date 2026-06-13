@@ -1,0 +1,33 @@
+bloom_level: ANALYZE
+content: "# LLM 파인튜닝 가이드\n\n## 핵심 원칙\n- 프롬프트 엔지니어링 → Few-shot → RAG → 파인튜닝 순으로 시도한다\n\
+  - 파인튜닝은 특정 형식, 톤, 도메인 전문성이 필요할 때 사용한다\n- 고품질 학습 데이터가 모델 성능을 결정한다\n- LoRA/QLoRA로\
+  \ 효율적으로 파인튜닝한다\n\n## DO\n- 최소 100개 이상의 고품질 학습 데이터를 준비한다\n- 학습/검증/테스트 세트를 분리한다 (80/10/10)\n\
+  - 평가 지표를 미리 정의하고 기준선(baseline)을 측정한다\n- LoRA로 파라미터 효율적 파인튜닝(PEFT)을 수행한다\n- 과적합(overfitting)을\
+  \ 모니터링한다\n\n## DON'T\n- 프롬프트로 해결 가능한 문제에 파인튜닝을 사용하지 않는다\n- 저품질 데이터로 파인튜닝하지 않는다 (Garbage\
+  \ In, Garbage Out)\n- 평가 없이 파인튜닝된 모델을 배포하지 않는다\n- 전체 모델 파라미터를 파인튜닝하지 않는다 (LoRA 사용)\n\
+  \n## 파인튜닝 적합 시나리오\n| 시나리오 | 파인튜닝 | 프롬프트/RAG |\n|----------|----------|-------------|\n\
+  | 특정 출력 형식 일관성 | O | - |\n| 도메인 전문 용어 이해 | O | - |\n| 새로운 사실 학습 | - | RAG |\n| 특정\
+  \ 톤/스타일 유지 | O | 프롬프트 |\n| 비용 절감 (토큰 절약) | O | - |\n\n## 코드 예시\n```python\n# LoRA\
+  \ 파인튜닝 (Hugging Face + PEFT)\nfrom peft import LoraConfig, get_peft_model, TaskType\n\
+  from transformers import AutoModelForCausalLM, TrainingArguments, Trainer\n\n# LoRA\
+  \ 설정\nlora_config = LoraConfig(\n    task_type=TaskType.CAUSAL_LM,\n    r=16,  \
+  \                  # LoRA rank\n    lora_alpha=32,           # 스케일링 팩터\n    lora_dropout=0.1,\n\
+  \    target_modules=[\"q_proj\", \"v_proj\"],  # Attention 레이어만 튜닝\n)\n\nmodel =\
+  \ AutoModelForCausalLM.from_pretrained(\"meta-llama/Llama-3-8B\")\nmodel = get_peft_model(model,\
+  \ lora_config)\nprint(f\"학습 가능 파라미터: {model.print_trainable_parameters()}\")\n#\
+  \ 전체의 ~0.5%만 학습\n\n# 학습\ntrainer = Trainer(\n    model=model,\n    train_dataset=train_dataset,\n\
+  \    eval_dataset=eval_dataset,\n    args=TrainingArguments(\n        output_dir=\"\
+  ./output\",\n        num_train_epochs=3,\n        per_device_train_batch_size=4,\n\
+  \        learning_rate=2e-4,\n        evaluation_strategy=\"steps\",\n        eval_steps=100,\n\
+  \    ),\n)\ntrainer.train()\n```\n"
+domain: development.ai
+id: dev.ai.fine-tuning
+tags:
+- ai
+- fine-tuning
+- lora
+- training
+theory: '#281 Fine-Tuning LLMs (OpenAI Fine-Tuning Guide, 2023; LoRA, Hu et al. 2021)'
+token_estimate: 825
+type: pattern
+version: 1

@@ -1,0 +1,49 @@
+content: "NoSQL 데이터 모델링 패턴 (액세스 패턴 중심으로 데이터를 설계한다):\n\n### RDBMS vs NoSQL 설계 사고방식\n\
+  - RDBMS: \"데이터가 어떤 구조인가?\" → 정규화 → 쿼리 작성\n- NoSQL: \"어떤 쿼리가 필요한가?\" → 액세스 패턴 정의\
+  \ → 데이터 구조 결정\n\n### 1. Document DB (MongoDB) — 임베딩 vs 참조\n\n| 기준 | 임베딩 (Embed)\
+  \ | 참조 (Reference) |\n|------|---------------|-----------------|\n| 읽기 패턴 | 함께 조회\
+  \ (1:1, 1:few) | 독립 조회 (1:many, M:N) |\n| 문서 크기 | 16MB 미만 유지 | 무제한 |\n| 업데이트 빈도\
+  \ | 부모와 함께 갱신 | 독립 갱신이 잦음 |\n| 일관성 요구 | 강한 일관성 필요 | 결과적 일관성 허용 |\n\nDO:\n```typescript\n\
+  // ✅ 임베딩 — 주문과 주문 항목은 항상 함께 조회\ninterface Order {\n  _id: ObjectId;\n  userId: ObjectId;\n\
+  \  status: \"pending\" | \"confirmed\" | \"shipped\";\n  items: Array<{        \
+  \    // 임베딩 (bounded array, 최대 50개)\n    productId: ObjectId;\n    name: string;\
+  \           // 비정규화 (조회 시 JOIN 불필요)\n    price: number;\n    quantity: number;\n\
+  \  }>;\n  shippingAddress: {        // 임베딩 (1:1 관계)\n    street: string;\n    city:\
+  \ string;\n    zipCode: string;\n  };\n  totalAmount: number;\n  createdAt: Date;\n\
+  }\n\n// ✅ 참조 — 상품 리뷰는 독립적으로 조회/페이지네이션\ninterface Review {\n  _id: ObjectId;\n  productId:\
+  \ ObjectId;      // 참조 (1:many, 수천 개 가능)\n  userId: ObjectId;\n  rating: number;\n\
+  \  content: string;\n  createdAt: Date;\n}\n```\n\n### 2. Single-Table Design (DynamoDB)\n\
+  하나의 테이블에 여러 엔티티를 PK/SK 패턴으로 저장한다.\n\n```typescript\n// ✅ 유저 + 주문을 단일 테이블에 저장\n//\
+  \ PK: USER#<userId>, SK: PROFILE            → 유저 프로필\n// PK: USER#<userId>, SK:\
+  \ ORDER#<orderId>    → 유저의 주문\n// PK: ORDER#<orderId>, SK: ITEM#<itemId>    → 주문\
+  \ 항목\n\nconst params = {\n  TableName: \"AppTable\",\n  KeyConditionExpression:\
+  \ \"PK = :pk AND begins_with(SK, :sk)\",\n  ExpressionAttributeValues: {\n    \"\
+  :pk\": `USER#${userId}`,\n    \":sk\": \"ORDER#\",        // 해당 유저의 모든 주문 조회\n \
+  \ },\n};\n```\n\n### 3. 비정규화 전략\n```typescript\n// ✅ 자주 함께 조회되는 데이터를 복제 (읽기 최적화)\n\
+  interface Post {\n  _id: ObjectId;\n  title: string;\n  content: string;\n  author:\
+  \ {\n    _id: ObjectId;\n    name: string;           // 비정규화: Users에서 복제\n    avatarUrl:\
+  \ string;      // 비정규화: Users에서 복제\n  };\n  commentCount: number;     // 비정규화: 카운트\
+  \ 캐싱\n}\n\n// ✅ 업데이트 시 비정규화 데이터 동기화 (Change Streams)\ndb.collection(\"users\").watch().on(\"\
+  change\", async (change) => {\n  if (change.operationType === \"update\") {\n  \
+  \  await db.collection(\"posts\").updateMany(\n      { \"author._id\": change.documentKey._id\
+  \ },\n      { $set: { \"author.name\": change.fullDocument.name } }\n    );\n  }\n\
+  });\n```\n\nDON'T:\n```typescript\n// ❌ NoSQL을 RDBMS처럼 정규화 — 매 조회마다 N+1 쿼리\ninterface\
+  \ Post { authorId: ObjectId; }  // 참조만\n// 목록 조회 시: posts 조회 → 각 post의 author 개별\
+  \ 조회 (N+1)\n\n// ❌ 무한 증가 배열 — 문서 크기 16MB 초과 위험\ninterface User {\n  followers: ObjectId[];\
+  \    // 팔로워 100만 명이면? → 별도 컬렉션으로 분리\n}\n\n// ❌ 액세스 패턴 분석 없이 설계 — 나중에 전체 재설계 필요\n\
+  ```\n\n### 선택 기준\n- 읽기/쓰기 비율 8:2 이상 → 비정규화 적극 활용\n- 관계가 복잡 (3단계 이상 JOIN) → RDBMS\
+  \ 유지 검토\n- 수평 확장 필수 → DynamoDB, Cassandra (AP 시스템)\n"
+domain: development.database
+id: dev.backend.database.nosql-patterns
+tags:
+- database
+- nosql
+- mongodb
+- dynamodb
+- denormalization
+- document-db
+- data-modeling
+theory: '#108 CAP Theorem (Brewer, 2000)'
+token_estimate: 1345
+type: pattern
+version: 1

@@ -1,0 +1,60 @@
+content: "Kubernetes 핵심 패턴 — 불변 인프라 원칙 위에서 선언적으로 애플리케이션을 배포하고 운영하는 패턴:\n\n### Deployment\
+  \ + Rolling Update\n```yaml\n# DO: 리소스 제한, 프로브, 롤링 업데이트 전략 모두 명시\napiVersion: apps/v1\n\
+  kind: Deployment\nmetadata:\n  name: app\nspec:\n  replicas: 3\n  strategy:\n  \
+  \  type: RollingUpdate\n    rollingUpdate:\n      maxSurge: 1            # 최대 1개\
+  \ 초과 Pod 허용\n      maxUnavailable: 0      # 항상 최소 3개 유지 (무중단)\n  selector:\n   \
+  \ matchLabels:\n      app: my-app\n  template:\n    metadata:\n      labels:\n \
+  \       app: my-app\n    spec:\n      securityContext:\n        runAsNonRoot: true\
+  \        # root 실행 금지\n        runAsUser: 1000\n      containers:\n        - name:\
+  \ app\n          image: registry.example.com/app:v1.2.3  # 명시적 태그\n          resources:\n\
+  \            requests:              # 스케줄링 기준\n              cpu: 100m\n       \
+  \       memory: 128Mi\n            limits:                # 최대 사용량\n           \
+  \   cpu: 500m\n              memory: 512Mi\n          livenessProbe:           #\
+  \ 컨테이너 생존 확인\n            httpGet:\n              path: /health\n              port:\
+  \ 3000\n            initialDelaySeconds: 10\n            periodSeconds: 15\n   \
+  \         failureThreshold: 3\n          readinessProbe:          # 트래픽 수신 준비 확인\n\
+  \            httpGet:\n              path: /readiness\n              port: 3000\n\
+  \            initialDelaySeconds: 5\n            periodSeconds: 5\n          env:\n\
+  \            - name: DATABASE_URL\n              valueFrom:\n                secretKeyRef:\n\
+  \                  name: app-secrets\n                  key: database-url\n```\n\
+  \n### Service (ClusterIP / LoadBalancer)\n```yaml\napiVersion: v1\nkind: Service\n\
+  metadata:\n  name: app-service\nspec:\n  type: ClusterIP              # 클러스터 내부\
+  \ 통신\n  selector:\n    app: my-app\n  ports:\n    - port: 80\n      targetPort:\
+  \ 3000\n---\n# 외부 노출 시 LoadBalancer 또는 Ingress 사용\napiVersion: networking.k8s.io/v1\n\
+  kind: Ingress\nmetadata:\n  name: app-ingress\n  annotations:\n    cert-manager.io/cluster-issuer:\
+  \ letsencrypt-prod\nspec:\n  tls:\n    - hosts: [app.example.com]\n      secretName:\
+  \ app-tls\n  rules:\n    - host: app.example.com\n      http:\n        paths:\n\
+  \          - path: /\n            pathType: Prefix\n            backend:\n     \
+  \         service:\n                name: app-service\n                port:\n \
+  \                 number: 80\n```\n\n### HPA (Horizontal Pod Autoscaler)\n```yaml\n\
+  apiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: app-hpa\n\
+  spec:\n  scaleTargetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name:\
+  \ app\n  minReplicas: 3\n  maxReplicas: 20\n  metrics:\n    - type: Resource\n \
+  \     resource:\n        name: cpu\n        target:\n          type: Utilization\n\
+  \          averageUtilization: 70    # CPU 70% 초과 시 스케일아웃\n    - type: Resource\n\
+  \      resource:\n        name: memory\n        target:\n          type: Utilization\n\
+  \          averageUtilization: 80\n```\n\n### Pod Disruption Budget\n```yaml\n#\
+  \ 유지보수/업데이트 중에도 최소 가용성 보장\napiVersion: policy/v1\nkind: PodDisruptionBudget\nmetadata:\n\
+  \  name: app-pdb\nspec:\n  minAvailable: 2              # 항상 최소 2개 Pod 유지\n  selector:\n\
+  \    matchLabels:\n      app: my-app\n```\n\nDON'T:\n```yaml\n# ❌ latest 태그 사용 —\
+  \ 어떤 버전인지 추적 불가\nimage: registry.example.com/app:latest\n\n# ❌ 리소스 제한 없음 — 단일 Pod가\
+  \ 노드 전체 자원 소진\ncontainers:\n  - name: app\n    image: app:v1\n    # resources 섹션\
+  \ 없음\n\n# ❌ root로 실행 — 컨테이너 탈출 시 노드 장악\nsecurityContext:\n  runAsUser: 0\n\n# ❌\
+  \ 프로브 없음 — 죽은 Pod에 트래픽 계속 전달\n# livenessProbe, readinessProbe 모두 미설정\n```\n\n###\
+  \ 핵심 체크리스트\n- requests와 limits 모두 설정 (limits만 ≠ requests + limits)\n- liveness +\
+  \ readiness 프로브 분리 (같은 엔드포인트 사용 금지)\n- 이미지 태그에 git SHA 또는 시맨틱 버전 사용\n- ConfigMap:\
+  \ 비밀이 아닌 설정, Secret: 민감 정보\n- Namespace로 환경 분리 (dev / staging / production)\n"
+domain: development.infra
+id: dev.infra.deploy.kubernetes
+tags:
+- infra
+- deploy
+- kubernetes
+- k8s
+- hpa
+- deployment
+- container
+theory: '#131 Immutable Infrastructure'
+token_estimate: 892
+type: pattern
+version: 1

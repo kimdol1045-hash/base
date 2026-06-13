@@ -1,0 +1,192 @@
+bloom_level: APPLY
+content: '# 보안 헤더 설정 가이드
+
+
+  ## 핵심 원칙
+
+  - 보안 헤더는 브라우저 레벨의 방어선이다 (서버 로직과 독립)
+
+  - 모든 응답에 일관되게 적용한다 (미들웨어로 처리)
+
+  - 폐기된 헤더(X-XSS-Protection)는 제거한다 — 오히려 취약점을 만들 수 있다
+
+
+  ## 필수 보안 헤더
+
+
+  ### Content-Security-Policy (CSP) — XSS 2차 방어선
+
+  ```
+
+  Content-Security-Policy:
+    default-src ''self'';
+    script-src ''self'' ''nonce-{random}'';
+    style-src ''self'' ''unsafe-inline'';
+    img-src ''self'' data: https:;
+    font-src ''self'';
+    connect-src ''self'' https://api.example.com;
+    frame-ancestors ''none'';
+    base-uri ''self'';
+    form-action ''self'';
+
+  ```
+
+  - `nonce-{random}`: 매 요청마다 랜덤 nonce 생성, 인라인 스크립트에 부여
+
+  - `frame-ancestors ''none''`: 클릭재킹 방어 (X-Frame-Options 대체)
+
+  - `base-uri ''self''`: base 태그 하이재킹 방어
+
+
+  ### Strict-Transport-Security (HSTS)
+
+  ```
+
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+  ```
+
+  - HTTPS 강제 (HTTP 요청을 브라우저가 자동 리다이렉트)
+
+  - `includeSubDomains`: 서브도메인도 HTTPS 강제
+
+  - `preload`: 브라우저 HSTS 프리로드 목록에 등록
+
+
+  ### Permissions-Policy (구 Feature-Policy)
+
+  ```
+
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+
+  ```
+
+  - 불필요한 브라우저 API 접근 차단
+
+  - 서드파티 iframe에서의 민감 API 사용 방지
+
+
+  ### 기타 필수 헤더
+
+  ```
+
+  X-Content-Type-Options: nosniff          # MIME 스니핑 방지
+
+  X-Frame-Options: DENY                     # 클릭재킹 방지 (CSP 보완)
+
+  Referrer-Policy: strict-origin-when-cross-origin  # 리퍼러 정보 제한
+
+  Cross-Origin-Opener-Policy: same-origin   # Spectre 등 사이드 채널 방어
+
+  Cross-Origin-Resource-Policy: same-origin  # 크로스 오리진 리소스 로딩 제한
+
+  ```
+
+
+  ## 폐기된/위험한 헤더
+
+  ```
+
+  # ❌ 제거해야 하는 헤더
+
+  X-XSS-Protection: 1; mode=block   # 폐기됨. 오히려 XSS 필터 우회 공격 가능
+
+  X-Powered-By: Express              # 서버 정보 노출 → 제거
+
+  Server: Apache/2.4.51              # 버전 정보 노출 → 제거 또는 변경
+
+  ```
+
+
+  ## 구현 예시
+
+
+  ### Hono
+
+  ```typescript
+
+  import { secureHeaders } from "hono/secure-headers";
+
+
+  app.use("*", secureHeaders({
+    contentSecurityPolicy: {
+      defaultSrc: ["''self''"],
+      scriptSrc: ["''self''"],
+      styleSrc: ["''self''", "''unsafe-inline''"],
+      imgSrc: ["''self''", "data:", "https:"],
+      frameAncestors: ["''none''"],
+    },
+    strictTransportSecurity: "max-age=31536000; includeSubDomains; preload",
+    permissionsPolicy: {
+      camera: [],
+      microphone: [],
+      geolocation: [],
+    },
+    xContentTypeOptions: "nosniff",
+    xFrameOptions: "DENY",
+    referrerPolicy: "strict-origin-when-cross-origin",
+    crossOriginOpenerPolicy: "same-origin",
+  }));
+
+  ```
+
+
+  ### Next.js (next.config.js)
+
+  ```javascript
+
+  const securityHeaders = [
+    { key: "Content-Security-Policy", value: "default-src ''self''; ..." },
+    { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
+    { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+    { key: "X-Content-Type-Options", value: "nosniff" },
+    { key: "X-Frame-Options", value: "DENY" },
+    { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  ];
+
+
+  module.exports = {
+    async headers() {
+      return [{ source: "/(.*)", headers: securityHeaders }];
+    },
+  };
+
+  ```
+
+
+  ## 검증 방법
+
+  - https://securityheaders.com — 헤더 등급 확인 (A+ 목표)
+
+  - https://csp-evaluator.withgoogle.com — CSP 정책 평가
+
+  - 브라우저 DevTools > Network 탭에서 응답 헤더 확인
+
+
+  ## 체크리스트
+
+  - [ ] CSP가 설정되어 있는가? (최소 default-src ''self'')
+
+  - [ ] HSTS가 적용되어 있는가? (max-age 1년 이상)
+
+  - [ ] X-XSS-Protection이 제거되었는가?
+
+  - [ ] X-Powered-By, Server 헤더가 제거/변경되었는가?
+
+  - [ ] Permissions-Policy로 불필요한 API가 차단되었는가?
+
+  '
+domain: development.backend
+id: dev.backend.security.security-headers
+tags:
+- backend
+- security
+- headers
+- csp
+- hsts
+- cors
+- xss
+theory: '#OWASP A05:2021 Security Misconfiguration + Mozilla Observatory'
+token_estimate: 750
+type: pattern
+version: 1

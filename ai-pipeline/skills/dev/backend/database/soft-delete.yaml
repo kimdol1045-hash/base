@@ -1,0 +1,54 @@
+content: "Soft Delete 패턴 (데이터를 물리 삭제하지 않고 논리 삭제하여 복구와 감사를 보장한다):\n\n### 왜 Soft Delete인가?\n\
+  - 실수로 삭제한 데이터 복구 가능 (MTTR 감소)\n- 법적 데이터 보존 의무 (GDPR 삭제 요청 시에도 감사 로그 필요)\n- 관계형 데이터\
+  \ 참조 무결성 유지 (CASCADE DELETE 방지)\n- 삭제 이력 분석 가능 (이탈률, 해지 패턴)\n\n### 기본 구현\n\nDO:\n\
+  ```typescript\n// ✅ Prisma schema — deletedAt 컬럼\n// model User {\n//   id     \
+  \   String    @id @default(uuid())\n//   email     String    @unique\n//   name\
+  \      String\n//   deletedAt DateTime? // null = 활성, 값 있으면 = 삭제됨\n//   createdAt\
+  \ DateTime  @default(now())\n//   updatedAt DateTime  @updatedAt\n// }\n\n// ✅ Prisma\
+  \ Middleware — 전역 soft delete 필터\nprisma.$use(async (params, next) => {\n  // findMany,\
+  \ findFirst 등에 자동으로 deletedAt: null 조건 추가\n  if (params.action === \"findMany\"\
+  \ || params.action === \"findFirst\") {\n    if (!params.args) params.args = {};\n\
+  \    if (!params.args.where) params.args.where = {};\n    if (params.args.where.deletedAt\
+  \ === undefined) {\n      params.args.where.deletedAt = null; // 삭제되지 않은 것만\n  \
+  \  }\n  }\n\n  // delete → update로 변환\n  if (params.action === \"delete\") {\n \
+  \   params.action = \"update\";\n    params.args.data = { deletedAt: new Date()\
+  \ };\n  }\n  if (params.action === \"deleteMany\") {\n    params.action = \"updateMany\"\
+  ;\n    if (!params.args) params.args = {};\n    params.args.data = { deletedAt:\
+  \ new Date() };\n  }\n\n  return next(params);\n});\n```\n\n### Unique 제약조건 + Soft\
+  \ Delete\n`email UNIQUE`에서 삭제된 유저의 email이 유니크 충돌 발생.\n\nDO:\n```sql\n-- ✅ Partial\
+  \ Unique Index — deletedAt IS NULL인 행만 유니크 적용\nCREATE UNIQUE INDEX idx_users_email_active\n\
+  \  ON users (email)\n  WHERE deleted_at IS NULL;\n\n-- 삭제된 유저의 email은 유니크 제약 없음\
+  \ → 재가입 가능\n```\n\n### 계단식 Soft Delete\n```typescript\n// ✅ 부모 삭제 시 자식도 soft delete\
+  \ (CASCADE 대체)\nasync function softDeleteProject(projectId: string) {\n  const now\
+  \ = new Date();\n  await prisma.$transaction([\n    prisma.task.updateMany({\n \
+  \     where: { projectId, deletedAt: null },\n      data: { deletedAt: now },\n\
+  \    }),\n    prisma.project.update({\n      where: { id: projectId },\n      data:\
+  \ { deletedAt: now },\n    }),\n  ]);\n}\n\n// ✅ 복구 시 자식도 함께 복구\nasync function\
+  \ restoreProject(projectId: string) {\n  await prisma.$transaction([\n    prisma.project.update({\n\
+  \      where: { id: projectId },\n      data: { deletedAt: null },\n    }),\n  \
+  \  prisma.task.updateMany({\n      where: { projectId, deletedAt: { not: null }\
+  \ },\n      data: { deletedAt: null },\n    }),\n  ]);\n}\n```\n\n### 데이터 보존 정책\n\
+  ```typescript\n// ✅ 30일 후 물리 삭제 (GDPR 준수) — Cron Job\nasync function purgeDeletedRecords()\
+  \ {\n  const threshold = subDays(new Date(), 30);\n  await prisma.user.deleteMany({\n\
+  \    where: {\n      deletedAt: { lt: threshold }, // 30일 이전 삭제 건\n    },\n  });\n\
+  }\n// cron: \"0 3 * * *\" — 매일 새벽 3시 실행\n```\n\nDON'T:\n```typescript\n// ❌ 모든 쿼리에서\
+  \ 수동 필터링 — 누락 시 삭제 데이터 노출\nconst users = await prisma.user.findMany({\n  where:\
+  \ { deletedAt: null }, // 매번 수동 추가? 반드시 누락됨\n});\n\n// ❌ Hard Delete without Audit\
+  \ Log — 복구 불가, 감사 불가\nawait prisma.user.delete({ where: { id } }); // 영구 삭제, 흔적\
+  \ 없음\n\n// ❌ Boolean isDeleted — 삭제 시점 알 수 없음\n// deletedAt: DateTime?이 isDeleted:\
+  \ Boolean보다 우수\n```\n\n### 성능 고려\n- 삭제 데이터가 쿼리 성능에 영향 → Partial Index 활용\n- `WHERE\
+  \ deleted_at IS NULL` 인덱스로 활성 데이터만 빠르게 조회\n- 삭제 비율 30% 초과 시 파티셔닝 또는 아카이브 테이블 검토\n"
+domain: development.database
+id: dev.backend.database.soft-delete
+tags:
+- database
+- soft-delete
+- data-retention
+- prisma
+- audit
+- gdpr
+- recovery
+theory: '#110 Data Integrity (데이터 무결성과 감사 추적)'
+token_estimate: 1557
+type: pattern
+version: 1

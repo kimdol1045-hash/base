@@ -1,0 +1,52 @@
+content: "API 버전 관리 전략 (API는 한번 공개되면 계약이다 -- 기존 클라이언트를 깨뜨리지 않아야 한다):\n\n### 버전 관리\
+  \ 방식 비교\n| 방식 | 예시 | 장점 | 단점 | 추천 |\n|------|------|------|------|------|\n| URL\
+  \ Path | `/api/v1/users` | 명확, 라우팅 쉬움, 캐싱 유리 | URL이 지저분 | **기본 선택** |\n| Header\
+  \ | `Accept: application/vnd.api.v1+json` | URL 깔끔 | 테스트 어려움, CDN 캐싱 복잡 | 대규모 API\
+  \ |\n| Query Param | `/api/users?version=1` | 간단 | 캐싱 어려움, 누락 가능 | 비추천 |\n\n###\
+  \ URL Path 버전 관리 (권장)\n```typescript\nconst app = new Hono();\n\n// v1 라우트\nconst\
+  \ v1 = new Hono();\nv1.get(\"/users\", listUsersV1);\nv1.get(\"/users/:id\", getUserV1);\n\
+  \n// v2 라우트 (응답 형식 변경)\nconst v2 = new Hono();\nv2.get(\"/users\", listUsersV2);\
+  \      // 새로운 응답 형식\nv2.get(\"/users/:id\", getUserV2);\n\napp.route(\"/api/v1\"\
+  , v1);\napp.route(\"/api/v2\", v2);\n```\n\n### 하위 호환성 규칙 (Breaking Change 방지)\n\
+  버전을 올리지 않아도 되는 변경 (하위 호환):\n```\nOK: 응답에 새 필드 추가          { data: { name, email,\
+  \ avatar } } → + phone 추가\nOK: 선택적 요청 필드 추가        body에 optional 필드 추가\nOK: 새 엔드포인트\
+  \ 추가           POST /api/v1/users/export\nOK: 에러 메시지 텍스트 변경      \"Not found\" →\
+  \ \"리소스를 찾을 수 없습니다\"\n```\n\n버전을 올려야 하는 변경 (Breaking Change):\n```\nBREAKING: 응답\
+  \ 필드 제거/이름 변경    name → fullName\nBREAKING: 필수 요청 필드 추가         body에 required 필드\
+  \ 추가\nBREAKING: URL 구조 변경              /users/:id → /accounts/:id\nBREAKING: 응답\
+  \ 형식 구조 변경        { users: [...] } → { data: [...] }\nBREAKING: HTTP 메서드 변경    \
+  \       PUT → PATCH\nBREAKING: 상태코드 변경 의미         200 → 201\n```\n\n### 버전 전환 구현\
+  \ 패턴\n```typescript\n// 공유 서비스 레이어 -- 버전 간 비즈니스 로직 재사용\n// services/user.service.ts\n\
+  export async function findUserById(id: string): Promise<UserEntity> {\n  return\
+  \ db.query.users.findFirst({ where: eq(users.id, id) });\n}\n\n// v1 -- 원래 응답 형식\n\
+  async function getUserV1(c: Context) {\n  const user = await findUserById(c.req.param(\"\
+  id\"));\n  if (!user) throw Errors.notFound(\"사용자\");\n  return c.json({\n    data:\
+  \ { id: user.id, name: user.name, email: user.email },\n  });\n}\n\n// v2 -- 확장된\
+  \ 응답 형식\nasync function getUserV2(c: Context) {\n  const user = await findUserById(c.req.param(\"\
+  id\"));\n  if (!user) throw Errors.notFound(\"사용자\");\n  return c.json({\n    data:\
+  \ {\n      id: user.id,\n      profile: { displayName: user.name, email: user.email,\
+  \ avatar: user.avatarUrl },\n      metadata: { createdAt: user.createdAt, updatedAt:\
+  \ user.updatedAt },\n    },\n  });\n}\n```\n\n### Deprecation 전략\n```typescript\n\
+  // 더 이상 사용하지 않는 버전/엔드포인트에 경고 헤더 추가\nfunction deprecationWarning(sunset: string)\
+  \ {\n  return async (c: Context, next: Next) => {\n    c.header(\"Deprecation\"\
+  , \"true\");\n    c.header(\"Sunset\", sunset);  // RFC 8594 형식: \"Sat, 01 Jan 2025\
+  \ 00:00:00 GMT\"\n    c.header(\"Link\", '</api/v2/docs>; rel=\"successor-version\"\
+  ');\n    await next();\n  };\n}\n\n// v1 전체에 deprecation 경고\nv1.use(\"*\", deprecationWarning(\"\
+  Sat, 01 Jul 2025 00:00:00 GMT\"));\n```\n\n### 버전 관리 베스트 프랙티스\n- 최대 2개 버전만 동시 운영\
+  \ (v1 + v2)\n- 새 버전 출시 후 최소 6개월간 이전 버전 유지\n- API 변경 로그(changelog)를 문서화\n- 클라이언트에게\
+  \ 마이그레이션 가이드 제공\n- 버전 없는 URL(`/api/users`)은 최신 버전으로 리다이렉트하지 말것 -- 암묵적 breaking change\n\
+  \n### 흔한 실수\n- 응답 필드 이름 변경을 \"사소한 수정\"으로 여김 -> 클라이언트 파싱 실패\n- 버전을 올리지 않고 필수 필드 추가\
+  \ -> 기존 클라이언트 요청이 422로 실패\n- v1, v2, v3... 버전이 계속 늘어남 -> 유지보수 지옥 (설계를 재고할 시점)\n\
+  - 내부 API에도 과도한 버전 관리 -> 불필요한 복잡도 (내부 API는 동시 배포 가능)\n"
+domain: development.backend
+id: dev.backend.api.versioning
+tags:
+- backend
+- api
+- versioning
+- architecture
+- evolution
+theory: '#104 API Evolution (Amundsen, 2020)'
+token_estimate: 1538
+type: rule
+version: 1

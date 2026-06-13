@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+.ruff_cache/
+dist/
+*.egg-info/
+.pytest_cache/
+
+# Docker volumes (local data)
+neo4j_data/
+qdrant_data/

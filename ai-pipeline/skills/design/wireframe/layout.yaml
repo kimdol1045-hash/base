@@ -1,0 +1,26 @@
+content: "레이아웃 패턴 (페이지 구조를 결정하는 검증된 패턴):\n\n### 1. Sidebar + Main (대시보드, 관리자)\n```tsx\n\
+  <div className=\"flex min-h-screen\">\n  <aside className=\"hidden w-64 border-r\
+  \ lg:block\">\n    {/* 사이드바 네비게이션 */}\n  </aside>\n  <main className=\"flex-1 p-6\"\
+  >{children}</main>\n</div>\n```\n\n### 2. Top Nav + Content (일반 웹앱)\n```tsx\n<div\
+  \ className=\"flex min-h-screen flex-col\">\n  <header className=\"sticky top-0\
+  \ z-50 border-b bg-background/80 backdrop-blur\">\n    <nav className=\"mx-auto\
+  \ flex h-14 max-w-7xl items-center px-4\">\n      {/* 로고 + 메뉴 + CTA */}\n    </nav>\n\
+  \  </header>\n  <main className=\"flex-1\">{children}</main>\n  <footer className=\"\
+  border-t py-8\">{/* 푸터 */}</footer>\n</div>\n```\n\n### 3. 12-Column Grid (반응형 콘텐츠)\n\
+  ```tsx\n<div className=\"grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3\"\
+  >\n  <Card /><Card /><Card />\n</div>\n```\n\n### 반응형 전환 규칙\n| 화면 | 레이아웃 | Tailwind\
+  \ |\n|------|---------|---------|\n| 모바일 (< 768px) | 세로 스택, 풀 너비 | 기본 |\n| 태블릿 (768px+)\
+  \ | 2열 그리드 | md: |\n| 데스크톱 (1024px+) | 사이드바 + 메인 | lg: |\n\n### 콘텐츠 너비 제한\n- 텍스트:\
+  \ max-w-prose (65ch)\n- 페이지: max-w-7xl (1280px) mx-auto\n- 폼: max-w-md (448px)\n"
+domain: design
+id: design.wireframe.layout
+tags:
+- design
+- wireframe
+- layout
+- grid
+- responsive
+theory: '#49 Grid Systems (Müller-Brockmann, 1961)'
+token_estimate: 536
+type: pattern
+version: 1

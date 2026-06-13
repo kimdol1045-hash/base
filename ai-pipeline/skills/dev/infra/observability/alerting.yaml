@@ -1,0 +1,33 @@
+bloom_level: APPLY
+content: "# 알림(Alerting) 설계 가이드\n\n## 핵심 원칙\n- 알림은 행동 가능한(Actionable) 것만 보낸다\n- 증상(Symptom)\
+  \ 기반으로 알림하고, 원인(Cause)이 아닌 결과를 감지한다\n- 알림 피로(Alert Fatigue)를 방지하기 위해 불필요한 알림을 제거한다\n\
+  - 심각도(Severity)별로 알림 채널을 분리한다\n\n## 심각도 레벨\n| 심각도 | 기준 | 채널 | 응답 시간 |\n|--------|------|------|-----------|\n\
+  | P1 Critical | 서비스 장애, 데이터 손실 | PagerDuty + 전화 | 5분 |\n| P2 High | 성능 심각 저하, 부분\
+  \ 장애 | Slack + PagerDuty | 30분 |\n| P3 Medium | 에러율 증가, 디스크 경고 | Slack | 2시간 |\n\
+  | P4 Low | 정보성, 최적화 필요 | 이메일/대시보드 | 영업일 |\n\n## DO\n- SLO 기반 알림을 설정한다 (에러 예산 소진\
+  \ 속도)\n- 알림에 충분한 컨텍스트(대시보드 링크, 런북 링크)를 포함한다\n- for/pending 기간을 설정하여 일시적 스파이크를 무시한다\n\
+  - 알림 규칙을 정기적으로 리뷰하고 정리한다\n\n## DON'T\n- CPU 사용률 같은 원인 메트릭으로만 알림하지 않는다\n- 알림을 너무\
+  \ 민감하게 설정하지 않는다 (노이즈 유발)\n- 모든 알림을 동일한 채널로 보내지 않는다\n- 런북 없이 알림을 설정하지 않는다\n\n## 코드\
+  \ 예시\n```yaml\n# Prometheus Alertmanager 규칙\ngroups:\n  - name: slo-alerts\n   \
+  \ rules:\n      # 증상 기반: 에러율 SLO 위반\n      - alert: HighErrorRate\n        expr:\
+  \ |\n          sum(rate(http_requests_total{status_code=~\"5..\"}[5m]))\n      \
+  \    /\n          sum(rate(http_requests_total[5m]))\n          > 0.01\n       \
+  \ for: 5m    # 5분간 지속될 때만 발화\n        labels:\n          severity: critical\n  \
+  \      annotations:\n          summary: \"에러율이 SLO(1%)를 초과했습니다\"\n          description:\
+  \ \"현재 에러율: {{ $value | humanizePercentage }}\"\n          dashboard: \"https://grafana.example.com/d/slo\"\
+  \n          runbook: \"https://wiki.example.com/runbooks/high-error-rate\"\n\n \
+  \     # 에러 예산 소진 속도 알림\n      - alert: ErrorBudgetBurnRate\n        expr: |\n  \
+  \        error_budget_burn_rate_1h > 14.4\n        for: 5m\n        labels:\n  \
+  \        severity: critical\n        annotations:\n          summary: \"에러 예산이 빠르게\
+  \ 소진되고 있습니다\"\n```\n"
+domain: development.infra
+id: dev.infra.observability.alerting
+tags:
+- infra
+- observability
+- alerting
+- monitoring
+theory: '#272 Alerting Best Practices (Google SRE Book, Chapter 6: Monitoring)'
+token_estimate: 799
+type: pattern
+version: 1

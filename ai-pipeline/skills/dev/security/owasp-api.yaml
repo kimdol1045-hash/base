@@ -1,0 +1,28 @@
+content: "OWASP API Security Top 10 (API 특화 보안 위협을 방어한다):\n\n| 순위 | 위협 | 대응 |\n|------|------|------|\n\
+  | API1 | Broken Object Level Auth | 모든 요청에서 리소스 소유자 검증 |\n| API2 | Broken Authentication\
+  \ | JWT 만료, Rate limit, MFA |\n| API3 | Broken Object Property Level Auth | 응답 필드\
+  \ 필터링, 민감 필드 제외 |\n| API4 | Unrestricted Resource Consumption | Rate limiting, Pagination,\
+  \ 페이로드 크기 제한 |\n| API5 | Broken Function Level Auth | RBAC, 엔드포인트별 권한 검증 |\n| API6\
+  \ | Unrestricted Access to Sensitive Business Flows | 봇 감지, CAPTCHA, 비즈니스 로직 Rate\
+  \ limit |\n| API7 | Server Side Request Forgery (SSRF) | URL 화이트리스트, 내부 IP 차단 |\n\
+  | API8 | Security Misconfiguration | CORS 제한, 에러 메시지 최소화, 불필요한 메서드 비활성화 |\n| API9\
+  \ | Improper Inventory Management | API 버전 관리, 사용되지 않는 엔드포인트 제거 |\n| API10 | Unsafe\
+  \ Consumption of APIs | 서드파티 API 응답 검증, 타임아웃, Circuit Breaker |\n\n### 필수 구현 패턴\n\
+  ```typescript\n// API1: Object Level Authorization\nasync function getOrder(userId:\
+  \ string, orderId: string) {\n  const order = await db.order.findUnique({ where:\
+  \ { id: orderId } });\n  if (order.userId !== userId) throw new ForbiddenError();\n\
+  \  return order;\n}\n\n// API4: Resource Consumption 제한\napp.use(rateLimit({ windowMs:\
+  \ 15 * 60 * 1000, max: 100 }));\napp.use(express.json({ limit: '1mb' }));\n```\n\
+  \n### API 보안 헤더\n```\nX-Content-Type-Options: nosniff\nX-Frame-Options: DENY\nStrict-Transport-Security:\
+  \ max-age=31536000\nContent-Security-Policy: default-src 'self'\n```\n"
+domain: development.security
+id: dev.security.owasp-api
+tags:
+- security
+- owasp
+- api-security
+- top-10
+theory: '#164 OWASP API Security Top 10 (2023)'
+token_estimate: 689
+type: rule
+version: 1

@@ -1,0 +1,83 @@
+bloom_level: APPLY
+content: '# 로컬 SEO 가이드
+
+
+  ## 핵심 원칙
+
+  - Google Business Profile(GBP) 최적화가 최우선
+
+  - NAP 정보의 웹 전체 일관성 유지
+
+  - 로컬 리뷰 수집 및 관리
+
+  - 지역 키워드 + 서비스 키워드 조합
+
+
+  ## Google Business Profile 최적화
+
+  1. 모든 필드 100% 작성 (카테고리, 설명, 시간 등)
+
+  2. 고품질 사진 10장 이상 업로드
+
+  3. 주간 게시물(Post) 발행
+
+  4. Q&A 섹션 사전 작성
+
+  5. 리뷰에 24시간 내 응답
+
+
+  ## 로컬 SEO 체크리스트
+
+  | 항목 | 설명 |
+
+  |------|------|
+
+  | NAP 일관성 | 모든 디렉토리에서 동일한 정보 |
+
+  | 로컬 키워드 | "서울 강남 카페" 패턴 |
+
+  | 지역 페이지 | 서비스 지역별 개별 페이지 |
+
+  | 리뷰 관리 | 긍정/부정 리뷰 모두 응답 |
+
+  | 구조화 데이터 | LocalBusiness Schema 마크업 |
+
+
+  ## 리뷰 관리 전략
+
+  - 만족 고객에게 리뷰 요청 자동화
+
+  - 부정 리뷰에 공감 + 해결 의지 표현
+
+  - 리뷰 키워드가 로컬 랭킹에 영향
+
+
+  ## DO
+
+  - 서비스 지역별 고유한 콘텐츠가 있는 랜딩 페이지 생성
+
+  - 로컬 백링크 구축 (지역 미디어, 커뮤니티)
+
+  - 모바일 최적화 (로컬 검색의 80%가 모바일)
+
+
+  ## DON''T
+
+  - 동일한 콘텐츠로 여러 지역 페이지 만들지 않기
+
+  - 가짜 리뷰 작성하지 않기
+
+  - GBP 정보를 오래된 채로 방치하지 않기
+
+  '
+domain: marketing
+id: marketing.seo.local-seo
+tags:
+- local-seo
+- google-business
+- local-search
+theory: 로컬 SEO는 지역 기반 검색에서 비즈니스의 가시성을 높이는 최적화 전략이다. Google Business Profile, 로컬 키워드,
+  NAP(Name, Address, Phone) 일관성, 로컬 리뷰 관리가 핵심 요소이다.
+token_estimate: 380
+type: pattern
+version: 1

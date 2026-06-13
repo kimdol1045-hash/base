@@ -1,0 +1,41 @@
+content: "RBAC + ABAC + 리소스 소유권 (최소 권한 원칙에 기반한 다층 접근 제어):\n\n### 역할별 권한 매트릭스\n| 권한\
+  \ | admin | editor | viewer |\n|------|-------|--------|--------|\n| user.list |\
+  \ ✅ | ❌ | ❌ |\n| post.create | ✅ | ✅ | ❌ |\n| post.edit | ✅ | own | ❌ |\n| post.delete\
+  \ | ✅ | own | ❌ |\n| post.read | ✅ | ✅ | ✅ |\n| settings.manage | ✅ | ❌ | ❌ |\n\n\
+  ### 미들웨어 체인 구현\n```typescript\n// DO: auth → role → ownership 순서로 미들웨어 체인\nenum\
+  \ Permission {\n  POST_CREATE = 'post.create',\n  POST_EDIT = 'post.edit',\n  POST_DELETE\
+  \ = 'post.delete',\n  USER_LIST = 'user.list',\n}\n\nconst ROLE_PERMISSIONS: Record<string,\
+  \ Permission[]> = {\n  admin: [Permission.POST_CREATE, Permission.POST_EDIT, Permission.POST_DELETE,\
+  \ Permission.USER_LIST],\n  editor: [Permission.POST_CREATE, Permission.POST_EDIT,\
+  \ Permission.POST_DELETE],\n  viewer: [],\n};\n\n// 1단계: 역할 기반 권한 확인\nfunction requirePermission(...perms:\
+  \ Permission[]) {\n  return (req: Request, res: Response, next: NextFunction) =>\
+  \ {\n    const userPerms = ROLE_PERMISSIONS[req.user.role] ?? [];\n    const hasAll\
+  \ = perms.every(p => userPerms.includes(p));\n    if (!hasAll) return res.status(403).json({\
+  \ error: 'Insufficient permissions' });\n    next();\n  };\n}\n\n// 2단계: 리소스 소유권\
+  \ 확인 (admin은 bypass)\nfunction requireOwnership(resourceFn: (req: Request) => Promise<{\
+  \ ownerId: string } | null>) {\n  return async (req: Request, res: Response, next:\
+  \ NextFunction) => {\n    if (req.user.role === 'admin') return next();\n    const\
+  \ resource = await resourceFn(req);\n    if (!resource) return res.status(404).json({\
+  \ error: 'Not found' });\n    if (resource.ownerId !== req.user.id) return res.status(403).json({\
+  \ error: 'Not owner' });\n    next();\n  };\n}\n\n// 라우터 적용\nrouter.put('/posts/:id',\n\
+  \  authenticate,\n  requirePermission(Permission.POST_EDIT),\n  requireOwnership(req\
+  \ => postRepo.findById(req.params.id)),\n  updatePostHandler,\n);\n```\n\nDON'T:\n\
+  ```typescript\n// ❌ 핸들러 내부에 하드코딩된 역할 체크\nasync function updatePost(req: Request,\
+  \ res: Response) {\n  if (req.user.role !== 'admin' && req.user.role !== 'editor')\
+  \ {\n    return res.status(403).send('Forbidden');\n  }\n  // 소유권 확인 누락! editor가\
+  \ 남의 글 수정 가능\n  await postRepo.update(req.params.id, req.body);\n}\n```\n\n### ABAC\
+  \ 확장 예시\n- 근무시간(09-18시)에만 관리자 기능 허용\n- IP 화이트리스트 기반 접근 제한\n- 조건: `if (user.department\
+  \ === resource.department)`\n\n### 흔한 실수\n- 프론트엔드에서만 권한 체크 (백엔드 미적용)\n- admin 역할의\
+  \ 범위가 너무 넓음 — super_admin / admin 분리 필요\n- 역할 변경 후 기존 세션/토큰의 권한이 갱신되지 않음\n"
+domain: development.backend
+id: dev.backend.auth.rbac
+tags:
+- backend
+- auth
+- rbac
+- abac
+- authorization
+theory: '#115 Saltzer Least Privilege'
+token_estimate: 500
+type: rule
+version: 1

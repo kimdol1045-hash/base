@@ -1,0 +1,48 @@
+content: "인증/인가 규칙 (모든 비공개 리소스 접근에는 신원 확인과 권한 검증이 필수다):\n\n### JWT 인증 흐름\n```typescript\n\
+  // middleware/auth.ts\nimport { verify } from \"hono/jwt\";\n\nexport async function\
+  \ authMiddleware(c: Context, next: Next) {\n  const header = c.req.header(\"Authorization\"\
+  );\n  if (!header?.startsWith(\"Bearer \")) {\n    return c.json({\n      error:\
+  \ { code: \"AUTH_REQUIRED\", message: \"인증 토큰이 필요합니다\" }\n    }, 401);\n  }\n\n\
+  \  try {\n    const token = header.slice(7);\n    const payload = await verify(token,\
+  \ c.env.JWT_SECRET);\n    c.set(\"userId\", payload.sub);\n    c.set(\"userRole\"\
+  , payload.role);\n    await next();\n  } catch {\n    return c.json({\n      error:\
+  \ { code: \"AUTH_INVALID\", message: \"유효하지 않은 토큰입니다\" }\n    }, 401);\n  }\n}\n\
+  ```\n\n### 토큰 설정 기준\n| 항목 | 값 | 이유 |\n|------|-----|------|\n| Access Token 만료 |\
+  \ 15분 | 탈취 시 피해 최소화 |\n| Refresh Token 만료 | 7일 | UX와 보안의 균형 |\n| 저장 위치 (웹) | httpOnly\
+  \ Cookie | XSS로부터 보호 |\n| Cookie 옵션 | `secure; sameSite=strict; path=/` | CSRF 방지\
+  \ |\n\nDON'T:\n```typescript\n// ❌ localStorage에 토큰 저장 (XSS 취약)\nlocalStorage.setItem(\"\
+  token\", jwt);\n\n// ❌ 토큰 만료 검증 건너뛰기\nconst payload = jwt.decode(token); // decode만\
+  \ 하면 서명 검증 안 됨!\n\n// ❌ 하드코딩된 시크릿\nconst secret = \"my-super-secret-key\";\n```\n\
+  \n### 역할 기반 인가 (RBAC)\n```typescript\n// middleware/authorize.ts\nexport function\
+  \ requireRole(...roles: string[]) {\n  return async (c: Context, next: Next) =>\
+  \ {\n    const userRole = c.get(\"userRole\");\n    if (!roles.includes(userRole))\
+  \ {\n      return c.json({\n        error: { code: \"FORBIDDEN\", message: \"접근\
+  \ 권한이 없습니다\" }\n      }, 403);\n    }\n    await next();\n  };\n}\n\n// 사용\napp.delete(\"\
+  /users/:id\", authMiddleware, requireRole(\"admin\"), handler);\n```\n\n### 리소스\
+  \ 소유권 검증\n```typescript\n// 자신의 리소스만 수정 가능\napp.patch(\"/posts/:id\", authMiddleware,\
+  \ async (c) => {\n  const userId = c.get(\"userId\");\n  const post = await db.query.posts.findFirst({\n\
+  \    where: eq(posts.id, c.req.param(\"id\")),\n  });\n\n  if (!post) return c.json({\
+  \ error: { code: \"NOT_FOUND\", message: \"게시글을 찾을 수 없습니다\" } }, 404);\n  if (post.authorId\
+  \ !== userId) return c.json({ error: { code: \"FORBIDDEN\", message: \"본인의 게시글만\
+  \ 수정 가능합니다\" } }, 403);\n\n  // ... 수정 로직\n});\n```\n\n### 비밀번호 처리\n- 해싱: bcrypt\
+  \ (cost 12+) 또는 argon2id\n- 비밀번호 정책: 최소 8자, 최대 72자 (bcrypt 제한)\n- 비교: `await bcrypt.compare(input,\
+  \ hash)` (타이밍 공격 방지 내장)\n- 평문 전송/저장/로깅 절대 금지\n\n### 공개 엔드포인트 명시\n```typescript\n\
+  // 공개 라우트는 명시적으로 분리\nconst publicRoutes = new Hono();\npublicRoutes.post(\"/auth/login\"\
+  , loginHandler);    // PUBLIC\npublicRoutes.post(\"/auth/register\", registerHandler);\
+  \ // PUBLIC\n\n// 인증 필요 라우트\nconst protectedRoutes = new Hono();\nprotectedRoutes.use(\"\
+  *\", authMiddleware);\nprotectedRoutes.get(\"/me\", getMeHandler);\n```\n\n### 흔한\
+  \ 실수\n- 401(인증 실패)과 403(인가 실패) 혼동\n- Refresh Token을 access token과 같은 곳에 저장\n- 토큰\
+  \ 해독(decode)과 검증(verify)을 혼동\n- 로그아웃 시 서버 측 토큰 무효화 미처리 (블랙리스트 필요)\n"
+domain: development.backend
+id: dev.backend.api.auth
+tags:
+- backend
+- api
+- auth
+- jwt
+- security
+- rbac
+theory: '#115 Saltzer 최소권한, #116 OWASP A07'
+token_estimate: 1367
+type: rule
+version: 1

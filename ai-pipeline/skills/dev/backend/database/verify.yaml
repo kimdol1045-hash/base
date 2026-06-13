@@ -1,0 +1,79 @@
+content: '데이터베이스 설계/쿼리 자기 검증 체크리스트:
+
+
+  ### 스키마 검증 (PASS: 전부 충족 / FAIL: 하나라도 미충족)
+
+  - [ ] 모든 테이블에 UUID PK + created_at + updated_at이 있는가?
+
+  - [ ] 3NF 이상 정규화가 적용되었는가? 비정규화 시 `-- DENORMALIZED: 이유` 주석이 있는가?
+
+  - [ ] 모든 외래키에 ON DELETE/ON UPDATE가 명시되었는가?
+
+  - [ ] VARCHAR에 적절한 길이 제한이 설정되었는가?
+
+  - [ ] NOT NULL이 필요한 컬럼에 모두 적용되었는가?
+
+  - [ ] TIMESTAMP가 아닌 TIMESTAMPTZ를 사용했는가?
+
+
+  ### 인덱스 검증
+
+  - [ ] WHERE/JOIN/ORDER BY에 자주 사용되는 컬럼에 인덱스가 있는가?
+
+  - [ ] 외래키 컬럼에 인덱스가 설정되었는가?
+
+  - [ ] 테이블당 인덱스가 7개를 초과하지 않는가?
+
+  - [ ] 복합 인덱스의 컬럼 순서가 선택도(cardinality) 기준으로 정렬되었는가?
+
+
+  ### 쿼리 검증
+
+  - [ ] SELECT *를 사용하지 않았는가?
+
+  - [ ] N+1 쿼리 패턴이 없는가? (루프 안 개별 쿼리)
+
+  - [ ] 모든 동적 쿼리가 parameterized($1, $2)인가?
+
+  - [ ] 대량 데이터 조회 시 cursor 기반 페이지네이션을 사용했는가?
+
+  - [ ] EXPLAIN ANALYZE로 Seq Scan 없음을 확인했는가?
+
+
+  ### 보안 검증
+
+  - [ ] 사용자 데이터 테이블에 RLS 정책이 적용되었는가?
+
+  - [ ] RLS 정책이 auth.uid()로 소유자 확인을 하는가?
+
+  - [ ] 민감 컬럼(password_hash 등)이 SELECT에서 제외되는가?
+
+
+  ### 마이그레이션 검증
+
+  - [ ] up 마이그레이션에 대응하는 down 마이그레이션이 있는가?
+
+  - [ ] 마이그레이션이 기존 데이터를 파괴하지 않는가?
+
+  - [ ] 프로덕션에서 테이블 락 없이 실행 가능한가? (ALTER TABLE 주의)
+
+
+  ### PASS/FAIL 판정
+
+  - **PASS**: 모든 항목 충족. 스키마와 쿼리가 안전하고 효율적임
+
+  - **FAIL**: 하나라도 미충족 시 해당 항목을 명시하고 수정 방안 제시
+
+  - Critical FAIL: SQL Injection 가능, RLS 미적용, 데이터 손실 가능 → 즉시 수정 필수
+
+  '
+domain: development.database
+id: dev.backend.database.verify
+tags:
+- database
+- verification
+- checklist
+- quality-gate
+token_estimate: 570
+type: verify
+version: 1

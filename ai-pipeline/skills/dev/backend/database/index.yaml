@@ -1,0 +1,50 @@
+content: "인덱싱 전략 (쿼리 성능을 O(n)에서 O(log n)으로 개선한다):\n\n### 인덱스 종류와 사용 기준\n\n**B-tree\
+  \ (기본, 가장 범용)**:\n```sql\n-- 등호(=), 범위(<, >, BETWEEN), ORDER BY, LIKE 'prefix%'\n\
+  CREATE INDEX idx_users_email ON users(email);\nCREATE INDEX idx_orders_created_at\
+  \ ON orders(created_at);\n```\n\n**Hash (등호 비교만)**:\n```sql\n-- 정확한 값 매칭만 필요할 때\
+  \ (범위 검색 불가)\nCREATE INDEX idx_sessions_token ON sessions USING hash(token);\n```\n\
+  \n**GIN (배열, JSONB, 전문 검색)**:\n```sql\n-- JSONB 내부 검색\nCREATE INDEX idx_products_metadata\
+  \ ON products USING gin(metadata);\n\n-- 전문 검색 (Full Text Search)\nALTER TABLE posts\
+  \ ADD COLUMN search_vector tsvector\n  GENERATED ALWAYS AS (\n    setweight(to_tsvector('korean',\
+  \ coalesce(title, '')), 'A') ||\n    setweight(to_tsvector('korean', coalesce(content,\
+  \ '')), 'B')\n  ) STORED;\nCREATE INDEX idx_posts_search ON posts USING gin(search_vector);\n\
+  ```\n\n**GiST (지리 데이터, 범위 타입)**:\n```sql\n-- PostGIS 지리 데이터 인덱싱\nCREATE INDEX idx_stores_location\
+  \ ON stores USING gist(location);\n```\n\n### 복합 인덱스 컬럼 순서\n선택도(cardinality)가 높은\
+  \ 컬럼을 먼저 배치한다.\n\nDO:\n```sql\n-- ✅ user_id(높은 선택도) → status(낮은 선택도) → created_at(범위)\n\
+  CREATE INDEX idx_orders_user_status_date\n  ON orders(user_id, status, created_at\
+  \ DESC);\n\n-- 이 인덱스로 커버되는 쿼리들:\n-- WHERE user_id = $1\n-- WHERE user_id = $1 AND\
+  \ status = $2\n-- WHERE user_id = $1 AND status = $2 ORDER BY created_at DESC\n\
+  ```\n\nDON'T:\n```sql\n-- ❌ status(선택도 낮음: 5가지)를 먼저 → 효율 나쁨\nCREATE INDEX idx_orders_bad\
+  \ ON orders(status, user_id, created_at);\n```\n\n### 부분 인덱스 (Partial Index)\n조건부\
+  \ 데이터만 인덱싱하여 인덱스 크기를 줄인다.\n```sql\n-- active 사용자만 인덱싱 (전체의 20%만 해당)\nCREATE INDEX\
+  \ idx_users_active_email\n  ON users(email)\n  WHERE deleted_at IS NULL AND status\
+  \ = 'active';\n```\n\n### EXPLAIN ANALYZE 읽는 법\n```sql\nEXPLAIN (ANALYZE, BUFFERS,\
+  \ FORMAT TEXT)\nSELECT id, title FROM posts\nWHERE author_id = '550e8400-...' AND\
+  \ published = true\nORDER BY created_at DESC LIMIT 10;\n```\n\n핵심 확인 포인트:\n```\n\
+  -- ✅ 좋은 결과: Index Scan + 적은 행 처리\nIndex Scan using idx_posts_author on posts\n \
+  \ (cost=0.43..8.45 rows=10 width=48)\n  (actual time=0.025..0.042 rows=10 loops=1)\n\
+  \  Buffers: shared hit=4\n\n-- ❌ 나쁜 결과: Seq Scan + 전체 테이블 스캔\nSeq Scan on posts\n\
+  \  (cost=0.00..125000.00 rows=500000 width=48)\n  (actual time=0.015..1250.000 rows=10\
+  \ loops=1)\n  Filter: (author_id = '550e8400-...' AND published)\n  Rows Removed\
+  \ by Filter: 499990\n```\n\n**체크 순서**:\n1. `Seq Scan` 발견 → 인덱스 추가 필요\n2. `actual\
+  \ rows` vs `rows` (estimated) 차이 10배+ → `ANALYZE` 실행\n3. `Buffers: shared read`\
+  \ 높음 → 캐시 미스, 메모리 부족 가능\n4. `Sort` 노드 발견 → ORDER BY 인덱스 커버 확인\n\n### 인덱스 관리 규칙\n\
+  - 테이블당 인덱스 5-7개 권장 상한 (쓰기 성능 저하 주의)\n- 사용하지 않는 인덱스 정기 정리:\n  ```sql\n  SELECT indexrelname,\
+  \ idx_scan, idx_tup_read\n  FROM pg_stat_user_indexes\n  WHERE idx_scan = 0 AND\
+  \ schemaname = 'public'\n  ORDER BY pg_relation_size(indexrelid) DESC;\n  ```\n\
+  - 프로덕션: CREATE INDEX CONCURRENTLY 사용 (테이블 락 방지)\n\n### 흔한 실수\n- 모든 컬럼에 인덱스 → INSERT/UPDATE\
+  \ 성능 50%+ 저하\n- WHERE LOWER(email) 사용인데 일반 인덱스 → 함수 인덱스 필요\n- LIKE '%keyword%' →\
+  \ B-tree 인덱스 사용 불가 (pg_trgm 또는 GIN 필요)\n- 복합 인덱스의 중간 컬럼만 조건 → 인덱스 미사용\n"
+domain: development.database
+id: dev.backend.database.index
+tags:
+- database
+- index
+- btree
+- gin
+- explain-analyze
+- performance
+theory: '#110 B-tree Index (Bayer & McCreight, 1972)'
+token_estimate: 1461
+type: pattern
+version: 1

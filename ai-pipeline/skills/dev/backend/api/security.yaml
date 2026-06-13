@@ -1,0 +1,50 @@
+content: "API 보안 규칙 (보안은 기능이 아니라 품질 속성이다 -- 모든 코드에 내재해야 한다):\n\n### 1. SQL Injection\
+  \ 방지\nORM/Query Builder의 parameterized query만 사용한다.\n\nDO:\n```typescript\n// Drizzle\
+  \ ORM -- 자동 파라미터화\nconst user = await db.query.users.findFirst({\n  where: eq(users.email,\
+  \ email),\n});\n\n// 부득이한 raw query\nconst result = await db.execute(\n  sql`SELECT\
+  \ * FROM users WHERE id = ${userId}`  // 템플릿 리터럴 = 자동 파라미터화\n);\n```\n\nDON'T:\n\
+  ```typescript\n// ❌ 문자열 연결 -- SQL Injection 취약\nconst result = await db.execute(\n\
+  \  `SELECT * FROM users WHERE email = '${email}'`\n);\n\n// ❌ 동적 컬럼명도 위험\nconst\
+  \ result = await db.execute(\n  `SELECT * FROM users ORDER BY ${sortColumn}`  //\
+  \ sortColumn 검증 없이 사용\n);\n```\n\n### 2. XSS 방지\n- 모든 응답에 `Content-Type: application/json`\
+  \ 명시\n- HTML을 반환할 경우 반드시 이스케이핑\n- CSP 헤더 설정: `Content-Security-Policy: default-src\
+  \ 'self'`\n\n### 3. CORS 설정\n```typescript\n// DO: 명시적 origin 목록\napp.use(\"*\"\
+  , cors({\n  origin: [\"https://myapp.com\", \"https://admin.myapp.com\"],\n  allowMethods:\
+  \ [\"GET\", \"POST\", \"PATCH\", \"DELETE\"],\n  allowHeaders: [\"Content-Type\"\
+  , \"Authorization\"],\n  credentials: true,\n  maxAge: 86400, // preflight 캐시 24시간\n\
+  }));\n\n// DON'T: 와일드카드 (개발 환경 외 금지)\napp.use(\"*\", cors({ origin: \"*\" })); \
+  \ // ❌ credentials와 함께 사용 불가\n```\n\n### 4. Rate Limiting\n| 엔드포인트 유형 | 제한 | 이유\
+  \ |\n|-----------------|------|------|\n| 로그인/회원가입 | 분당 5회 (IP 기준) | 브루트포스 방지 |\n\
+  | 비밀번호 재설정 | 시간당 3회 | 스팸 방지 |\n| 일반 API (인증) | 분당 100회 (유저 기준) | 남용 방지 |\n| 일반 API\
+  \ (비인증) | 분당 30회 (IP 기준) | 스크래핑 방지 |\n| 파일 업로드 | 분당 5회 | 스토리지 남용 방지 |\n\n```typescript\n\
+  import { rateLimiter } from \"hono-rate-limiter\";\n\nconst loginLimiter = rateLimiter({\n\
+  \  windowMs: 60 * 1000,\n  limit: 5,\n  keyGenerator: (c) => c.req.header(\"x-forwarded-for\"\
+  ) ?? \"unknown\",\n  handler: (c) => c.json({\n    error: { code: \"RATE_LIMITED\"\
+  , message: \"요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.\" }\n  }, 429),\n});\n```\n\n### 5.\
+  \ 환경변수 관리\n```typescript\n// DO: Zod로 환경변수 검증 (서버 시작 시)\nconst EnvSchema = z.object({\n\
+  \  DATABASE_URL: z.string().url(),\n  JWT_SECRET: z.string().min(32),\n  REDIS_URL:\
+  \ z.string().url().optional(),\n  NODE_ENV: z.enum([\"development\", \"production\"\
+  , \"test\"]),\n});\nexport const env = EnvSchema.parse(process.env);\n\n// DON'T:\n\
+  const secret = \"hardcoded-secret\";              // ❌ 하드코딩\nconst dbUrl = process.env.DATABASE_URL!;\
+  \         // ❌ non-null assertion\nconst port = process.env.PORT as unknown as number;\
+  \ // ❌ 위험한 타입 캐스팅\n```\n\n### 6. 파일 업로드 보안\n- MIME 타입 검증 (magic bytes 기반, 확장자만 믿지\
+  \ 말것)\n- 크기 제한: 이미지 5MB, 문서 20MB, 동영상은 별도 처리\n- 원본 파일명 사용 금지 -- UUID로 재명명\n- 업로드\
+  \ 경로: 애플리케이션 디렉토리 외부 또는 클라우드 스토리지\n\n### 7. 보안 헤더\n```typescript\napp.use(\"*\"\
+  , secureHeaders({\n  xFrameOptions: \"DENY\",\n  xContentTypeOptions: \"nosniff\"\
+  ,\n  strictTransportSecurity: \"max-age=31536000; includeSubDomains\",\n  referrerPolicy:\
+  \ \"strict-origin-when-cross-origin\",\n}));\n```\n\n### 흔한 실수\n- `.env` 파일을 git에\
+  \ 커밋 (`.gitignore` 필수 확인)\n- CORS origin에 정규식 사용 시 `\\.` 이스케이프 누락 -> 하위 도메인 위조 가능\n\
+  - Rate limiter를 로드밸런서 뒤에서 IP 기반으로만 설정 -> 모든 요청이 같은 IP로 인식\n"
+domain: development.backend
+id: dev.backend.api.security
+tags:
+- backend
+- api
+- security
+- owasp
+- cors
+- rate-limiting
+theory: '#116 OWASP Top 10 (2021)'
+token_estimate: 1441
+type: rule
+version: 1

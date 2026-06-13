@@ -1,0 +1,38 @@
+bloom_level: APPLY
+content: "# AI 평가 파이프라인 가이드\n\n## 핵심 원칙\n- 배포 전 모든 AI 기능을 자동화된 평가로 검증한다\n- 정량적 메트릭과\
+  \ 정성적 평가를 병행한다\n- 회귀 테스트로 기존 성능이 저하되지 않음을 보장한다\n- 평가 데이터셋을 지속적으로 확장한다\n\n## 주요 평가\
+  \ 메트릭\n| 메트릭 | 대상 | 측정 방법 |\n|--------|------|-----------|\n| Faithfulness | RAG\
+  \ | 생성 응답이 검색 문서에 근거하는지 |\n| Relevance | RAG | 검색된 문서가 질문과 관련 있는지 |\n| Accuracy\
+  \ | 분류 | 정답과의 일치율 |\n| Latency | 전체 | 응답 시간 p50, p95 |\n| Cost | 전체 | 토큰 사용량 / 요청\
+  \ |\n\n## DO\n- 골든 테스트 세트(정답이 있는)를 100개 이상 구축한다\n- CI/CD에 평가 파이프라인을 통합한다\n- LLM-as-Judge로\
+  \ 주관적 품질을 평가한다\n- A/B 테스트로 프로덕션 성능을 비교한다\n\n## DON'T\n- 수동 검토만으로 평가하지 않는다 (확장성 부족)\n\
+  - 하나의 메트릭만으로 전체 품질을 판단하지 않는다\n- 테스트 데이터를 학습에 사용하지 않는다 (오염 방지)\n- 평가 없이 프롬프트를 변경하지\
+  \ 않는다\n\n## ���드 예시\n```typescript\ninterface EvalCase {\n  input: string;\n  expectedOutput?:\
+  \ string;\n  context?: string[];\n  metadata: Record<string, unknown>;\n}\n\ninterface\
+  \ EvalResult {\n  score: number;\n  metrics: Record<string, number>;\n  details:\
+  \ string;\n}\n\n// 평가 파이프라인\nasync function evaluateRAG(testCases: EvalCase[]):\
+  \ Promise<EvalResult[]> {\n  const results: EvalResult[] = [];\n\n  for (const testCase\
+  \ of testCases) {\n    const response = await ragQuery(testCase.input);\n\n    //\
+  \ Faithfulness: 응답이 소스에 근거하는지\n    const faithfulness = await llmJudge(\n      `응답이\
+  \ 주어진 문서에만 근거하여 작성되었나요?\n      문서: ${testCase.context?.join(\"\\n\")}\n      응답:\
+  \ ${response.answer}\n      점수 (0-1):`,\n    );\n\n    // Relevance: 검색 문서의 관련성\n\
+  \    const relevance = await computeRelevance(testCase.input, response.sources);\n\
+  \n    // Accuracy: 정답과의 일치\n    const accuracy = testCase.expectedOutput\n     \
+  \ ? await semanticSimilarity(response.answer, testCase.expectedOutput)\n      :\
+  \ null;\n\n    results.push({\n      score: (faithfulness + relevance + (accuracy\
+  \ ?? 0)) / (accuracy ? 3 : 2),\n      metrics: { faithfulness, relevance, ...(accuracy\
+  \ ? { accuracy } : {}) },\n      details: response.answer,\n    });\n  }\n\n  //\
+  \ 요약 보고\n  const avgScore = results.reduce((s, r) => s + r.score, 0) / results.length;\n\
+  \  console.log(`평균 점수: ${avgScore.toFixed(3)} (${results.length}건)`);\n  return\
+  \ results;\n}\n```\n"
+domain: development.ai
+id: dev.ai.eval-pipeline
+tags:
+- ai
+- evaluation
+- metrics
+- quality
+theory: '#284 LLM Evaluation (LMSYS, Chatbot Arena 2023; RAGAS Framework)'
+token_estimate: 983
+type: pattern
+version: 1

@@ -1,0 +1,35 @@
+bloom_level: APPLY
+content: "# Core Web Vitals 최적화 가이드\n\n## 핵심 원칙\n- LCP, INP, CLS 세 가지 핵심 지표를 모니터링하고\
+  \ 최적화한다\n- 실제 사용자 데이터(RUM)와 실험실 데이터(Lighthouse)를 모두 활용한다\n- 성능 예산을 설정하고 CI에서 자동\
+  \ 검증한다\n- 75번째 백분위수(p75)를 기준으로 평가한다\n\n## 핵심 지표\n| 지표 | 좋음 | 보통 | 나쁨 | 의미 |\n|------|------|------|------|------|\n\
+  | LCP | < 2.5s | < 4.0s | > 4.0s | 가장 큰 콘텐츠 요소 로드 시간 |\n| INP | < 200ms | < 500ms\
+  \ | > 500ms | 상호작용 응답 시간 |\n| CLS | < 0.1 | < 0.25 | > 0.25 | 레이아웃 이동 정도 |\n\n##\
+  \ DO\n- LCP: 히어로 이미지에 priority 설정, 서버 응답 시간 최적화\n- INP: 무거운 이벤트 핸들러를 비동기로 처리, `startTransition`\
+  \ 활용\n- CLS: 이미지/광고에 명시적 크기 설정, 폰트 swap 설정\n- 실제 사용자 데이터를 수집하여 대시보드로 모니터링한다\n\n\
+  ## DON'T\n- Lighthouse 점수만 보고 실제 사용자 경험을 무시하지 않는다\n- layout shift를 유발하는 동적 콘텐츠 삽입을\
+  \ 하지 않는다\n- 메인 스레드를 50ms 이상 블로킹하는 작업을 하지 않는다\n- 폰트 로딩으로 인한 FOIT/FOUT를 방치하지 않는다\n\
+  \n## 코드 예시\n```tsx\n// Web Vitals 측정 및 리포팅\nimport { onLCP, onINP, onCLS } from\
+  \ \"web-vitals\";\n\nfunction reportWebVitals() {\n  onLCP((metric) => sendToAnalytics(\"\
+  LCP\", metric));\n  onINP((metric) => sendToAnalytics(\"INP\", metric));\n  onCLS((metric)\
+  \ => sendToAnalytics(\"CLS\", metric));\n}\n\nfunction sendToAnalytics(name: string,\
+  \ metric: Metric) {\n  fetch(\"/api/analytics/vitals\", {\n    method: \"POST\"\
+  ,\n    body: JSON.stringify({\n      name,\n      value: metric.value,\n      rating:\
+  \ metric.rating, // \"good\" | \"needs-improvement\" | \"poor\"\n      navigationType:\
+  \ metric.navigationType,\n      url: window.location.href,\n    }),\n    keepalive:\
+  \ true,\n  });\n}\n\n// CLS 방지: 이미지 크기 명시\n<Image src={url} width={800} height={600}\
+  \ alt=\"...\" />\n\n// INP 최적화: startTransition\nimport { startTransition } from\
+  \ \"react\";\n\nfunction handleFilterChange(filter: string) {\n  startTransition(()\
+  \ => {\n    setFilter(filter); // 무거운 리렌더링을 비긴급으로 처리\n  });\n}\n\n// 폰트 최적화\n//\
+  \ app/layout.tsx\nimport { Inter } from \"next/font/google\";\nconst inter = Inter({\
+  \ subsets: [\"latin\"], display: \"swap\" });\n```\n"
+domain: development.frontend
+id: dev.frontend.performance.web-vitals
+tags:
+- frontend
+- performance
+- web-vitals
+- lighthouse
+theory: '#254 Core Web Vitals (Google, Web Vitals Initiative 2020)'
+token_estimate: 893
+type: pattern
+version: 1

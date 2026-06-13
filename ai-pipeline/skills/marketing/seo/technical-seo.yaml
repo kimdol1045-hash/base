@@ -1,0 +1,60 @@
+content: "Technical SEO — 검색 엔진이 사이트를 올바르게 크롤링, 인덱싱, 렌더링하도록 기술적 기반을 최적화:\n\n### 1.\
+  \ 메타태그 (Next.js Metadata API)\n```typescript\n// DO: 페이지별 동적 메타데이터 생성\nimport {\
+  \ Metadata } from \"next\";\n\n// 정적 페이지\nexport const metadata: Metadata = {\n\
+  \  title: \"SaaS 프로젝트 관리 도구 | AppName\",        // 30~60자\n  description: \"팀 협업을\
+  \ 위한 프로젝트 관리. 칸반 보드, 타임라인, 자동화 기능으로 생산성 34% 향상.\",  // 80~160자\n  alternates: {\n\
+  \    canonical: \"https://app.example.com/features\",   // canonical URL\n  },\n\
+  \  openGraph: {\n    title: \"프로젝트 관리, 더 스마트하게\",\n    description: \"12,000+ 팀이\
+  \ 선택한 협업 도구\",\n    images: [{ url: \"/og-features.png\", width: 1200, height: 630\
+  \ }],\n    type: \"website\",\n  },\n  twitter: {\n    card: \"summary_large_image\"\
+  ,\n    title: \"프로젝트 관리, 더 스마트하게\",\n  },\n};\n\n// 동적 페이지 (블로그 포스트)\nexport async\
+  \ function generateMetadata({ params }: Props): Promise<Metadata> {\n  const post\
+  \ = await getPost(params.slug);\n  return {\n    title: `${post.title} | AppName\
+  \ Blog`,\n    description: post.excerpt.slice(0, 155) + \"...\",\n    alternates:\
+  \ { canonical: `https://app.example.com/blog/${params.slug}` },\n  };\n}\n```\n\n\
+  ### 2. 구조화 데이터 (JSON-LD)\n```typescript\n// DO: 페이지 유형에 맞는 JSON-LD 삽입\n// Article\
+  \ (블로그)\nconst articleJsonLd = {\n  \"@context\": \"https://schema.org\",\n  \"\
+  @type\": \"Article\",\n  headline: post.title,\n  author: { \"@type\": \"Person\"\
+  , name: post.author },\n  datePublished: post.publishedAt,\n  dateModified: post.updatedAt,\n\
+  \  image: post.coverImage,\n  publisher: {\n    \"@type\": \"Organization\",\n \
+  \   name: \"AppName\",\n    logo: { \"@type\": \"ImageObject\", url: \"https://app.example.com/logo.png\"\
+  \ },\n  },\n};\n\n// Product (SaaS 가격 페이지)\nconst productJsonLd = {\n  \"@context\"\
+  : \"https://schema.org\",\n  \"@type\": \"SoftwareApplication\",\n  name: \"AppName\
+  \ Pro\",\n  applicationCategory: \"ProjectManagement\",\n  offers: {\n    \"@type\"\
+  : \"Offer\",\n    price: \"29\",\n    priceCurrency: \"USD\",\n    priceValidUntil:\
+  \ \"2025-12-31\",\n  },\n  aggregateRating: {\n    \"@type\": \"AggregateRating\"\
+  ,\n    ratingValue: \"4.8\",\n    reviewCount: \"2341\",\n  },\n};\n\n// 컴포넌트에 삽입\n\
+  <script type=\"application/ld+json\" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd)\
+  \ }} />\n```\n\n### 3. 사이트맵 + robots.txt\n```typescript\n// DO: Next.js App Router\
+  \ sitemap.ts\nexport default async function sitemap(): Promise<MetadataRoute.Sitemap>\
+  \ {\n  const posts = await getAllPosts();\n  const postUrls = posts.map((post) =>\
+  \ ({\n    url: `https://app.example.com/blog/${post.slug}`,\n    lastModified: post.updatedAt,\n\
+  \    changeFrequency: \"weekly\" as const,\n    priority: 0.7,\n  }));\n\n  return\
+  \ [\n    { url: \"https://app.example.com\", lastModified: new Date(), priority:\
+  \ 1.0 },\n    { url: \"https://app.example.com/pricing\", priority: 0.9 },\n   \
+  \ { url: \"https://app.example.com/features\", priority: 0.8 },\n    ...postUrls,\n\
+  \  ];\n}\n\n// robots.ts\nexport default function robots(): MetadataRoute.Robots\
+  \ {\n  return {\n    rules: { userAgent: \"*\", allow: \"/\", disallow: [\"/api/\"\
+  , \"/admin/\", \"/dashboard/\"] },\n    sitemap: \"https://app.example.com/sitemap.xml\"\
+  ,\n  };\n}\n```\n\nDON'T:\n```typescript\n// ❌ 메타 설명 누락 — Google이 자동 생성 (제어 불가)\n\
+  export const metadata = { title: \"Features\" };\n// description 없음, OG tags 없음\n\
+  \n// ❌ 크롤러 실수로 차단\n// robots.txt에서 Disallow: / 설정 → 전체 사이트 인덱스 제외\n\n// ❌ canonical\
+  \ 없는 중복 콘텐츠\n// /products?sort=price 와 /products?sort=name 이 별도 페이지로 인덱싱\n// → 동일\
+  \ 콘텐츠가 여러 URL로 분산 → 순위 하락\n```\n\n### 성능과 SEO의 관계\n| Core Web Vitals | 기준 | SEO\
+  \ 영향 |\n|-----------------|------|---------|\n| LCP (Largest Contentful Paint) |\
+  \ < 2.5초 | 직접 순위 요소 |\n| INP (Interaction to Next Paint) | < 200ms | 직접 순위 요소 |\n\
+  | CLS (Cumulative Layout Shift) | < 0.1 | 직접 순위 요소 |\n"
+domain: marketing
+id: marketing.seo.technical-seo
+tags:
+- marketing
+- seo
+- technical
+- metadata
+- json-ld
+- sitemap
+- next-js
+theory: '#60 ELM (Petty & Cacioppo, 1986) — 정보 접근 경로'
+token_estimate: 878
+type: rule
+version: 1

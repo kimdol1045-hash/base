@@ -1,0 +1,58 @@
+content: "HTTP 캐싱 전략 (같은 데이터를 반복 요청하는 것은 서버와 사용자 모두에게 낭비다):\n\n### Cache-Control 헤더\
+  \ 기본\n| 디렉티브 | 의미 | 사용 시점 |\n|----------|------|-----------|\n| `no-store` | 캐시\
+  \ 절대 금지 | 민감한 데이터 (인증 정보, 결제) |\n| `no-cache` | 캐시하되 매번 재검증 | 자주 변하는 데이터 |\n| `private`\
+  \ | 브라우저만 캐시 (CDN 금지) | 사용자별 데이터 |\n| `public, max-age=N` | N초 동안 캐시 | 정적/공유 데이터\
+  \ |\n| `s-maxage=N` | CDN에서 N초 캐시 | CDN 활용 시 |\n| `stale-while-revalidate=N` | 만료\
+  \ 후 N초간 캐시 제공하며 백그라운드 갱신 | 준실시간 데이터 |\n\n### 엔드포인트별 캐싱 전략\n```typescript\n// 1.\
+  \ 공개 목록 (변경 빈도 낮음) -- CDN + 브라우저 캐시\napp.get(\"/api/v1/categories\", async (c) =>\
+  \ {\n  const categories = await getCategories();\n  c.header(\"Cache-Control\",\
+  \ \"public, max-age=3600, s-maxage=86400, stale-while-revalidate=60\");\n  return\
+  \ c.json({ data: categories });\n});\n\n// 2. 사용자별 데이터 -- 브라우저만 캐시, CDN 금지\napp.get(\"\
+  /api/v1/me/profile\", authMiddleware, async (c) => {\n  const profile = await getProfile(c.get(\"\
+  userId\"));\n  c.header(\"Cache-Control\", \"private, max-age=60\");\n  return c.json({\
+  \ data: profile });\n});\n\n// 3. 민감한 데이터 -- 캐시 완전 금지\napp.get(\"/api/v1/me/payment-methods\"\
+  , authMiddleware, async (c) => {\n  const methods = await getPaymentMethods(c.get(\"\
+  userId\"));\n  c.header(\"Cache-Control\", \"no-store\");\n  return c.json({ data:\
+  \ methods });\n});\n```\n\n### ETag를 이용한 조건부 요청\n동일한 데이터를 반복 전송하지 않고, 변경 여부만 확인한다.\n\
+  \n```typescript\nimport { createHash } from \"crypto\";\n\napp.get(\"/api/v1/posts/:id\"\
+  , async (c) => {\n  const post = await getPost(c.req.param(\"id\"));\n  if (!post)\
+  \ throw Errors.notFound(\"게시글\");\n\n  // ETag 생성 (콘텐츠 해시 기반)\n  const etag = `\"\
+  ${createHash(\"md5\").update(JSON.stringify(post)).digest(\"hex\")}\"`;\n\n  //\
+  \ 클라이언트가 보낸 If-None-Match와 비교\n  if (c.req.header(\"If-None-Match\") === etag) {\n\
+  \    return c.body(null, 304);  // Not Modified -- body 전송 안 함\n  }\n\n  c.header(\"\
+  ETag\", etag);\n  c.header(\"Cache-Control\", \"private, no-cache\");  // 매번 재검증\n\
+  \  return c.json({ data: post });\n});\n```\n\n### 서버 사이드 캐싱 (Redis)\nDB 부하를 줄이기\
+  \ 위해 자주 조회되는 데이터를 Redis에 캐싱한다.\n\n```typescript\nasync function getCachedOrFetch<T>(\n\
+  \  key: string,\n  ttlSeconds: number,\n  fetcher: () => Promise<T>,\n): Promise<T>\
+  \ {\n  const cached = await redis.get(key);\n  if (cached) return JSON.parse(cached)\
+  \ as T;\n\n  const data = await fetcher();\n  await redis.set(key, JSON.stringify(data),\
+  \ \"EX\", ttlSeconds);\n  return data;\n}\n\n// 사용\napp.get(\"/api/v1/posts/:id\"\
+  , async (c) => {\n  const id = c.req.param(\"id\");\n  const post = await getCachedOrFetch(\n\
+  \    `post:${id}`,\n    300,  // 5분 TTL\n    () => db.query.posts.findFirst({ where:\
+  \ eq(posts.id, id) }),\n  );\n  return c.json({ data: post });\n});\n```\n\n###\
+  \ 캐시 무효화 (Cache Invalidation)\n```typescript\n// 데이터 변경 시 관련 캐시 삭제\napp.patch(\"\
+  /api/v1/posts/:id\", authMiddleware, async (c) => {\n  const id = c.req.param(\"\
+  id\");\n  const updated = await updatePost(id, body);\n\n  // 관련 캐시 무효화\n  await\
+  \ redis.del(`post:${id}`);\n  await redis.del(\"posts:list:*\");  // 목록 캐시도 무효화\n\
+  \n  return c.json({ data: updated });\n});\n```\n\nDON'T:\n```typescript\n// ❌ 인증된\
+  \ 사용자 데이터에 public 캐시\nc.header(\"Cache-Control\", \"public, max-age=3600\");  //\
+  \ CDN이 캐시하면 다른 유저에게 노출\n\n// ❌ POST/PATCH/DELETE 응답을 캐시\napp.post(\"/api/v1/posts\"\
+  , async (c) => {\n  c.header(\"Cache-Control\", \"max-age=60\");  // 쓰기 요청은 캐시하면\
+  \ 안 됨\n});\n\n// ❌ 캐시 무효화 없이 데이터 수정\nawait updatePost(id, data);  // Redis 캐시는 여전히\
+  \ 옛날 데이터...\n```\n\n### 흔한 실수\n- `private` 데이터에 `public` 캐시 설정 -> 다른 사용자에게 데이터 유출\n\
+  - 캐시 무효화 누락 -> 사용자가 수정해도 이전 데이터가 계속 보임\n- Redis 캐시 TTL을 너무 길게 설정 -> 데이터 일관성 문제\n\
+  - ETag 비교 시 따옴표(`\"`) 포함 여부 불일치\n- `stale-while-revalidate`를 모든 엔드포인트에 적용 -> 실시간\
+  \ 데이터에 부적절\n"
+domain: development.backend
+id: dev.backend.api.caching
+tags:
+- backend
+- api
+- caching
+- http
+- redis
+- performance
+theory: '#102 HTTP Caching (Fielding, 1999)'
+token_estimate: 1715
+type: rule
+version: 1

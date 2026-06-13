@@ -1,0 +1,32 @@
+bloom_level: APPLY
+content: "# 서버리스 아키텍처 가이드\n\n## 핵심 원칙\n- 서버 관리 없이 코드 실행에만 집중한다 (FaaS)\n- 사용한 만큼만 비용을\
+  \ 지불한다 (Pay per invocation)\n- Cold Start를 최소화하는 설계를 한다\n- 상태를 함수 외부(DB, S3, Redis)에\
+  \ 저장한다\n\n## DO\n- 이벤트 기반 처리(API Gateway, SQS, S3 이벤트)에 활용한다\n- 함수 크기를 작게 유지한다 (번들\
+  \ 최소화)\n- Provisioned Concurrency로 중요 API의 Cold Start를 제거한다\n- 환경변수로 설정을 주입한다\n\n\
+  ## DON'T\n- 장시간 실행되는 작업에 Lambda를 사용하지 않는다 (15분 제한)\n- VPC 내부 Lambda를 불필요하게 사용하지\
+  \ 않는다 (Cold Start 증가)\n- 함수 안에서 전역 상태에 의존하지 않는다\n- 동기 호출 체인을 길게 만들지 않는다 (비동기 이벤트\
+  \ 활용)\n\n## 코드 예시\n```typescript\n// AWS Lambda 핸들러 (Node.js)\nimport { APIGatewayProxyHandler\
+  \ } from \"aws-lambda\";\nimport { DynamoDBClient } from \"@aws-sdk/client-dynamodb\"\
+  ;\n\n// 핸들러 외부: Cold Start 시 한 번만 초기화\nconst dynamodb = new DynamoDBClient({});\n\
+  \nexport const handler: APIGatewayProxyHandler = async (event) => {\n  try {\n \
+  \   const { id } = event.pathParameters ?? {};\n    if (!id) {\n      return { statusCode:\
+  \ 400, body: JSON.stringify({ error: \"ID 필수\" }) };\n    }\n\n    const result\
+  \ = await dynamodb.send(new GetItemCommand({\n      TableName: process.env.TABLE_NAME!,\n\
+  \      Key: { id: { S: id } },\n    }));\n\n    if (!result.Item) {\n      return\
+  \ { statusCode: 404, body: JSON.stringify({ error: \"Not found\" }) };\n    }\n\n\
+  \    return {\n      statusCode: 200,\n      headers: { \"Content-Type\": \"application/json\"\
+  \ },\n      body: JSON.stringify({ data: unmarshall(result.Item) }),\n    };\n \
+  \ } catch (err) {\n    console.error(err);\n    return { statusCode: 500, body:\
+  \ JSON.stringify({ error: \"서버 오류\" }) };\n  }\n};\n```\n"
+domain: development.infra
+id: dev.infra.cloud.serverless
+tags:
+- infra
+- cloud
+- serverless
+- lambda
+- functions
+theory: '#266 Serverless Architecture (AWS Lambda, 2014; Serverless Framework)'
+token_estimate: 731
+type: pattern
+version: 1

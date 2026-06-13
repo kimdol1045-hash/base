@@ -1,0 +1,42 @@
+content: "API 코드 자기 검증 체크리스트 (코드 생성/수정 후 반드시 각 항목을 점검한다):\n\n### A. 입력 검증 (Input Validation)\n\
+  - [ ] 모든 request body가 Zod 스키마로 검증되는가?\n  - PASS: `const body = Schema.parse(await\
+  \ c.req.json())` 형태 존재\n  - FAIL: `req.body`를 직접 사용하거나 `as` 타입 캐스팅으로 대체\n- [ ] query\
+  \ params가 `z.coerce`를 사용해 타입 변환하는가?\n  - PASS: `z.coerce.number().int().min(1).max(100)`\n\
+  \  - FAIL: `Number(req.query.page)` 또는 `parseInt()` 직접 사용\n- [ ] path params (id\
+  \ 등)의 형식을 검증하는가?\n  - PASS: `z.string().uuid()` 또는 `z.string().min(1)`\n  - FAIL:\
+  \ `req.params.id`를 검증 없이 DB 쿼리에 사용\n- [ ] 배열 입력에 `.max()` 크기 제한이 있는가?\n  - PASS:\
+  \ `.array().max(100)`\n  - FAIL: `.array()` 크기 제한 없음 (DoS 가능)\n\n### B. 인증/인가 (Auth)\n\
+  - [ ] 비공개 엔드포인트에 인증 미들웨어가 적용되어 있는가?\n  - PASS: `app.use(\"*\", authMiddleware)`\
+  \ 또는 개별 라우트에 적용\n  - FAIL: 핸들러 내에서 인증 체크 누락\n- [ ] 리소스 소유권 검증이 있는가? (본인 리소스만 수정/삭제)\n\
+  \  - PASS: `if (resource.userId !== currentUserId) throw Errors.forbidden()`\n \
+  \ - FAIL: 인증만 하고 인가(소유권) 체크 없음\n- [ ] 공개 엔드포인트가 의도적이며 명시적으로 분리되어 있는가?\n\n### C.\
+  \ 에러 핸들링 (Error Handling)\n- [ ] 글로벌 에러 핸들러가 있는가? (app.onError)\n  - PASS: Zod,\
+  \ AppError, 예상치 못한 에러를 각각 처리\n  - FAIL: 각 핸들러마다 try-catch 중복, 또는 에러 처리 없음\n- [ ]\
+  \ 에러 응답 형식이 `{ error: { code, message, details? } }`로 통일되어 있는가?\n  - FAIL: `{ msg:\
+  \ \"...\" }`, `{ error: \"string\" }` 등 비일관적\n- [ ] 5xx 에러에서 스택 트레이스나 내부 정보가 노출되지\
+  \ 않는가?\n  - PASS: 클라이언트에는 일반 메시지, 서버에는 상세 로깅\n  - FAIL: `c.json({ error: err.message\
+  \ })` 또는 `err.stack` 반환\n- [ ] 빈 catch 블록 `catch {}` 이 없는가?\n\n### D. 보안 (Security)\n\
+  - [ ] SQL 쿼리가 parameterized인가? (문자열 연결 없음)\n- [ ] 환경변수가 하드코딩되지 않았는가?\n  - PASS:\
+  \ `c.env.JWT_SECRET` 또는 `process.env.JWT_SECRET`\n  - FAIL: `const secret = \"abc123\"\
+  ` 하드코딩\n- [ ] CORS origin이 명시적으로 나열되어 있는가? (와일드카드 * 금지)\n- [ ] 민감 정보(비밀번호, 토큰, 카드번호)가\
+  \ 로그에 포함되지 않는가?\n- [ ] Rate limiting이 인증 엔드포인트에 적용되어 있는가?\n\n### E. REST 설계 (REST\
+  \ Design)\n- [ ] HTTP 메서드가 의미에 맞게 사용되는가? (GET=조회, POST=생성, PATCH=수정, DELETE=삭제)\n\
+  - [ ] 상태코드가 정확한가? (201=생성, 204=삭제, 422=검증실패)\n- [ ] URL이 복수형 명사이며 동사가 포함되지 않는가?\n\
+  - [ ] 응답에 적절한 메타정보(pagination 등)가 포함되는가?\n\n### F. 코드 품질 (Code Quality)\n- [ ] `any`\
+  \ 타입이 사용되지 않는가?\n  - PASS: 모든 변수/파라미터에 명시적 타입 또는 Zod 추론 타입\n  - FAIL: `as any`,\
+  \ `req.body as any`, 타입 없는 파라미터\n- [ ] 매직 넘버/스트링이 상수로 추출되어 있는가?\n  - PASS: `const\
+  \ MAX_PAGE_SIZE = 100`\n  - FAIL: `if (page > 100)` 하드코딩된 숫자\n- [ ] 함수가 단일 책임 원칙을\
+  \ 지키는가? (한 함수 50줄 이하)\n- [ ] 비즈니스 로직이 프레임워크 코드와 분리되어 있는가?\n  - PASS: service 레이어에\
+  \ 로직 분리\n  - FAIL: 핸들러 안에 DB 쿼리 + 비즈니스 로직 + 응답 처리 혼재\n"
+domain: development.backend
+id: dev.backend.api.verify
+tags:
+- backend
+- api
+- verification
+- checklist
+- quality
+theory: '#8 Flavell MGV (Metacognitive Verification)'
+token_estimate: 1169
+type: verify
+version: 1

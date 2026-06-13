@@ -1,0 +1,28 @@
+content: "Next.js App Router 패턴 (서버/클라이언트 경계를 올바르게 설계한다):\n\n### Server vs Client\
+  \ Components\n| 구분 | Server Component (기본) | Client Component ('use client') |\n\
+  |------|------------------------|-------------------------------|\n| 용도 | 데이터 페칭,\
+  \ 정적 콘텐츠 | 인터랙션, 상태, 브라우저 API |\n| 번들 | 포함 안 됨 (제로 JS) | 클라이언트 번들에 포함 |\n| 예시 |\
+  \ 페이지 레이아웃, DB 조회 | 폼, 모달, 드롭다운 |\n\n### 데이터 페칭 패턴\n```tsx\n// Server Component에서\
+  \ 직접 async\nasync function ProductPage({ params }: { params: { id: string } }) {\n\
+  \  const product = await db.product.findUnique({\n    where: { id: params.id }\n\
+  \  });\n  return <ProductDetail product={product} />;\n}\n```\n\n### 레이아웃 중첩\n```\n\
+  app/\n  layout.tsx          ← 루트 레이아웃 (html, body)\n  (marketing)/\n    layout.tsx\
+  \        ← 마케팅 전용 레이아웃\n    page.tsx\n  (app)/\n    layout.tsx        ← 앱 전용 레이아웃\
+  \ (사이드바)\n    dashboard/\n      page.tsx\n```\n\n### Server Actions\n```tsx\nasync\
+  \ function createPost(formData: FormData) {\n  'use server';\n  const title = formData.get('title')\
+  \ as string;\n  await db.post.create({ data: { title } });\n  revalidatePath('/posts');\n\
+  }\n```\n\n### 캐싱/재검증\n- `revalidatePath()`: 특정 경로 캐시 무효화\n- `revalidateTag()`: 태그\
+  \ 기반 무효화\n- `unstable_cache()`: 함수 레벨 캐싱\n\n### 주의사항\n- 'use client' 경계를 최대한 아래로\
+  \ (leaf에 가깝게)\n- Server Component에서 클라이언트 훅(useState 등) 사용 불가\n- 민감 데이터는 Server\
+  \ Component/Action에서만 접근\n"
+domain: development.frontend
+id: dev.frontend.page.nextjs-patterns
+tags:
+- frontend
+- nextjs
+- app-router
+- server-components
+theory: '#161 Next.js App Router Patterns (Vercel, 2023+)'
+token_estimate: 635
+type: pattern
+version: 1

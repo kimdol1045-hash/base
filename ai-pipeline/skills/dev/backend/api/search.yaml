@@ -1,0 +1,66 @@
+content: "Full-text Search 패턴 (검색은 LIKE가 아니라 tsvector로 한다 -- 인덱싱 없는 검색은 테이블 풀스캔이다):\n\
+  \n### Postgres tsvector 기본 설정\n\nDO:\n```typescript\n// 1. 마이그레이션: tsvector 컬럼 +\
+  \ GIN 인덱스\nimport { sql } from \"drizzle-orm\";\n\nexport async function up(db:\
+  \ Database) {\n  // 검색용 tsvector 컬럼 추가\n  await db.execute(sql`\n    ALTER TABLE\
+  \ posts ADD COLUMN search_vector tsvector\n      GENERATED ALWAYS AS (\n       \
+  \ setweight(to_tsvector('korean', coalesce(title, '')), 'A') ||\n        setweight(to_tsvector('korean',\
+  \ coalesce(summary, '')), 'B') ||\n        setweight(to_tsvector('korean', coalesce(body,\
+  \ '')), 'C')\n      ) STORED;\n  `);\n\n  // GIN 인덱스 (검색 속도 핵심)\n  await db.execute(sql`\n\
+  \    CREATE INDEX idx_posts_search ON posts USING GIN (search_vector);\n  `);\n\n\
+  \  // trigram 인덱스 (오타 허용 퍼지 검색용)\n  await db.execute(sql`\n    CREATE EXTENSION\
+  \ IF NOT EXISTS pg_trgm;\n    CREATE INDEX idx_posts_title_trgm ON posts USING GIN\
+  \ (title gin_trgm_ops);\n  `);\n}\n\n// 2. 검색 API 구현\nconst SearchQuerySchema =\
+  \ z.object({\n  q: z.string().min(1).max(100).trim(),\n  category: z.string().optional(),\n\
+  \  page: z.coerce.number().int().min(1).default(1),\n  limit: z.coerce.number().int().min(1).max(50).default(20),\n\
+  });\n\napp.get(\"/api/v1/posts/search\", async (c) => {\n  const { q, category,\
+  \ page, limit } = SearchQuerySchema.parse(c.req.query());\n\n  // tsquery로 변환 (공백을\
+  \ & 연산자로)\n  const tsquery = q\n    .split(/\\s+/)\n    .filter(Boolean)\n    .map((term)\
+  \ => `${term}:*`)  // prefix 매칭\n    .join(\" & \");\n\n  const offset = (page -\
+  \ 1) * limit;\n\n  const results = await db.execute(sql`\n    SELECT\n      id,\
+  \ title, summary,\n      ts_rank(search_vector, to_tsquery('korean', ${tsquery}))\
+  \ AS relevance,\n      ts_headline('korean', body, to_tsquery('korean', ${tsquery}),\n\
+  \        'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15'\n      ) AS\
+  \ highlight\n    FROM posts\n    WHERE search_vector @@ to_tsquery('korean', ${tsquery})\n\
+  \      ${category ? sql`AND category = ${category}` : sql``}\n    ORDER BY relevance\
+  \ DESC, created_at DESC\n    LIMIT ${limit} OFFSET ${offset}\n  `);\n\n  const total\
+  \ = await db.execute(sql`\n    SELECT count(*) FROM posts\n    WHERE search_vector\
+  \ @@ to_tsquery('korean', ${tsquery})\n      ${category ? sql`AND category = ${category}`\
+  \ : sql``}\n  `);\n\n  return c.json({\n    data: results.rows,\n    meta: { total:\
+  \ total.rows[0].count, page, limit },\n  });\n});\n```\n\n### 퍼지 검색 (Trigram Similarity)\n\
+  ```typescript\n// 오타 허용 검색 (예: \"프로그래밍\" -> \"프로그레밍\")\napp.get(\"/api/v1/posts/suggest\"\
+  , async (c) => {\n  const { q } = z.object({ q: z.string().min(2).max(50) }).parse(c.req.query());\n\
+  \n  const suggestions = await db.execute(sql`\n    SELECT title, similarity(title,\
+  \ ${q}) AS sim\n    FROM posts\n    WHERE similarity(title, ${q}) > 0.3\n    ORDER\
+  \ BY sim DESC\n    LIMIT 5\n  `);\n\n  return c.json({ data: suggestions.rows });\n\
+  });\n\n// similarity threshold 설정\nawait db.execute(sql`SET pg_trgm.similarity_threshold\
+  \ = 0.3`);\n```\n\n### 검색 가중치 전략\n| 가중치 | 대상 필드 | 배수 | 이유 |\n|--------|-----------|------|------|\n\
+  | A (1.0) | title | 기본 x1.0 | 제목 일치가 가장 중요 |\n| B (0.4) | summary | 기본 x0.4 | 요약은\
+  \ 보조 |\n| C (0.2) | body | 기본 x0.2 | 본문은 노이즈가 많음 |\n| D (0.1) | tags | 기본 x0.1 |\
+  \ 태그는 부가 정보 |\n\nDON'T:\n```typescript\n// ❌ LIKE '%검색어%' -- 인덱스 사용 불가, 풀 테이블 스캔\n\
+  const results = await db.execute(sql`\n  SELECT * FROM posts WHERE body LIKE ${'%'\
+  \ + query + '%'}\n`);  // 100만 행이면 매 검색마다 풀스캔\n\n// ❌ 모든 컬럼에 동일 가중치 -- 제목과 본문의 중요도가\
+  \ 같을 수 없음\nto_tsvector(title || ' ' || body)  // 가중치 없이 합침\n\n// ❌ 검색어 sanitize\
+  \ 없이 직접 tsquery 전달\nto_tsquery(${userInput})  // 특수문자(&, |, !) 포함 시 구문 오류\n\n//\
+  \ ❌ search_vector를 매 쿼리마다 계산\nWHERE to_tsvector('korean', title || body) @@ to_tsquery(${q})\n\
+  // GENERATED STORED 컬럼이면 사전 계산됨\n```\n\n### 검색 성능 기준\n| 데이터 규모 | 응답 시간 목표 | 권장 전략\
+  \ |\n|-------------|----------------|-----------|\n| < 10만 행 | < 50ms | Postgres\
+  \ tsvector |\n| 10만~100만 | < 100ms | tsvector + 파티셔닝 |\n| 100만~1000만 | < 200ms |\
+  \ Elasticsearch/Meilisearch 고려 |\n| > 1000만 | < 500ms | 전용 검색 엔진 필수 |\n\n### 흔한\
+  \ 실수\n- GIN 인덱스 없이 tsvector 검색 -> 인덱스가 성능의 핵심\n- 한국어 검색 시 기본 'english' 설정 사용 ->\
+  \ 'korean' 또는 적절한 설정 필요\n- ts_headline에 MinWords/MaxWords 미설정 -> 하이라이트 스니펫이 너무 길거나\
+  \ 짧음\n- 검색어를 split 후 prefix 매칭(:*) 미적용 -> 부분 단어 매칭 불가\n- 검색 결과 캐싱 미적용 -> 인기 검색어는\
+  \ Redis 캐싱 (TTL 60초) 권장\n"
+domain: development.backend
+id: dev.backend.api.search
+tags:
+- backend
+- api
+- search
+- postgres
+- tsvector
+- full-text-search
+- performance
+theory: '#110 Query Optimization'
+token_estimate: 1033
+type: pattern
+version: 1

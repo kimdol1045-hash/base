@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.ruff_cache/
+.pytest_cache/
+.env
+.git/
+tests/
+docs/
+*.egg-info/
+dist/
+neo4j_data/
+qdrant_data/

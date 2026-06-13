@@ -1,0 +1,23 @@
+content: "테슬러 법칙 (모든 시스템에는 줄일 수 없는 본질적 복잡성이 있다):\n\n### 핵심 원리\n복잡성은 사라지지 않고 이동한다:\
+  \ 사용자 → 시스템, 또는 시스템 → 사용자.\n좋은 설계 = 시스템이 복잡성을 흡수하여 사용자 부담 최소화.\n\n### 적용 패턴\n1.\
+  \ **스마트 기본값**: 사용자가 선택하지 않아도 합리적으로 동작\n   - 배송지: 최근 사용 주소 자동 선택\n   - 알림: 합리적 기본값\
+  \ ON, 세부 설정은 옵션\n   - 날짜: 오늘 날짜 기본값\n\n2. **점진적 공개 (Progressive Disclosure)**: 고급\
+  \ 옵션은 숨김\n   ```tsx\n   <div>\n     <Input placeholder=\"검색어 입력\" />\n     <Collapsible>\n\
+  \       <CollapsibleTrigger className=\"text-sm text-muted-foreground\">\n     \
+  \    고급 검색 옵션 ▾\n       </CollapsibleTrigger>\n       <CollapsibleContent>\n   \
+  \      <Select>날짜 범위</Select>\n         <Select>카테고리</Select>\n         <Checkbox>정확히\
+  \ 일치</Checkbox>\n       </CollapsibleContent>\n     </Collapsible>\n   </div>\n\
+  \   ```\n\n3. **자동 완성/추론**: 시스템이 추론 가능한 건 묻지 않기\n   - 우편번호 → 주소 자동 완성\n   - 카드 번호\
+  \ 앞 자리 → 카드사 자동 인식\n   - 위치 기반 → 언어/통화 자동 설정\n\n### 경고\n- 과도한 자동화: 사용자가 통제감을 잃으면\
+  \ 불안 (자율성 침해)\n- 마법 같은 동작: 왜 이렇게 되었는지 설명 가능해야\n"
+domain: design
+id: design.ux-psychology.teslers-law
+tags:
+- design
+- ux
+- tesler
+- simplicity
+theory: '#53 Tesler''s Law (Tesler, 2007)'
+token_estimate: 400
+type: rule
+version: 1

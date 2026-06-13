@@ -1,0 +1,91 @@
+content: "외부 API 연동 패턴 (비즈니스 로직이 외부 서비스에 직접 의존하면 안 된다 -- 어댑터로 격리하라):\n\n### Adapter\
+  \ 패턴 (Port & Adapter)\n```\nBusiness Logic → Port (Interface) → Adapter (Implementation)\
+  \ → External API\n```\n\nDO:\n```typescript\n// 1. Port (인터페이스) 정의\ninterface EmailProvider\
+  \ {\n  send(params: {\n    to: string;\n    subject: string;\n    html: string;\n\
+  \  }): Promise<{ messageId: string }>;\n}\n\ninterface StorageProvider {\n  upload(key:\
+  \ string, data: Buffer, contentType: string): Promise<{ url: string }>;\n  download(key:\
+  \ string): Promise<Buffer>;\n  delete(key: string): Promise<void>;\n}\n\ninterface\
+  \ PaymentProvider {\n  createCharge(params: ChargeParams): Promise<ChargeResult>;\n\
+  \  refund(chargeId: string, amount?: number): Promise<RefundResult>;\n}\n\n// 2.\
+  \ Adapter 구현 (외부 SDK 캡슐화)\nclass ResendEmailAdapter implements EmailProvider {\n\
+  \  private client: Resend;\n\n  constructor(apiKey: string) {\n    this.client =\
+  \ new Resend(apiKey);\n  }\n\n  async send(params: { to: string; subject: string;\
+  \ html: string }) {\n    try {\n      const result = await this.client.emails.send({\n\
+  \        from: env.EMAIL_FROM,\n        to: params.to,\n        subject: params.subject,\n\
+  \        html: params.html,\n      });\n      return { messageId: result.id };\n\
+  \    } catch (err) {\n      // 외부 에러를 도메인 에러로 변환\n      throw new ExternalServiceError(\"\
+  email\", \"send\", err);\n    }\n  }\n}\n\n// SendGrid로 교체 시 이 어댑터만 변경하면 됨\nclass\
+  \ SendGridEmailAdapter implements EmailProvider {\n  async send(params: { to: string;\
+  \ subject: string; html: string }) {\n    const result = await sgMail.send({\n \
+  \     to: params.to,\n      from: env.EMAIL_FROM,\n      subject: params.subject,\n\
+  \      html: params.html,\n    });\n    return { messageId: result[0].headers[\"\
+  x-message-id\"] };\n  }\n}\n\n// 3. 타임아웃 + 재시도 래퍼\nfunction withResilience<T extends\
+  \ (...args: any[]) => Promise<any>>(\n  fn: T,\n  options: {\n    timeout: number;\
+  \    // ms\n    retries: number;\n    backoff: number;    // 기본 대기 ms\n    retryOn?:\
+  \ (err: any) => boolean;\n  },\n): T {\n  return (async (...args: any[]) => {\n\
+  \    let lastError: Error;\n    for (let attempt = 0; attempt <= options.retries;\
+  \ attempt++) {\n      try {\n        const controller = new AbortController();\n\
+  \        const timer = setTimeout(() => controller.abort(), options.timeout);\n\n\
+  \        const result = await fn(...args, { signal: controller.signal });\n    \
+  \    clearTimeout(timer);\n        return result;\n      } catch (err) {\n     \
+  \   lastError = err as Error;\n\n        // 재시도 가능한 에러인지 확인\n        if (options.retryOn\
+  \ && !options.retryOn(err)) throw err;\n        if (attempt < options.retries) {\n\
+  \          const delay = options.backoff * Math.pow(2, attempt) * (1 + Math.random()\
+  \ * 0.1);\n          await sleep(delay);\n        }\n      }\n    }\n    throw lastError!;\n\
+  \  }) as T;\n}\n\n// 4. Circuit Breaker 통합\nclass CircuitBreaker {\n  private failures\
+  \ = 0;\n  private lastFailure = 0;\n  private state: \"closed\" | \"open\" | \"\
+  half-open\" = \"closed\";\n\n  constructor(\n    private readonly threshold: number\
+  \ = 5,     // 연속 실패 5회 시 open\n    private readonly resetTimeout: number = 30_000,\
+  \ // 30초 후 half-open\n  ) {}\n\n  async execute<T>(fn: () => Promise<T>): Promise<T>\
+  \ {\n    if (this.state === \"open\") {\n      if (Date.now() - this.lastFailure\
+  \ > this.resetTimeout) {\n        this.state = \"half-open\";\n      } else {\n\
+  \        throw new CircuitBreakerOpenError(\"Circuit breaker is open\");\n     \
+  \ }\n    }\n\n    try {\n      const result = await fn();\n      this.onSuccess();\n\
+  \      return result;\n    } catch (err) {\n      this.onFailure();\n      throw\
+  \ err;\n    }\n  }\n\n  private onSuccess() {\n    this.failures = 0;\n    this.state\
+  \ = \"closed\";\n  }\n\n  private onFailure() {\n    this.failures++;\n    this.lastFailure\
+  \ = Date.now();\n    if (this.failures >= this.threshold) {\n      this.state =\
+  \ \"open\";\n      logger.warn(`Circuit breaker opened after ${this.failures} failures`);\n\
+  \    }\n  }\n}\n\n// 5. DI 컨테이너에서 주입\nconst emailProvider: EmailProvider =\n  env.NODE_ENV\
+  \ === \"test\"\n    ? new MockEmailAdapter()\n    : new ResendEmailAdapter(env.RESEND_API_KEY);\n\
+  \n// 비즈니스 로직은 인터페이스에만 의존\nclass OrderService {\n  constructor(\n    private email:\
+  \ EmailProvider,\n    private storage: StorageProvider,\n  ) {}\n\n  async completeOrder(order:\
+  \ Order) {\n    const receipt = await generateReceipt(order);\n    await this.storage.upload(`receipts/${order.id}.pdf`,\
+  \ receipt, \"application/pdf\");\n    await this.email.send({\n      to: order.userEmail,\n\
+  \      subject: \"주문이 완료되었습니다\",\n      html: renderOrderEmail(order),\n    });\n\
+  \  }\n}\n```\n\n### 외부 API 설정 기준\n| 설정 | 값 | 이유 |\n|------|-----|------|\n| 연결 타임아웃\
+  \ | 5초 | 외부 서비스 응답 대기 한도 |\n| 읽기 타임아웃 | 10초 | 응답 수신 최대 대기 |\n| 최대 재시도 | 3회 | 일시\
+  \ 오류 복구 |\n| Circuit Breaker 임계값 | 5회 연속 실패 | 장애 전파 차단 |\n| Circuit Breaker 리셋 |\
+  \ 30초 | 복구 확인 간격 |\n| 응답 캐시 TTL | 60~300초 | 외부 호출 횟수 절감 |\n\n### 에러 매핑\n```typescript\n\
+  // 외부 에러를 도메인 에러로 변환\nclass ExternalServiceError extends Error {\n  constructor(\n\
+  \    public service: string,\n    public operation: string,\n    public originalError:\
+  \ unknown,\n  ) {\n    super(`External service error: ${service}.${operation}`);\n\
+  \  }\n}\n\n// 에러 매핑 미들웨어\nfunction mapExternalError(err: ExternalServiceError):\
+  \ AppError {\n  if (err.originalError instanceof TimeoutError) {\n    return Errors.serviceUnavailable(`${err.service}\
+  \ 서비스 응답 지연`);\n  }\n  if (isRateLimitError(err.originalError)) {\n    return Errors.tooManyRequests(\"\
+  외부 서비스 호출 한도 초과\");\n  }\n  return Errors.internalServer(\"외부 서비스 오류가 발생했습니다\");\n\
+  }\n```\n\nDON'T:\n```typescript\n// ❌ 비즈니스 로직에서 SDK 직접 호출 -- 교체/테스트 불가\nclass OrderService\
+  \ {\n  async sendReceipt(order: Order) {\n    const resend = new Resend(env.RESEND_API_KEY);\
+  \  // 하드코딩 의존성\n    await resend.emails.send({ /* ... */ });\n  }\n}\n\n// ❌ 타임아웃\
+  \ 없이 외부 호출 -- 외부 장애 시 무한 대기\nconst response = await fetch(\"https://api.external.com/data\"\
+  );\n\n// ❌ 외부 에러를 그대로 사용자에게 노출\ntry {\n  await externalApi.call();\n} catch (err)\
+  \ {\n  return c.json({ error: err.message }, 500);  // 내부 구조 노출\n}\n\n// ❌ Circuit\
+  \ Breaker 없이 장애 전파 -- 외부 서비스 다운 시 우리 서비스도 다운\nfor (const user of users) {\n  await\
+  \ externalApi.notify(user);  // 외부 장애 시 전체 루프 실패\n}\n```\n\n### 흔한 실수\n- Adapter\
+  \ 인터페이스 없이 SDK를 직접 사용 -> 외부 서비스 교체 시 비즈니스 로직 수정 필요\n- 타임아웃 미설정으로 요청 스레드 점유 -> 연쇄\
+  \ 장애 발생\n- 외부 API 에러 메시지를 그대로 클라이언트에 전달 -> 내부 구조 및 키 노출 위험\n- 재시도 시 jitter 없이 동일\
+  \ 간격 -> 외부 서비스에 thundering herd 발생\n- 테스트에서 실제 외부 API 호출 -> Mock Adapter로 격리 필수\n"
+domain: development.backend
+id: dev.backend.api.third-party
+tags:
+- backend
+- api
+- third-party
+- adapter
+- circuit-breaker
+- hexagonal
+- resilience
+theory: '#103 Hexagonal Architecture'
+token_estimate: 1544
+type: pattern
+version: 1

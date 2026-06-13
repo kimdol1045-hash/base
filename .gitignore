@@ -1,0 +1,34 @@
+.DS_Store
+
+# Local assistant/tool state
+.claude/
+.omc/
+.mcp.json
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Build outputs
+dist/
+build/
+
+# Local service data
+neo4j_data/
+qdrant_data/

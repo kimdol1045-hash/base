@@ -1,0 +1,130 @@
+---
+id: "planning.prd.feature-prioritization"
+domain: "planning"
+type: "pattern"
+bloom_level: ""
+tags: ["planning", "prioritization", "rice", "ice", "moscow", "pareto", "product-management", "roadmap"]
+brain_region: "PREFRONTAL"
+token_estimate: 500
+---
+
+# planning.prd.feature-prioritization
+
+> #5 Pareto Principle — 80/20 법칙 (Pareto, 1896)
+
+기능 우선순위 결정 패턴 (제한된 자원으로 최대 가치를 전달한다):
+
+### 왜 체계적 우선순위가 필요한가?
+Pareto 원칙: 전체 기능의 20%가 사용자 가치의 80%를 생성한다.
+데이터 기반 우선순위 없이 HiPPO(Highest Paid Person's Opinion)로 결정하면
+핵심 기능이 묻히고 리소스가 낭비된다.
+
+### 1. RICE 스코어링 (정량적, 추천)
+
+**공식: RICE = (Reach × Impact × Confidence) / Effort**
+
+| 차원 | 정의 | 측정 기준 |
+|------|------|-----------|
+| Reach | 영향받는 사용자 수 | 분기당 사용자 수 (예: 5000명) |
+| Impact | 개별 사용자에 대한 영향도 | 0.25(최소), 0.5(낮음), 1(중간), 2(높음), 3(최대) |
+| Confidence | 추정의 확신도 | 100%(데이터 검증), 80%(간접 증거), 50%(직관) |
+| Effort | 투입 인력·시간 | person-months (예: 2 PM) |
+
+DO:
+```
+기능 우선순위 평가 예시:
+
+┌──────────────────┬───────┬────────┬────────────┬────────┬───────┬──────┐
+│ 기능             │ Reach │ Impact │ Confidence │ Effort │ RICE  │ 순위 │
+├──────────────────┼───────┼────────┼────────────┼────────┼───────┼──────┤
+│ 소셜 로그인      │ 8000  │ 2      │ 90%        │ 1 PM   │ 14400 │ 1    │
+│ 대시보드 리디자인│ 5000  │ 1      │ 80%        │ 3 PM   │ 1333  │ 3    │
+│ AI 자동 추천     │ 3000  │ 3      │ 50%        │ 4 PM   │ 1125  │ 4    │
+│ 실시간 알림      │ 6000  │ 2      │ 80%        │ 2 PM   │ 4800  │ 2    │
+│ 다국어 지원      │ 2000  │ 1      │ 70%        │ 2 PM   │ 700   │ 5    │
+└──────────────────┴───────┴────────┴────────────┴────────┴───────┴──────┘
+
+결론: 소셜 로그인 → 실시간 알림 → 대시보드 리디자인 순서로 개발
+```
+
+### 2. ICE 스코어링 (경량, 초기 단계)
+
+**공식: ICE = Impact × Confidence × Ease (각 1-10)**
+
+```
+| 기능          | Impact | Confidence | Ease | ICE Score |
+|---------------|--------|------------|------|-----------|
+| 소셜 로그인   | 8      | 9          | 7    | 504       |
+| AI 추천       | 9      | 4          | 3    | 108       |
+| 온보딩 개선   | 7      | 7          | 8    | 392       |
+```
+
+RICE vs ICE 선택 기준:
+- RICE: 사용자 데이터가 있을 때 (Reach 정량화 가능)
+- ICE: 초기 단계, 빠른 판단 필요할 때
+
+### 3. MoSCoW 방법 (범위 협상용)
+
+```
+Must Have (없으면 출시 불가):
+- 사용자 인증
+- 핵심 CRUD 기능
+
+Should Have (중요하지만 우회 가능):
+- 검색 기능
+- 이메일 알림
+
+Could Have (있으면 좋지만 없어도 됨):
+- 다크 모드
+- 소셜 공유
+
+Won't Have (이번 릴리즈에 포함하지 않음):
+- 실시간 협업
+- AI 기능
+```
+
+### 4. 우선순위 워크숍 진행 (2시간)
+
+```
+Step 1: 기능 후보 나열 (30분)
+- 모든 이해관계자가 기능 후보를 포스트잇에 작성
+- 중복 제거 후 카테고리 그룹핑
+
+Step 2: 독립 스코어링 (30분)
+- 각자 RICE/ICE 점수를 독립적으로 매김 (앵커링 방지)
+- 편차가 큰 항목 토론 후 재평가
+
+Step 3: 합의 도출 (30분)
+- 점수 평균으로 순위 정렬
+- 상위 5개를 Must Have로 확정
+- 나머지를 Should/Could/Won't 분류
+
+Step 4: 로드맵 배치 (30분)
+- Must Have → 현재 스프린트
+- Should Have → 다음 스프린트
+- Could Have → 백로그
+```
+
+DON'T:
+```
+❌ HiPPO 의사결정:
+"대표님이 이 기능이 중요하다고 했으니까 1순위"
+→ 데이터 없이 직급으로 결정하면 편향 발생
+
+❌ 직감 기반 우선순위:
+"이 기능 당연히 필요하잖아요"
+→ Confidence 50% 이하면 사용자 인터뷰/데이터 먼저 확보
+
+❌ 모든 기능을 Must Have로 지정:
+"다 중요합니다" → MoSCoW의 의미 상실
+Must Have는 전체 기능의 60% 이하로 제한
+
+❌ 기술적 흥미로 우선순위 결정:
+"AI 기능이 기술적으로 재미있으니까" → Impact/Reach 기준으로 판단
+```
+
+## Connections
+
+- [[planning.prd.rice]] — CO_CREATES (weight: 0.6)
+- [[planning.prd.kano-model]] — CO_CREATES (weight: 0.6)
+- [[planning.prd.metrics]] — CO_CREATES (weight: 0.6)

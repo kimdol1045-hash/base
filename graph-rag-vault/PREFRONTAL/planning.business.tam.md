@@ -1,0 +1,55 @@
+---
+id: "planning.business.tam"
+domain: "planning"
+type: "rule"
+region: PREFRONTAL
+token_estimate: 400
+theory: "#B4 Technology Acceptance Model (Davis, 1989)"
+tags: [planning, business, tam, market]
+---
+
+# planning.business.tam
+
+> **Region**: 🧠 [[PREFRONTAL]]  
+> **Domain**: `planning`  
+> **Type**: `rule`  
+> **Theory**: #B4 Technology Acceptance Model (Davis, 1989)  
+> **Tokens**: 400
+
+## Content
+
+기술수용모델 (사용자가 새 기술/제품을 받아들이는 조건):
+
+### 두 가지 핵심 요소
+1. **유용성 (Perceived Usefulness)**: "이것이 내 일을 더 잘하게 해주는가?"
+2. **사용 용이성 (Perceived Ease of Use)**: "이것을 사용하기 쉬운가?"
+
+유용성 > 사용 용이성 (유용하면 어려워도 쓴다, 쉬워도 쓸모없으면 안 쓴다)
+
+### 제품 설계 체크리스트
+유용성 확보:
+- [ ] 기존 방법 대비 시간/비용 절감이 명확한가?
+- [ ] 핵심 Job-to-be-Done을 직접 해결하는가?
+- [ ] 가치를 3초 내에 전달할 수 있는가? (엘리베이터 피치)
+
+사용 용이성 확보:
+- [ ] 온보딩 3단계 이내에 핵심 가치 경험 가능한가?
+- [ ] 학습 없이 직관적으로 사용 가능한가? (제이콥 법칙)
+- [ ] 에러 시 복구가 쉬운가?
+
+### TAM/SAM/SOM 시장 규모
+- TAM (Total): 전체 잠재 시장
+- SAM (Serviceable): 서비스 가능 시장 (지역/언어/플랫폼 제한)
+- SOM (Obtainable): 실제 획득 가능 시장 (1-3년 내 현실적)
+- SOM은 SAM의 1-5% 범위로 보수적 추정
+
+## Connections
+
+### REQUIRES (1)
+
+- ← [[planning.business.role]] `w=0.9`
+
+### FEEDS (2)
+
+- ← [[planning.business.double-diamond]] `w=0.7`
+- → [[planning.business.verify]] `w=0.8`

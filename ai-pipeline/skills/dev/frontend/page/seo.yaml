@@ -1,0 +1,71 @@
+content: "Next.js SEO 최적화 규칙 (검색 엔진이 콘텐츠를 정확히 이해하고 노출하도록 한다):\n\n### 1. Metadata API\
+  \ — 정적 & 동적 메타데이터\n\nDO:\n```tsx\n// ✅ 정적 메타데이터 (layout.tsx 또는 page.tsx)\nimport\
+  \ { type Metadata } from \"next\";\n\nexport const metadata: Metadata = {\n  title:\
+  \ {\n    default: \"MyApp — 설명\",\n    template: \"%s | MyApp\",  // 하위 페이지: \"\
+  대시보드 | MyApp\"\n  },\n  description: \"서비스 설명 (120~160자). 핵심 키워드 포함.\",\n  keywords:\
+  \ [\"SaaS\", \"프로젝트 관리\", \"협업 도구\"],\n  authors: [{ name: \"MyApp Team\" }],\n\
+  \  openGraph: {\n    type: \"website\",\n    locale: \"ko_KR\",\n    url: \"https://myapp.com\"\
+  ,\n    siteName: \"MyApp\",\n    images: [\n      {\n        url: \"https://myapp.com/og-image.png\"\
+  ,\n        width: 1200,\n        height: 630,\n        alt: \"MyApp 소개 이미지\",\n\
+  \      },\n    ],\n  },\n  twitter: {\n    card: \"summary_large_image\",\n    creator:\
+  \ \"@myapp\",\n  },\n  robots: {\n    index: true,\n    follow: true,\n    googleBot:\
+  \ {\n      index: true,\n      follow: true,\n      \"max-video-preview\": -1,\n\
+  \      \"max-image-preview\": \"large\",\n      \"max-snippet\": -1,\n    },\n \
+  \ },\n};\n```\n\n```tsx\n// ✅ 동적 메타데이터 (상세 페이지)\nexport async function generateMetadata({\n\
+  \  params,\n}: {\n  params: { slug: string };\n}): Promise<Metadata> {\n  const\
+  \ post = await getPost(params.slug);\n  if (!post) return { title: \"Not Found\"\
+  \ };\n\n  return {\n    title: post.title,\n    description: post.excerpt.slice(0,\
+  \ 160),\n    openGraph: {\n      title: post.title,\n      description: post.excerpt,\n\
+  \      images: [{ url: post.coverImage, width: 1200, height: 630 }],\n      type:\
+  \ \"article\",\n      publishedTime: post.publishedAt,\n      authors: [post.author.name],\n\
+  \    },\n    alternates: {\n      canonical: `https://myapp.com/blog/${params.slug}`,\n\
+  \    },\n  };\n}\n```\n\nDON'T:\n```tsx\n// ❌ 메타데이터 누락\nexport default function\
+  \ Page() {\n  return <div>콘텐츠</div>; // title, description 없음\n}\n\n// ❌ 하드코딩된 title\
+  \ (동적 페이지에서)\nexport const metadata = { title: \"상세 페이지\" }; // 모든 상세 페이지가 같은 제목\n\
+  ```\n\n### 2. 구조화된 데이터 (JSON-LD)\n검색 엔진이 콘텐츠 의미를 이해하도록 Schema.org 마크업을 추가한다.\n\n\
+  DO:\n```tsx\n// ✅ JSON-LD 구조화 데이터\nexport default async function BlogPost({ params\
+  \ }: { params: { slug: string } }) {\n  const post = await getPost(params.slug);\n\
+  \n  const jsonLd = {\n    \"@context\": \"https://schema.org\",\n    \"@type\":\
+  \ \"BlogPosting\",\n    headline: post.title,\n    description: post.excerpt,\n\
+  \    image: post.coverImage,\n    datePublished: post.publishedAt,\n    dateModified:\
+  \ post.updatedAt,\n    author: {\n      \"@type\": \"Person\",\n      name: post.author.name,\n\
+  \      url: post.author.url,\n    },\n  };\n\n  return (\n    <>\n      <script\n\
+  \        type=\"application/ld+json\"\n        dangerouslySetInnerHTML={{ __html:\
+  \ JSON.stringify(jsonLd) }}\n      />\n      <article>\n        <h1>{post.title}</h1>\n\
+  \        {/* ... */}\n      </article>\n    </>\n  );\n}\n```\n\n### 3. sitemap.xml\
+  \ & robots.txt\n\n```tsx\n// ✅ app/sitemap.ts — 동적 사이트맵\nimport { type MetadataRoute\
+  \ } from \"next\";\n\nexport default async function sitemap(): Promise<MetadataRoute.Sitemap>\
+  \ {\n  const posts = await getAllPosts();\n\n  const postUrls = posts.map((post)\
+  \ => ({\n    url: `https://myapp.com/blog/${post.slug}`,\n    lastModified: new\
+  \ Date(post.updatedAt),\n    changeFrequency: \"weekly\" as const,\n    priority:\
+  \ 0.8,\n  }));\n\n  return [\n    { url: \"https://myapp.com\", lastModified: new\
+  \ Date(), priority: 1.0 },\n    { url: \"https://myapp.com/about\", lastModified:\
+  \ new Date(), priority: 0.5 },\n    ...postUrls,\n  ];\n}\n```\n\n```tsx\n// ✅ app/robots.ts\n\
+  import { type MetadataRoute } from \"next\";\n\nexport default function robots():\
+  \ MetadataRoute.Robots {\n  return {\n    rules: [\n      {\n        userAgent:\
+  \ \"*\",\n        allow: \"/\",\n        disallow: [\"/api/\", \"/dashboard/\",\
+  \ \"/admin/\"],\n      },\n    ],\n    sitemap: \"https://myapp.com/sitemap.xml\"\
+  ,\n  };\n}\n```\n\n### 4. 시맨틱 HTML 규칙\n- `h1`은 페이지당 **1개만** 사용한다.\n- 제목은 `h1 → h2\
+  \ → h3` 순서로 건너뛰지 않는다 (h1 다음 h3 금지).\n- 메인 콘텐츠는 `<main>`, 내비게이션은 `<nav>`, 보조는 `<aside>`\
+  \ 사용.\n- 이미지에 의미 있는 `alt` 텍스트 필수 (장식 이미지: `alt=\"\"`).\n- 링크 텍스트는 설명적으로 (\"여기 클릭\"\
+  \ 금지, \"사용자 가이드 보기\" 사용).\n\n### 5. 성능 & Core Web Vitals\n- LCP (Largest Contentful\
+  \ Paint): 히어로 이미지에 `priority` 속성 추가.\n- CLS (Cumulative Layout Shift): 이미지/비디오에\
+  \ width, height 명시.\n- FID (First Input Delay): 무거운 JS를 dynamic import로 지연.\n\n\
+  ```tsx\n// ✅ 히어로 이미지 최적화\nimport Image from \"next/image\";\n<Image\n  src=\"/hero.webp\"\
+  \n  alt=\"서비스 소개 히어로 이미지\"\n  width={1200}\n  height={630}\n  priority  // LCP 최적화:\
+  \ 프리로드\n  className=\"w-full h-auto\"\n/>\n```\n\n### Edge Cases\n- SPA 모달 내 콘텐츠는\
+  \ 검색 엔진이 크롤링하기 어렵다. 중요한 콘텐츠는 별도 페이지로.\n- `noindex` 페이지에도 `canonical` URL을 설정하면 중복\
+  \ 콘텐츠 문제를 방지한다.\n- 다국어 사이트는 `alternates.languages`로 hreflang을 설정한다.\n"
+domain: development.frontend
+id: dev.frontend.page.seo
+tags:
+- frontend
+- page
+- seo
+- metadata
+- structured-data
+- nextjs
+theory: '#131 SEO (Google Webmaster Guidelines)'
+token_estimate: 1116
+type: rule
+version: 1

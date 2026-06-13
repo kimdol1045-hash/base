@@ -1,0 +1,38 @@
+content: "희소성 — 제한된 것은 더 가치 있게 느껴진다 (구할 수 없는 것을 더 원한다):\n\n### 희소성 3가지 유형\n\n**1.\
+  \ 수량 한정 (Limited Quantity)**\n- \"선착순 100명 한정\"\n- \"남은 좌석: 7석\"\n- \"재고 3개 남음\"\
+  \n- 실시간 재고 카운터로 긴급감 극대화\n\n**2. 시간 한정 (Limited Time)**\n- \"오늘 자정까지만\"\n- \"얼리버드\
+  \ 할인 D-3\"\n- 카운트다운 타이머 표시\n```\n┌─────────────────────────────────┐\n│  얼리버드 할인\
+  \ 종료까지           │\n│  02일 14시간 37분 22초           │\n│  [지금 등록하기 — ₩990,000]   \
+  \  │\n└─────────────────────────────────┘\n```\n\n**3. 접근 한정 (Limited Access)**\n\
+  - \"초대 코드가 있는 분만\"\n- \"프리미엄 회원 전용\"\n- \"베타 테스터 500명 모집\"\n- 대기 리스트: \"현재 3,421명\
+  \ 대기 중. 지금 등록하면 3,422번째\"\n\n### 카피 예시\n- \"이번 기수 마감까지 남은 자리: 12석 / 50석\"\n- \"\
+  이 할인가는 오늘 가입하는 분에게만 적용됩니다\"\n- \"지난 프로모션은 2시간 만에 마감되었습니다\"\n- \"현재 487명이 이 상품을 보고\
+  \ 있습니다\"\n- \"오늘 구매하면 한정판 보너스 키트 증정\"\n- \"무료 체험은 이번 달까지만 제공됩니다\"\n\n### 카운트다운 타이머\
+  \ 구현 (React)\n```tsx\nfunction CountdownTimer({ deadline }: { deadline: Date })\
+  \ {\n  const [timeLeft, setTimeLeft] = useState(getTimeLeft(deadline));\n\n  useEffect(()\
+  \ => {\n    const timer = setInterval(() => {\n      const remaining = getTimeLeft(deadline);\n\
+  \      if (remaining.total <= 0) {\n        clearInterval(timer);\n        setTimeLeft({\
+  \ days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 });\n        return;\n   \
+  \   }\n      setTimeLeft(remaining);\n    }, 1000);\n    return () => clearInterval(timer);\n\
+  \  }, [deadline]);\n\n  return (\n    <div className=\"flex gap-2 text-center\"\
+  >\n      <TimeBlock value={timeLeft.days} label=\"일\" />\n      <TimeBlock value={timeLeft.hours}\
+  \ label=\"시간\" />\n      <TimeBlock value={timeLeft.minutes} label=\"분\" />\n  \
+  \    <TimeBlock value={timeLeft.seconds} label=\"초\" />\n    </div>\n  );\n}\n```\n\
+  \n### 윤리적 주의점\n| 허용 | 금지 |\n|------|------|\n| 실제 한정 수량 표시 | 가짜 재고 카운터 (항상 \"3개\
+  \ 남음\") |\n| 실제 마감 기한 카운트다운 | 리셋되는 가짜 타이머 |\n| 시즌 한정 프로모션 | \"마지막 기회\"를 반복 사용 |\n\
+  | 대기 리스트 실제 순번 | 조작된 대기자 수 |\n| 재고 연동 실시간 표시 | 인위적으로 재고를 줄여 표시 |\n\n### 효과 극대화 조건\n\
+  - 희소성 + 사회적 증거: \"487명이 보고 있고 재고 3개\" (경쟁 심리)\n- 희소성 + 손실 회피: \"오늘 놓치면 ₩50,000 할인이\
+  \ 사라집니다\"\n- 구체적 숫자일수록 신뢰도 상승: \"한정\" < \"100명 한정\" < \"남은 7자리\"\n"
+domain: marketing
+id: marketing.persuasion.scarcity
+tags:
+- marketing
+- persuasion
+- scarcity
+- urgency
+- countdown
+- conversion
+theory: '#63 희소성 (Cialdini, 1984 Ch.7)'
+token_estimate: 948
+type: pattern
+version: 1

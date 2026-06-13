@@ -1,0 +1,89 @@
+content: "자주 사용되는 커스텀 훅 패턴 (반복 로직을 재사용 가능한 훅으로 추출한다):\n\n### 1. useDebounce — 입력 디바운싱\n\
+  사용자 입력(검색, 필터)의 연속 호출을 제어하여 API 요청을 줄인다.\n\n```tsx\nimport { useState, useEffect\
+  \ } from \"react\";\n\nexport function useDebounce<T>(value: T, delay: number =\
+  \ 300): T {\n  const [debouncedValue, setDebouncedValue] = useState(value);\n\n\
+  \  useEffect(() => {\n    const timer = setTimeout(() => setDebouncedValue(value),\
+  \ delay);\n    return () => clearTimeout(timer); // cleanup 필수\n  }, [value, delay]);\n\
+  \n  return debouncedValue;\n}\n\n// 사용 예시\nfunction SearchInput() {\n  const [query,\
+  \ setQuery] = useState(\"\");\n  const debouncedQuery = useDebounce(query, 300);\n\
+  \n  useEffect(() => {\n    if (debouncedQuery) {\n      searchAPI(debouncedQuery);\
+  \ // 300ms 동안 입력 없을 때만 호출\n    }\n  }, [debouncedQuery]);\n\n  return <input value={query}\
+  \ onChange={e => setQuery(e.target.value)} />;\n}\n```\n\n### 2. useLocalStorage\
+  \ — localStorage 동기화\n상태와 localStorage를 자동으로 동기화한다. SSR 환경(Server Component)에서 안전하게\
+  \ 동작한다.\n\n```tsx\nimport { useState, useEffect, useCallback } from \"react\";\n\
+  \nexport function useLocalStorage<T>(\n  key: string,\n  initialValue: T\n): [T,\
+  \ (value: T | ((prev: T) => T)) => void, () => void] {\n  const [storedValue, setStoredValue]\
+  \ = useState<T>(() => {\n    if (typeof window === \"undefined\") return initialValue;\n\
+  \    try {\n      const item = localStorage.getItem(key);\n      return item ? (JSON.parse(item)\
+  \ as T) : initialValue;\n    } catch {\n      return initialValue;\n    }\n  });\n\
+  \n  useEffect(() => {\n    try {\n      localStorage.setItem(key, JSON.stringify(storedValue));\n\
+  \    } catch (error) {\n      console.warn(`localStorage 저장 실패 (key: ${key})`, error);\n\
+  \    }\n  }, [key, storedValue]);\n\n  const remove = useCallback(() => {\n    setStoredValue(initialValue);\n\
+  \    localStorage.removeItem(key);\n  }, [key, initialValue]);\n\n  return [storedValue,\
+  \ setStoredValue, remove];\n}\n\n// 사용 예시\nconst [theme, setTheme] = useLocalStorage(\"\
+  theme\", \"light\");\nconst [cart, setCart, clearCart] = useLocalStorage<CartItem[]>(\"\
+  cart\", []);\n```\n\n### 3. useMediaQuery — 반응형 브레이크포인트 감지\nCSS 미디어 쿼리를 JavaScript에서\
+  \ 감지하여 조건부 렌더링에 사용한다.\n\n```tsx\nimport { useState, useEffect } from \"react\";\n\
+  \nexport function useMediaQuery(query: string): boolean {\n  const [matches, setMatches]\
+  \ = useState(false);\n\n  useEffect(() => {\n    const media = window.matchMedia(query);\n\
+  \    setMatches(media.matches);\n\n    const handler = (e: MediaQueryListEvent)\
+  \ => setMatches(e.matches);\n    media.addEventListener(\"change\", handler);\n\
+  \    return () => media.removeEventListener(\"change\", handler);\n  }, [query]);\n\
+  \n  return matches;\n}\n\n// Tailwind 브레이크포인트에 맞춘 편의 훅\nexport function useIsMobile()\
+  \ {\n  return useMediaQuery(\"(max-width: 767px)\");\n}\nexport function useIsDesktop()\
+  \ {\n  return useMediaQuery(\"(min-width: 1024px)\");\n}\n\n// 사용 예시\nfunction Navigation()\
+  \ {\n  const isMobile = useIsMobile();\n  return isMobile ? <MobileNav /> : <DesktopNav\
+  \ />;\n}\n```\n\n### 4. useIntersectionObserver — 뷰포트 진입 감지\n무한 스크롤, lazy loading,\
+  \ 애니메이션 트리거에 사용한다.\n\n```tsx\nimport { useState, useEffect, useRef, type RefObject\
+  \ } from \"react\";\n\ninterface UseIntersectionOptions {\n  threshold?: number;\n\
+  \  rootMargin?: string;\n  enabled?: boolean;\n}\n\nexport function useIntersectionObserver<T\
+  \ extends HTMLElement>(\n  options: UseIntersectionOptions = {}\n): { ref: RefObject<T>;\
+  \ isIntersecting: boolean } {\n  const { threshold = 0, rootMargin = \"0px\", enabled\
+  \ = true } = options;\n  const ref = useRef<T>(null);\n  const [isIntersecting,\
+  \ setIsIntersecting] = useState(false);\n\n  useEffect(() => {\n    if (!enabled\
+  \ || !ref.current) return;\n\n    const observer = new IntersectionObserver(\n \
+  \     ([entry]) => setIsIntersecting(entry.isIntersecting),\n      { threshold,\
+  \ rootMargin }\n    );\n    observer.observe(ref.current);\n    return () => observer.disconnect();\n\
+  \  }, [threshold, rootMargin, enabled]);\n\n  return { ref, isIntersecting };\n\
+  }\n\n// ✅ 무한 스크롤 사용 예시\nfunction InfiniteList() {\n  const { ref, isIntersecting\
+  \ } = useIntersectionObserver<HTMLDivElement>({\n    rootMargin: \"100px\", // 100px\
+  \ 전에 미리 로드\n  });\n\n  useEffect(() => {\n    if (isIntersecting) loadMore();\n\
+  \  }, [isIntersecting]);\n\n  return (\n    <div>\n      {items.map(item => <ItemCard\
+  \ key={item.id} item={item} />)}\n      <div ref={ref} className=\"h-4\" /> {/*\
+  \ 센티넬 요소 */}\n    </div>\n  );\n}\n```\n\n### 5. useClickOutside — 외부 클릭 감지\n드롭다운,\
+  \ 모달, 팝오버를 외부 클릭으로 닫을 때 사용한다.\n\n```tsx\nimport { useEffect, useRef, type RefObject\
+  \ } from \"react\";\n\nexport function useClickOutside<T extends HTMLElement>(\n\
+  \  handler: () => void\n): RefObject<T> {\n  const ref = useRef<T>(null);\n\n  useEffect(()\
+  \ => {\n    const listener = (event: MouseEvent | TouchEvent) => {\n      if (!ref.current\
+  \ || ref.current.contains(event.target as Node)) return;\n      handler();\n   \
+  \ };\n    document.addEventListener(\"mousedown\", listener);\n    document.addEventListener(\"\
+  touchstart\", listener);\n    return () => {\n      document.removeEventListener(\"\
+  mousedown\", listener);\n      document.removeEventListener(\"touchstart\", listener);\n\
+  \    };\n  }, [handler]);\n\n  return ref;\n}\n\n// 사용 예시\nfunction Dropdown() {\n\
+  \  const [isOpen, setIsOpen] = useState(false);\n  const ref = useClickOutside<HTMLDivElement>(()\
+  \ => setIsOpen(false));\n\n  return (\n    <div ref={ref}>\n      <button onClick={()\
+  \ => setIsOpen(!isOpen)}>메뉴</button>\n      {isOpen && <DropdownMenu />}\n    </div>\n\
+  \  );\n}\n```\n\n### 6. useCopyToClipboard — 클립보드 복사\n\n```tsx\nimport { useState,\
+  \ useCallback } from \"react\";\n\nexport function useCopyToClipboard(resetDelay:\
+  \ number = 2000) {\n  const [copied, setCopied] = useState(false);\n\n  const copy\
+  \ = useCallback(async (text: string) => {\n    try {\n      await navigator.clipboard.writeText(text);\n\
+  \      setCopied(true);\n      setTimeout(() => setCopied(false), resetDelay);\n\
+  \      return true;\n    } catch {\n      console.warn(\"클립보드 복사 실패\");\n      return\
+  \ false;\n    }\n  }, [resetDelay]);\n\n  return { copied, copy };\n}\n\n// 사용 예시\n\
+  const { copied, copy } = useCopyToClipboard();\n<button onClick={() => copy(code)}>\n\
+  \  {copied ? \"복사됨!\" : \"코드 복사\"}\n</button>\n```\n\n### 훅 설계 원칙 요약\n- **cleanup을\
+  \ 반드시** 구현한다 (타이머, 이벤트 리스너, Observer).\n- **SSR 안전성**: `typeof window === \"undefined\"\
+  ` 체크로 서버 환경 대응.\n- **Generic 타입**으로 재사용성을 높인다.\n- **옵션 객체 패턴**: 파라미터가 3개 이상이면 옵션\
+  \ 객체로 전달한다.\n"
+domain: development.frontend
+id: dev.frontend.hook.patterns
+tags:
+- frontend
+- hook
+- patterns
+- debounce
+- intersection-observer
+- custom-hook
+token_estimate: 1530
+type: pattern
+version: 1

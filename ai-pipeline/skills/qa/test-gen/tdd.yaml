@@ -1,0 +1,57 @@
+bloom_level: APPLY
+content: '# TDD (Test-Driven Development) 가이드
+
+
+  ## 적용 상황
+
+  - 새 기능을 구현하면서 높은 테스트 커버리지를 보장하고 싶을 때
+
+  - 복잡한 비즈니스 로직을 안전하게 구현해야 할 때
+
+  - API 인터페이스를 설계하면서 사용성을 먼저 검증하고 싶을 때
+
+  - 리팩터링 안전망을 확보하면서 코드를 개선할 때
+
+
+  ## 구현 방법
+
+  - Red: 실패하는 테스트 먼저 작성. 의도한 동작을 테스트로 명세
+
+  - Green: 테스트를 통과시키는 최소한의 코드만 작성 (하드코딩도 OK)
+
+  - Refactor: 중복 제거, 네이밍 개선, 구조 정리. 테스트는 그대로 통과해야 함
+
+  - 한 번에 하나의 테스트만 추가. 사이클 시간 1-5분 유지
+
+  - 테스트가 설계를 주도하게 허용: 테스트하기 어려운 코드 = 설계 문제 신호
+
+  - 작은 단계로 점진적 구현: 먼저 가장 단순한 케이스부터 시작
+
+  - Transformation Priority Premise: 단순한 변환(nil→constant→variable)부터 복잡한 변환으로
+
+  - 외부 의존성은 인터페이스로 추상화하여 테스트 가능하게 설계
+
+
+  ## 주의사항
+
+  - 구현을 먼저 작성하고 테스트를 끼워맞추면 TDD의 설계 이점이 사라짐
+
+  - 리팩터링 단계를 건너뛰면 코드 품질이 점진적으로 저하
+
+  - 너무 큰 단위로 테스트를 작성하면 Red-Green 사이클이 길어져 집중력 저하
+
+  - UI 컴포넌트나 E2E 시나리오에는 TDD 적용이 비효율적일 수 있음
+
+  - 익숙해지기까지 시간 필요. 처음에는 간단한 유틸리티 함수부터 연습
+
+  '
+domain: qa.testing
+id: qa.test-gen.tdd
+tags:
+- tdd
+- test-driven
+- red-green-refactor
+theory: TDD (Test-Driven Development) — Red-Green-Refactor 사이클
+token_estimate: 376
+type: pattern
+version: 1

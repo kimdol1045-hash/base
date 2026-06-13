@@ -1,0 +1,15 @@
+{
+  "domain_results": {
+    "test.domain": [
+      "PASS",
+      "PASS",
+      "PASS",
+      "PASS",
+      "PASS",
+      "PASS",
+      "PASS",
+      "PASS"
+    ]
+  },
+  "locked_domains": []
+}

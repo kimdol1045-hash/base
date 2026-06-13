@@ -1,0 +1,211 @@
+bloom_level: APPLY
+content: '# DESIGN.md Template (디자인 시스템 문서 표준)
+
+  Source: VoltAgent/awesome-design-md
+
+
+  ## Purpose
+
+  프로젝트의 디자인 시스템을 plain-text DESIGN.md로 정의하여
+
+  AI 에이전트가 일관된 UI를 생성할 수 있게 한다.
+
+  Figma 없이도 디자인 스펙을 코드와 함께 버전 관리한다.
+
+
+  ## 9-Section Standard Format
+
+
+  ### 1. Visual Theme & Atmosphere
+
+  분위기, 밀도, 디자인 철학을 정의한다.
+
+  ```
+
+  - Mood: minimal / bold / playful / editorial / corporate
+
+  - Density: compact / comfortable / spacious
+
+  - Design philosophy: 1-2문장으로 핵심 원칙
+
+  ```
+
+
+  ### 2. Color Palette & Roles
+
+  시맨틱 이름, hex 값, 기능적 용도를 매핑한다.
+
+  ```
+
+  - Primary: #hex — 주요 액션, CTA
+
+  - Secondary: #hex — 보조 액션
+
+  - Background: #hex — 페이지 배경
+
+  - Surface: #hex — 카드/패널 배경
+
+  - Foreground: #hex — 기본 텍스트
+
+  - Muted: #hex — 보조 텍스트
+
+  - Destructive: #hex — 삭제/위험 액션
+
+  - Border: #hex — 구분선/보더
+
+  - Accent: #hex — 강조/뱃지
+
+  다크모드 변형도 함께 정의한다.
+
+  ```
+
+
+  ### 3. Typography Rules
+
+  폰트 패밀리와 전체 위계를 정의한다.
+
+  ```
+
+  - Font family: 제목/본문/코드
+
+  - Scale: Display → H1 → H2 → H3 → Body → Small → Caption
+
+  - Line height: 제목 1.25, 본문 1.5-1.625
+
+  - Max line length: 65-75자 (한국어 35-40자)
+
+  ```
+
+
+  ### 4. Component Stylings
+
+  버튼, 카드, 입력, 뱃지 등 핵심 컴포넌트의 상태별 스타일.
+
+  ```
+
+  Button:
+
+  - default / hover / active / disabled 상태
+
+  - variant: primary / secondary / ghost / destructive
+
+  - size: sm / md / lg
+
+  - border-radius, padding, font-size 명시
+
+  ```
+
+
+  ### 5. Layout Principles
+
+  간격 스케일, 그리드, 여백 철학.
+
+  ```
+
+  - Spacing scale: 4/8/12/16/24/32/48/64
+
+  - Grid: 1 → 2 → 3열 (반응형)
+
+  - Container max-width: 1280px
+
+  - Section gap: 48-64px
+
+  ```
+
+
+  ### 6. Depth & Elevation
+
+  그림자 시스템과 표면 위계.
+
+  ```
+
+  - Level 0: 배경 (그림자 없음)
+
+  - Level 1: 카드 (sm shadow)
+
+  - Level 2: 드롭다운 (md shadow)
+
+  - Level 3: 모달 (lg shadow)
+
+  ```
+
+
+  ### 7. Do''s and Don''ts
+
+  디자인 가드레일과 안티패턴.
+
+  ```
+
+  DO: 시맨틱 색상 토큰 사용, 일관된 간격, 접근성 대비
+
+  DON''T: 하드코딩 색상, 인라인 스타일, 장식적 애니메이션
+
+  ```
+
+
+  ### 8. Responsive Behavior
+
+  브레이크포인트, 터치 타겟, 적응 전략.
+
+  ```
+
+  - Mobile: < 640px (1열, 햄버거 메뉴)
+
+  - Tablet: 640-1024px (2열, 탭 바)
+
+  - Desktop: > 1024px (3열, 사이드바)
+
+  - Touch target: 최소 44x44px
+
+  ```
+
+
+  ### 9. Agent Prompt Guide
+
+  AI 에이전트가 사용할 색상 참조와 프롬프트.
+
+  ```
+
+  - 색상 변수명 → 실제 hex 매핑
+
+  - 컴포넌트 생성 시 참조할 규칙 요약
+
+  - "이 DESIGN.md를 참고하여 [컴포넌트] 만들어줘" 예시
+
+  ```
+
+
+  ## 적용 방법
+
+  1. 프로젝트 루트에 DESIGN.md 생성
+
+  2. 9개 섹션 채우기 (기존 디자인 참고 또는 새로 정의)
+
+  3. AI에게 "DESIGN.md를 참고해서 페이지 만들어줘" 지시
+
+  4. 코드 변경과 함께 DESIGN.md도 업데이트 (버전 관리)
+
+
+  ## 58+ 레퍼런스 컬렉션 (awesome-design-md)
+
+  Toss, Stripe, Linear, Vercel, Notion, Figma, Supabase,
+
+  Claude, Apple, Spotify 등 58개 이상 사이트의 DESIGN.md 제공.
+
+  각 사이트별 preview.html + preview-dark.html 포함.
+
+  '
+domain: design
+id: design.design-md.template
+tags:
+- design
+- design-system
+- design-md
+- template
+- ai-agent
+- documentation
+- plain-text
+theory: 'DESIGN.md Standard (AI 에이전트용 plain-text 디자인 시스템: 9-Section Format + 58+ References)'
+token_estimate: 780
+type: rule
+version: 1

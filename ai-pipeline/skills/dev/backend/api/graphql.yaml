@@ -1,0 +1,80 @@
+content: "GraphQL 패턴 (쿼리의 자유를 허용하되 비용을 제어한다 -- 제한 없는 GraphQL은 DB를 무너뜨리는 무기가 된다):\n\
+  \n### Schema-First 설계\n\nDO:\n```typescript\n// 1. 스키마 정의 (SDL-first)\nconst typeDefs\
+  \ = `#graphql\n  type Query {\n    user(id: ID!): User\n    users(filter: UserFilter,\
+  \ pagination: PaginationInput): UserConnection!\n    post(id: ID!): Post\n  }\n\n\
+  \  type Mutation {\n    createPost(input: CreatePostInput!): Post!\n    updatePost(id:\
+  \ ID!, input: UpdatePostInput!): Post!\n  }\n\n  type User {\n    id: ID!\n    name:\
+  \ String!\n    email: String!\n    posts(first: Int = 10, after: String): PostConnection!\n\
+  \    followers: [User!]!\n  }\n\n  type Post {\n    id: ID!\n    title: String!\n\
+  \    body: String!\n    author: User!\n    comments(first: Int = 10): [Comment!]!\n\
+  \    createdAt: DateTime!\n  }\n\n  type UserConnection {\n    edges: [UserEdge!]!\n\
+  \    pageInfo: PageInfo!\n    totalCount: Int!\n  }\n\n  type UserEdge {\n    cursor:\
+  \ String!\n    node: User!\n  }\n\n  type PageInfo {\n    hasNextPage: Boolean!\n\
+  \    endCursor: String\n  }\n\n  input PaginationInput {\n    first: Int = 20\n\
+  \    after: String\n  }\n\n  input UserFilter {\n    name: String\n    status: UserStatus\n\
+  \  }\n`;\n\n// 2. DataLoader를 사용한 N+1 방지\nimport DataLoader from \"dataloader\"\
+  ;\n\nfunction createLoaders() {\n  return {\n    userLoader: new DataLoader<string,\
+  \ User>(async (ids) => {\n      const users = await db.query.users.findMany({\n\
+  \        where: inArray(users.id, [...ids]),\n      });\n      // DataLoader는 입력\
+  \ 순서와 동일한 순서로 반환해야 함\n      const userMap = new Map(users.map((u) => [u.id, u]));\n\
+  \      return ids.map((id) => userMap.get(id) ?? new Error(`User ${id} not found`));\n\
+  \    }),\n\n    postsByAuthorLoader: new DataLoader<string, Post[]>(async (authorIds)\
+  \ => {\n      const posts = await db.query.posts.findMany({\n        where: inArray(posts.authorId,\
+  \ [...authorIds]),\n      });\n      const grouped = new Map<string, Post[]>();\n\
+  \      posts.forEach((p) => {\n        const list = grouped.get(p.authorId) ?? [];\n\
+  \        list.push(p);\n        grouped.set(p.authorId, list);\n      });\n    \
+  \  return authorIds.map((id) => grouped.get(id) ?? []);\n    }),\n  };\n}\n\n//\
+  \ 요청마다 새 DataLoader 인스턴스 생성 (캐시 격리)\nconst server = new ApolloServer({\n  typeDefs,\n\
+  \  resolvers,\n  context: ({ req }) => ({\n    user: req.user,\n    loaders: createLoaders(),\n\
+  \  }),\n});\n\n// 3. Resolver에서 DataLoader 사용\nconst resolvers = {\n  Query: {\n\
+  \    user: (_, { id }, { loaders }) => loaders.userLoader.load(id),\n    users:\
+  \ async (_, { filter, pagination }) => {\n      const { first = 20, after } = pagination\
+  \ ?? {};\n      // cursor-based pagination 구현\n      const results = await db.query.users.findMany({\n\
+  \        where: filter?.status ? eq(users.status, filter.status) : undefined,\n\
+  \        limit: first + 1,\n        ...(after ? { cursor: decodeCursor(after) }\
+  \ : {}),\n      });\n      const hasNext = results.length > first;\n      const\
+  \ edges = (hasNext ? results.slice(0, -1) : results).map((u) => ({\n        cursor:\
+  \ encodeCursor(u.id),\n        node: u,\n      }));\n      return {\n        edges,\n\
+  \        pageInfo: { hasNextPage: hasNext, endCursor: edges.at(-1)?.cursor },\n\
+  \        totalCount: await db.$count(users),\n      };\n    },\n  },\n  User: {\n\
+  \    posts: (parent, { first }, { loaders }) => loaders.postsByAuthorLoader.load(parent.id),\n\
+  \    followers: (parent, _, { loaders }) => loaders.followersLoader.load(parent.id),\n\
+  \  },\n  Post: {\n    author: (parent, _, { loaders }) => loaders.userLoader.load(parent.authorId),\n\
+  \  },\n};\n```\n\n### 쿼리 보안: Depth Limit + Complexity Analysis\n```typescript\n\
+  import depthLimit from \"graphql-depth-limit\";\nimport { createComplexityLimitRule\
+  \ } from \"graphql-validation-complexity\";\n\nconst server = new ApolloServer({\n\
+  \  typeDefs,\n  resolvers,\n  validationRules: [\n    depthLimit(7),  // 최대 깊이 7단계\n\
+  \    createComplexityLimitRule(1000, {\n      scalarCost: 1,\n      objectCost:\
+  \ 2,\n      listFactor: 10,  // 리스트는 10배 가중\n      onCost: (cost) => {\n       \
+  \ if (cost > 800) logger.warn(`High complexity query: ${cost}`);\n      },\n   \
+  \ }),\n  ],\n  plugins: [\n    {\n      requestDidStart: async () => ({\n      \
+  \  didResolveOperation: async ({ request }) => {\n          logger.info(\"GraphQL\
+  \ query\", {\n            query: request.query,\n            variables: request.variables,\n\
+  \          });\n        },\n      }),\n    },\n  ],\n});\n```\n\n### 복잡도 예산\n| 항목\
+  \ | 비용 | 설명 |\n|------|------|------|\n| Scalar 필드 | 1 | id, name, email 등 |\n|\
+  \ Object 필드 | 2 | 중첩 객체 resolve 비용 |\n| List 필드 | x10 배수 | 리스트 내 각 항목에 배수 적용 |\n\
+  | 최대 총 복잡도 | 1000 | 초과 시 쿼리 거부 |\n| 최대 깊이 | 7 | 무한 중첩 방지 |\n\nDON'T:\n```typescript\n\
+  // ❌ DataLoader 없이 직접 DB 호출 -- N+1 쿼리 발생\nconst resolvers = {\n  Post: {\n    author:\
+  \ async (parent) => {\n      return db.query.users.findFirst({ where: eq(users.id,\
+  \ parent.authorId) });\n      // posts 100개 조회 시 user 쿼리 100번 실행\n    },\n  },\n\
+  };\n\n// ❌ Depth Limit 없음 -- 재귀 쿼리로 서버 과부하\n// query { user { followers { followers\
+  \ { followers { ... } } } } }\n\n// ❌ DataLoader를 전역 싱글톤으로 생성 -- 요청 간 캐시 오염\nconst\
+  \ globalLoader = new DataLoader(batchFn);  // 모든 요청이 같은 캐시 공유\n\n// ❌ 에러 메시지에 내부\
+  \ 구조 노출\nthrow new Error(`Column users.password_hash not found`);\n```\n\n### 흔한\
+  \ 실수\n- DataLoader 인스턴스를 요청 간 공유 -> 캐시 오염으로 다른 유저 데이터 반환\n- 리스트 필드에 기본 limit 미설정\
+  \ -> `users { posts { comments } }` 시 전체 로드\n- 쿼리 복잡도 분석 없이 배포 -> 악의적 중첩 쿼리로 DB\
+  \ 과부하\n- Introspection을 프로덕션에서 활성화 -> 스키마 구조 전체 노출\n- mutation 응답에서 변경된 객체 미반환 ->\
+  \ 클라이언트 캐시 무효화 불가\n"
+domain: development.backend
+id: dev.backend.api.graphql
+tags:
+- backend
+- api
+- graphql
+- dataloader
+- n+1
+- schema-design
+theory: '#102 API Design Principles'
+token_estimate: 1309
+type: pattern
+version: 1

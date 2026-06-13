@@ -1,0 +1,50 @@
+content: "헬스체크 패턴 (서비스 상태를 정확히 보고하여 트래픽 라우팅을 제어한다):\n\n### 프로브 종류\n| 프로브 | 경로 | 목적\
+  \ | 검사 항목 |\n|--------|------|------|-----------|\n| Liveness | /health/live | 프로세스\
+  \ 생존 확인 | 단순 응답 (200 OK) |\n| Readiness | /health/ready | 트래픽 수신 가능 여부 | DB, Redis,\
+  \ 외부 의존성 |\n| Startup | /health/startup | 초기화 완료 여부 | 마이그레이션, 캐시 워밍 |\n\n### 구현\n\
+  ```typescript\n// DO: liveness는 단순, readiness는 의존성 체크\nimport { Router } from 'express';\n\
+  \nconst health = Router();\n\n// Liveness: 프로세스가 살아있으면 200 (DB 체크 금지!)\nhealth.get('/health/live',\
+  \ (req, res) => {\n  res.status(200).json({ status: 'ok', timestamp: Date.now()\
+  \ });\n});\n\n// Readiness: 모든 의존성 정상이면 200\nhealth.get('/health/ready', async (req,\
+  \ res) => {\n  const checks = await Promise.allSettled([\n    checkDatabase(),\n\
+  \    checkRedis(),\n    checkExternalApi(),\n  ]);\n\n  const results = {\n    database:\
+  \ checks[0].status === 'fulfilled' ? 'up' : 'down',\n    redis: checks[1].status\
+  \ === 'fulfilled' ? 'up' : 'down',\n    externalApi: checks[2].status === 'fulfilled'\
+  \ ? 'up' : 'down',\n  };\n\n  const allHealthy = Object.values(results).every(s\
+  \ => s === 'up');\n  res.status(allHealthy ? 200 : 503).json({\n    status: allHealthy\
+  \ ? 'ready' : 'not_ready',\n    checks: results,\n    timestamp: Date.now(),\n \
+  \ });\n});\n\n// 의존성 체크 함수 (타임아웃 포함)\nasync function checkDatabase(): Promise<void>\
+  \ {\n  const controller = new AbortController();\n  setTimeout(() => controller.abort(),\
+  \ 3000); // 3초 타임아웃\n  await db.query('SELECT 1');\n}\n\nasync function checkRedis():\
+  \ Promise<void> {\n  const pong = await redis.ping();\n  if (pong !== 'PONG') throw\
+  \ new Error('Redis not responding');\n}\n```\n\n### Graceful Shutdown\n```typescript\n\
+  // DO: SIGTERM 수신 시 graceful shutdown\nlet isShuttingDown = false;\n\nprocess.on('SIGTERM',\
+  \ async () => {\n  isShuttingDown = true;\n  logger.info('SIGTERM received, starting\
+  \ graceful shutdown');\n\n  // 1. readiness를 503으로 변경 (새 트래픽 차단)\n  // 2. 진행 중인\
+  \ 요청 완료 대기 (최대 30초)\n  server.close(async () => {\n    await db.end();\n    await\
+  \ redis.quit();\n    process.exit(0);\n  });\n\n  setTimeout(() => process.exit(1),\
+  \ 30000); // 30초 후 강제 종료\n});\n\n// readiness에 shutdown 상태 반영\nhealth.get('/health/ready',\
+  \ async (req, res) => {\n  if (isShuttingDown) return res.status(503).json({ status:\
+  \ 'shutting_down' });\n  // ... 기존 체크\n});\n```\n\nDON'T:\n```typescript\n// ❌ Liveness에서\
+  \ DB 체크 — DB 장애 시 컨테이너 무한 재시작\nhealth.get('/health/live', async (req, res) => {\n\
+  \  await db.query('SELECT 1'); // DB 다운 → liveness 실패 → 재시작 → 반복!\n  res.json({\
+  \ status: 'ok' });\n});\n\n// ❌ Readiness에서 의존성 체크 없음 — DB 다운인데 트래픽 수신\nhealth.get('/health/ready',\
+  \ (req, res) => {\n  res.json({ status: 'ok' }); // 항상 200 → 의미 없는 체크\n});\n\n//\
+  \ ❌ 체크에 타임아웃 없음 — 느린 DB 응답이 프로브 실패 유발\n```\n\n### K8s Probe 설정 예시\n```yaml\nlivenessProbe:\n\
+  \  httpGet: { path: /health/live, port: 3000 }\n  initialDelaySeconds: 5\n  periodSeconds:\
+  \ 10\n  failureThreshold: 3\nreadinessProbe:\n  httpGet: { path: /health/ready,\
+  \ port: 3000 }\n  initialDelaySeconds: 10\n  periodSeconds: 5\n  failureThreshold:\
+  \ 2\n```\n\n### 흔한 실수\n- liveness와 readiness를 하나의 엔드포인트로 합침\n- graceful shutdown\
+  \ 미구현으로 진행 중인 요청 강제 종료\n- 헬스체크 엔드포인트에 인증 미들웨어 적용 (프로브 실패)\n"
+domain: development.backend
+id: dev.backend.patterns.health-check
+tags:
+- backend
+- patterns
+- health-check
+- k8s
+- observability
+theory: '#130 Observability'
+token_estimate: 1511
+type: pattern
+version: 1

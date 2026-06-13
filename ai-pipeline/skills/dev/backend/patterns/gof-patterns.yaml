@@ -1,0 +1,27 @@
+content: "GoF 디자인 패턴 (자주 발생하는 설계 문제의 검증된 해법):\n\n### 가장 자주 쓰는 패턴 (TypeScript)\n\n\
+  **Strategy** (행동을 런타임에 교체):\n```typescript\ninterface PricingStrategy {\n  calculate(amount:\
+  \ number): number;\n}\nclass RegularPricing implements PricingStrategy {\n  calculate(amount:\
+  \ number) { return amount; }\n}\nclass VIPPricing implements PricingStrategy {\n\
+  \  calculate(amount: number) { return amount * 0.9; }\n}\n```\n\n**Observer** (이벤트\
+  \ 기반 알림):\n```typescript\nclass EventEmitter<T> {\n  private listeners: ((data:\
+  \ T) => void)[] = [];\n  on(listener: (data: T) => void) { this.listeners.push(listener);\
+  \ }\n  emit(data: T) { this.listeners.forEach(l => l(data)); }\n}\n```\n\n**Factory**\
+  \ (객체 생성 캡슐화):\n```typescript\nfunction createNotifier(type: 'email' | 'sms' | 'push'):\
+  \ Notifier {\n  switch (type) {\n    case 'email': return new EmailNotifier();\n\
+  \    case 'sms': return new SMSNotifier();\n    case 'push': return new PushNotifier();\n\
+  \  }\n}\n```\n\n### 패턴 선택 가이드\n| 문제 | 패턴 |\n|------|------|\n| 알고리즘 교체 | Strategy\
+  \ |\n| 객체 생성 분리 | Factory / Builder |\n| 상태 변화 알림 | Observer |\n| 인터페이스 변환 | Adapter\
+  \ |\n| 복잡한 객체 트리 | Composite |\n| 접근 제어/캐싱 | Proxy / Decorator |\n\n### 안티패턴\n-\
+  \ 패턴을 위한 패턴 (코드 2줄로 되는 걸 패턴으로 감싸지 말 것)\n- 과도한 추상화 — YAGNI 원칙 우선\n"
+domain: development.backend
+id: dev.backend.patterns.gof-patterns
+tags:
+- backend
+- design-patterns
+- gof
+- strategy
+- observer
+theory: '#172 GoF Design Patterns (Gang of Four, 1994)'
+token_estimate: 586
+type: pattern
+version: 1

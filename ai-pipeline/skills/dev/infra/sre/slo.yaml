@@ -1,0 +1,36 @@
+bloom_level: APPLY
+content: "# SLI/SLO/SLA 설계 가이드\n\n## 핵심 원칙\n- SLI(Service Level Indicator): 서비스 품질을\
+  \ 측정하는 지표\n- SLO(Service Level Objective): SLI의 목표 범위\n- SLA(Service Level Agreement):\
+  \ 외부 고객과의 공식 약속 (SLO보다 느슨)\n- SLO는 사용자 경험과 직결되는 지표를 기반으로 설정한다\n\n## 주요 SLI 유형\n\
+  | 서비스 유형 | SLI | 측정 방법 |\n|-------------|-----|-----------|\n| API 서버 | 가용성 | 성공\
+  \ 응답(2xx) / 전체 응답 |\n| API 서버 | 지연시간 | p99 < 500ms인 요청 비율 |\n| 배치 잡 | 완료율 | 성공 완료\
+  \ / 전체 실행 |\n| 데이터 파이프라인 | 신선도 | 마지막 처리 후 경과 시간 |\n\n## DO\n- SLO를 달성 가능하면서도 사용자\
+  \ 경험을 보장하는 수준으로 설정한다\n- SLO를 윈도우 기반(Rolling 28일)으로 측정한다\n- SLO 대시보드를 팀 전체가 볼 수 있게\
+  \ 공유한다\n- 에러 예산 소진 시 안정성 작업에 집중하는 정책을 수립한다\n\n## DON'T\n- SLO를 너무 높게(99.99%) 설정하여\
+  \ 개발 속도를 저해하지 않는다\n- 내부 메트릭만으로 SLI를 측정하지 않는다 (사용자 관점 측정)\n- SLO를 설정하고 모니터링하지 않은\
+  \ 채 방치하지 않는다\n- 모든 서비스에 동일한 SLO를 적용하지 않는다\n\n## 코드 예시\n```yaml\n# SLO 정의 문서\nservice:\
+  \ order-service\nslos:\n  - name: \"API 가용성\"\n    sli:\n      type: availability\n\
+  \      good_events: \"http_requests_total{status_code!~'5..'}\"\n      total_events:\
+  \ \"http_requests_total\"\n    objective: 99.9\n    window: 28d\n\n  - name: \"\
+  API 지연시간\"\n    sli:\n      type: latency\n      good_events: \"http_request_duration_seconds_bucket{le='0.5'}\"\
+  \n      total_events: \"http_request_duration_seconds_count\"\n    objective: 99.0\
+  \  # 99%의 요청이 500ms 이내\n    window: 28d\n```\n\n```typescript\n// SLO 에러 예산 계산\n\
+  function calculateErrorBudget(slo: number, totalEvents: number, badEvents: number)\
+  \ {\n  const sloDecimal = slo / 100;\n  const allowedBadEvents = totalEvents * (1\
+  \ - sloDecimal);\n  const remainingBudget = allowedBadEvents - badEvents;\n  const\
+  \ budgetPercentage = (remainingBudget / allowedBadEvents) * 100;\n  return {\n \
+  \   allowedBadEvents: Math.floor(allowedBadEvents),\n    actualBadEvents: badEvents,\n\
+  \    remainingBudget: Math.max(0, remainingBudget),\n    budgetPercentage: Math.max(0,\
+  \ budgetPercentage),\n    isViolated: budgetPercentage <= 0,\n  };\n}\n```\n"
+domain: development.infra
+id: dev.infra.sre.slo
+tags:
+- infra
+- sre
+- slo
+- sli
+- sla
+theory: '#275 SLI/SLO/SLA (Google SRE Workbook, Chapter 2)'
+token_estimate: 900
+type: pattern
+version: 1

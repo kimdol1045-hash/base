@@ -1,0 +1,35 @@
+bloom_level: APPLY
+content: "# Intersection Observer 훅 가이드\n\n## 핵심 원칙\n- 요소가 뷰포트에 진입/이탈할 때 콜백을 실행한다\n\
+  - 무한 스크롤, 지연 로딩, 애니메이션 트리거에 활용한다\n- scroll 이벤트 리스너보다 성능이 월등히 좋다 (비동기 동작)\n- threshold로\
+  \ 가시 비율을 세밀하게 제어한다\n\n## DO\n- 이미지 지연 로딩에 활용한다 (뷰포트 근처에서 로드 시작)\n- 무한 스크롤의 센티넬(sentinel)\
+  \ 요소에 적용한다\n- rootMargin으로 미리 로딩을 시작한다 (예: 200px 전에 트리거)\n- observer를 재사용하고, cleanup에서\
+  \ 해제한다\n\n## DON'T\n- scroll 이벤트 리스너로 가시성 감지를 구현하지 않는다\n- 매 렌더링마다 새로운 observer를\
+  \ 생성하지 않는다\n- SSR 환경에서 IntersectionObserver를 직접 호출하지 않는다\n- threshold를 너무 세밀하게 설정하지\
+  \ 않는다 (성능 저하)\n\n## 코드 예시\n```tsx\nimport { useEffect, useRef, useState, useCallback\
+  \ } from \"react\";\n\ninterface UseInViewOptions {\n  threshold?: number;\n  rootMargin?:\
+  \ string;\n  triggerOnce?: boolean;\n}\n\nfunction useInView(options: UseInViewOptions\
+  \ = {}) {\n  const { threshold = 0, rootMargin = \"0px\", triggerOnce = false }\
+  \ = options;\n  const ref = useRef<HTMLDivElement>(null);\n  const [isInView, setIsInView]\
+  \ = useState(false);\n\n  useEffect(() => {\n    const element = ref.current;\n\
+  \    if (!element) return;\n\n    const observer = new IntersectionObserver(\n \
+  \     ([entry]) => {\n        const inView = entry.isIntersecting;\n        setIsInView(inView);\n\
+  \        if (inView && triggerOnce) observer.unobserve(element);\n      },\n   \
+  \   { threshold, rootMargin },\n    );\n\n    observer.observe(element);\n    return\
+  \ () => observer.disconnect();\n  }, [threshold, rootMargin, triggerOnce]);\n\n\
+  \  return { ref, isInView };\n}\n\n// 무한 스크롤\nfunction InfiniteList() {\n  const\
+  \ { data, fetchNextPage, hasNextPage } = useInfiniteUsers();\n  const { ref, isInView\
+  \ } = useInView({ rootMargin: \"200px\" });\n\n  useEffect(() => {\n    if (isInView\
+  \ && hasNextPage) fetchNextPage();\n  }, [isInView, hasNextPage, fetchNextPage]);\n\
+  \n  return (\n    <div>\n      {data.map(user => <UserCard key={user.id} user={user}\
+  \ />)}\n      <div ref={ref} /> {/* 센티넬 요소 */}\n    </div>\n  );\n}\n```\n"
+domain: development.frontend
+id: dev.frontend.hook.intersection-observer
+tags:
+- frontend
+- hooks
+- intersection-observer
+- lazy-loading
+theory: '#240 Intersection Observer API (W3C, 2016)'
+token_estimate: 906
+type: pattern
+version: 1

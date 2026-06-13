@@ -1,0 +1,32 @@
+bloom_level: APPLY
+content: "# 이미지 최적화 가이드\n\n## 핵심 원칙\n- 이미지는 웹 페이지에서 가장 큰 페이로드를 차지한다\n- 자동 포맷 변환(WebP/AVIF),\
+  \ 리사이즈, 지연 로딩을 적용한다\n- Next.js의 `next/image`를 필수로 사용한다\n- LCP(Largest Contentful\
+  \ Paint) 이미지는 우선 로드한다\n\n## DO\n- 모든 이미지에 `next/image`를 사용한다 (img 태그 금지)\n- LCP\
+  \ 이미지에 `priority` 속성을 설정한다\n- `sizes` 속성으로 반응형 이미지 크기를 정확히 지정한다\n- placeholder=\"\
+  blur\"로 로딩 중 레이아웃 시프트를 방지한다\n\n## DON'T\n- 원본 이미지를 리사이즈 없이 서빙하지 않는다\n- 뷰포트 밖 이미지에\
+  \ `priority`를 설정하지 않는다\n- `width`와 `height`를 누락하여 CLS를 유발하지 않는다\n- Base64 인코딩된 큰\
+  \ 이미지를 인라인하지 않는다\n\n## 코드 예시\n```tsx\nimport Image from \"next/image\";\n\n// 히어로\
+  \ 이미지 (LCP - 우선 로드)\nfunction HeroSection() {\n  return (\n    <Image\n      src=\"\
+  /images/hero.jpg\"\n      alt=\"메인 배너\"\n      width={1200}\n      height={600}\n\
+  \      priority  // LCP 이미지는 반드시 priority\n      sizes=\"100vw\"\n      className=\"\
+  w-full h-auto object-cover\"\n    />\n  );\n}\n\n// 상품 이미지 (지연 로드 + blur placeholder)\n\
+  function ProductImage({ product }: { product: Product }) {\n  return (\n    <Image\n\
+  \      src={product.imageUrl}\n      alt={product.name}\n      width={400}\n   \
+  \   height={400}\n      placeholder=\"blur\"\n      blurDataURL={product.blurHash}\n\
+  \      sizes=\"(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw\"\n    \
+  \  className=\"rounded-lg\"\n    />\n  );\n}\n\n// next.config.js 이미지 설정\nconst\
+  \ nextConfig = {\n  images: {\n    formats: [\"image/avif\", \"image/webp\"],\n\
+  \    deviceSizes: [640, 750, 828, 1080, 1200, 1920],\n    imageSizes: [16, 32, 48,\
+  \ 64, 96, 128, 256],\n    remotePatterns: [\n      { protocol: \"https\", hostname:\
+  \ \"cdn.example.com\" },\n    ],\n  },\n};\n```\n"
+domain: development.frontend
+id: dev.frontend.performance.image-optimization
+tags:
+- frontend
+- performance
+- image
+- next-image
+theory: '#253 Image Optimization (web.dev, Google 2020)'
+token_estimate: 743
+type: pattern
+version: 1

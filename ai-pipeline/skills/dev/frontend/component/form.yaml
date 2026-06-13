@@ -1,0 +1,75 @@
+content: "React 폼 패턴 (일관된 유효성 검증과 접근성을 확보한다):\n\n### 1. React Hook Form + Zod 통합\n\
+  react-hook-form은 비제어 컴포넌트 기반으로 리렌더링을 최소화한다.\nzod로 스키마를 정의하면 타입과 유효성 규칙을 한 곳에서 관리할\
+  \ 수 있다.\n\nDO:\n```tsx\n// ✅ 스키마 정의 (types.ts 또는 schemas.ts)\nimport { z } from\
+  \ \"zod\";\n\nexport const createUserSchema = z.object({\n  name: z.string()\n \
+  \   .min(2, \"이름은 2자 이상이어야 합니다\")\n    .max(50, \"이름은 50자 이하여야 합니다\"),\n  email:\
+  \ z.string()\n    .email(\"올바른 이메일 형식이 아닙니다\"),\n  role: z.enum([\"admin\", \"user\"\
+  , \"viewer\"], {\n    errorMap: () => ({ message: \"역할을 선택해주세요\" }),\n  }),\n  bio:\
+  \ z.string().max(500).optional(),\n});\n\nexport type CreateUserInput = z.infer<typeof\
+  \ createUserSchema>;\n```\n\n```tsx\n// ✅ 폼 컴포넌트 (CreateUserForm.tsx)\n\"use client\"\
+  ;\n\nimport { useForm } from \"react-hook-form\";\nimport { zodResolver } from \"\
+  @hookform/resolvers/zod\";\nimport { createUserSchema, type CreateUserInput } from\
+  \ \"./schemas\";\n\nexport function CreateUserForm({ onSubmit }: { onSubmit: (data:\
+  \ CreateUserInput) => Promise<void> }) {\n  const {\n    register,\n    handleSubmit,\n\
+  \    formState: { errors, isSubmitting },\n    reset,\n  } = useForm<CreateUserInput>({\n\
+  \    resolver: zodResolver(createUserSchema),\n    defaultValues: { name: \"\",\
+  \ email: \"\", role: \"user\", bio: \"\" },\n  });\n\n  const handleFormSubmit =\
+  \ async (data: CreateUserInput) => {\n    await onSubmit(data);\n    reset();\n\
+  \  };\n\n  return (\n    <form onSubmit={handleSubmit(handleFormSubmit)} className=\"\
+  space-y-4\" noValidate>\n      {/* Name 필드 */}\n      <div className=\"space-y-1\"\
+  >\n        <label htmlFor=\"name\" className=\"text-sm font-medium\">\n        \
+  \  이름 <span className=\"text-destructive\">*</span>\n        </label>\n        <input\n\
+  \          id=\"name\"\n          {...register(\"name\")}\n          className=\"\
+  w-full rounded border px-3 py-2\"\n          aria-invalid={!!errors.name}\n    \
+  \      aria-describedby={errors.name ? \"name-error\" : undefined}\n        />\n\
+  \        {errors.name && (\n          <p id=\"name-error\" role=\"alert\" className=\"\
+  text-sm text-destructive\">\n            {errors.name.message}\n          </p>\n\
+  \        )}\n      </div>\n\n      {/* Email 필드 */}\n      <div className=\"space-y-1\"\
+  >\n        <label htmlFor=\"email\" className=\"text-sm font-medium\">\n       \
+  \   이메일 <span className=\"text-destructive\">*</span>\n        </label>\n      \
+  \  <input\n          id=\"email\"\n          type=\"email\"\n          {...register(\"\
+  email\")}\n          className=\"w-full rounded border px-3 py-2\"\n          aria-invalid={!!errors.email}\n\
+  \          aria-describedby={errors.email ? \"email-error\" : undefined}\n     \
+  \   />\n        {errors.email && (\n          <p id=\"email-error\" role=\"alert\"\
+  \ className=\"text-sm text-destructive\">\n            {errors.email.message}\n\
+  \          </p>\n        )}\n      </div>\n\n      <button\n        type=\"submit\"\
+  \n        disabled={isSubmitting}\n        className=\"rounded bg-primary px-4 py-2\
+  \ text-white disabled:opacity-50\"\n      >\n        {isSubmitting ? \"저장 중...\"\
+  \ : \"저장\"}\n      </button>\n    </form>\n  );\n}\n```\n\n### 2. 유효성 검증 UX 규칙\n\
+  - **제출 시** 전체 검증 (첫 번째 에러 필드로 포커스 이동).\n- **에러 발생 후** 실시간 검증 (onChange/onBlur).\n\
+  - 에러 메시지는 **해결 방법**을 포함한다 (\"이름을 입력하세요\" > \"필수 항목입니다\").\n- 서버 에러는 `setError`로\
+  \ 폼에 표시한다.\n\nDO:\n```tsx\n// ✅ 서버 에러를 폼 필드에 매핑\nconst onSubmit = async (data: CreateUserInput)\
+  \ => {\n  try {\n    await createUser(data);\n  } catch (err) {\n    if (err instanceof\
+  \ ApiError && err.field) {\n      setError(err.field as keyof CreateUserInput, {\n\
+  \        message: err.message,\n      });\n    } else {\n      setError(\"root\"\
+  , { message: \"서버 오류가 발생했습니다\" });\n    }\n  }\n};\n\n// 루트 에러 표시\n{errors.root\
+  \ && (\n  <div role=\"alert\" className=\"rounded bg-destructive/10 p-3 text-destructive\"\
+  >\n    {errors.root.message}\n  </div>\n)}\n```\n\n### 3. shadcn/ui Form 통합\nshadcn/ui의\
+  \ Form 컴포넌트를 활용하면 접근성이 자동 처리된다.\n\n```tsx\n// ✅ shadcn/ui Form 사용\nimport { Form,\
+  \ FormControl, FormField, FormItem, FormLabel, FormMessage } from \"@/components/ui/form\"\
+  ;\nimport { Input } from \"@/components/ui/input\";\n\n<Form {...form}>\n  <form\
+  \ onSubmit={form.handleSubmit(onSubmit)}>\n    <FormField\n      control={form.control}\n\
+  \      name=\"name\"\n      render={({ field }) => (\n        <FormItem>\n     \
+  \     <FormLabel>이름</FormLabel>\n          <FormControl>\n            <Input placeholder=\"\
+  홍길동\" {...field} />\n          </FormControl>\n          <FormMessage />\n     \
+  \   </FormItem>\n      )}\n    />\n  </form>\n</Form>\n```\n\n### 4. 접근성 필수 규칙\n\
+  - 모든 input에 `label`을 연결한다 (`htmlFor` + `id` 매칭).\n- 에러 메시지에 `role=\"alert\"`과 `aria-describedby`를\
+  \ 사용한다.\n- 에러 상태에 `aria-invalid={true}`를 설정한다.\n- 제출 버튼에 `disabled` + 로딩 텍스트를 표시한다.\n\
+  - `noValidate`로 브라우저 기본 유효성 검사를 비활성화한다.\n\nDON'T:\n```tsx\n// ❌ label 없는 input\n\
+  <input placeholder=\"이름\" />\n// ❌ 에러 메시지에 접근성 속성 없음\n<span className=\"text-red-500\"\
+  >{error}</span>\n// ❌ 제출 중 중복 클릭 방지 없음\n<button type=\"submit\">저장</button>\n```\n\
+  \n### Edge Cases\n- 파일 업로드는 `register`가 아닌 `Controller`로 처리한다.\n- 동적 필드(배열)는 `useFieldArray`를\
+  \ 사용한다.\n- 멀티 스텝 폼은 각 스텝을 별도 스키마로 정의하고 합성한다.\n- 폼 상태가 리셋되지 않는 경우 `reset()` 호출 시점을\
+  \ 확인한다.\n"
+domain: development.frontend
+id: dev.frontend.component.form
+tags:
+- frontend
+- component
+- form
+- react-hook-form
+- zod
+- accessibility
+token_estimate: 1209
+type: pattern
+version: 1

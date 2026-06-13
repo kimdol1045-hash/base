@@ -1,0 +1,25 @@
+content: "자이가르닉 효과 (미완료 작업이 완료된 작업보다 더 기억에 남는다):\n\n### UX 적용\n1. **프로그레스 바**: 완료까지\
+  \ 남은 정도를 시각화\n   ```tsx\n   <div className=\"space-y-2\">\n     <div className=\"\
+  flex justify-between text-sm\">\n       <span>프로필 완성도</span>\n       <span className=\"\
+  text-muted-foreground\">3/5 완료</span>\n     </div>\n     <Progress value={60} className=\"\
+  h-2\" />\n     <p className=\"text-xs text-muted-foreground\">\n       사진을 추가하면\
+  \ 매칭률이 40% 올라갑니다\n     </p>\n   </div>\n   ```\n\n2. **온보딩 체크리스트**: 완료한 것 + 남은 것\
+  \ 동시 표시\n   ```tsx\n   <ul className=\"space-y-2\">\n     <li className=\"flex items-center\
+  \ gap-2 text-muted-foreground line-through\">\n       <CheckCircle className=\"\
+  h-4 w-4\" /> 계정 생성\n     </li>\n     <li className=\"flex items-center gap-2 font-medium\"\
+  >\n       <Circle className=\"h-4 w-4\" /> 프로필 사진 추가\n     </li>\n     <li className=\"\
+  flex items-center gap-2 text-muted-foreground\">\n       <Circle className=\"h-4\
+  \ w-4\" /> 첫 프로젝트 생성\n     </li>\n   </ul>\n   ```\n\n3. **스트릭(Streak)**: 연속 일수\
+  \ 표시로 중단 저항\n4. **저장 알림**: \"작성 중인 글이 있습니다\" 리마인더\n\n### 주의: 과도한 활용 금지\n- 의무적 느낌\
+  \ → 스트레스 → 이탈\n- 달성 불가능한 목표 → 포기\n"
+domain: design
+id: design.ux-psychology.zeigarnik
+tags:
+- design
+- ux
+- zeigarnik
+- engagement
+theory: '#48 Zeigarnik Effect (Zeigarnik, 1927)'
+token_estimate: 519
+type: rule
+version: 1

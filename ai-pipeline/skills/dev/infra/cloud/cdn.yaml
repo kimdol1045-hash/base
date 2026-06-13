@@ -1,0 +1,35 @@
+bloom_level: APPLY
+content: "# CDN (Content Delivery Network) 가이드\n\n## 핵심 원칙\n- 정적 자산을 사용자와 가까운 엣지 서버에서\
+  \ 서빙한다\n- 캐시 정책을 자산 유형별로 세밀하게 설정한다\n- 캐시 무효화(Invalidation) 전략을 명확히 정의한다\n- 보안(HTTPS,\
+  \ WAF, DDoS 방어)을 CDN 레벨에서 적용한다\n\n## DO\n- 정적 자산(JS, CSS, 이미지)에 콘텐츠 해시 기반 파일명을 사용한다\n\
+  - 해시 파일은 `max-age=31536000, immutable`로 장기 캐시한다\n- HTML은 `max-age=0, s-maxage=60`으로\
+  \ 짧은 캐시를 설정한다\n- Custom Domain에 SSL 인증서를 적용한다\n\n## DON'T\n- 인증이 필요한 API 응답을 CDN에\
+  \ 캐시하지 않는다\n- 와일드카드 무효화(`/*`)를 빈번하게 사용하지 않는다\n- 캐시 키에 불필요한 쿼리 파라미터를 포함하지 않는다\n-\
+  \ 오리진 서버의 에러 응답을 장기간 캐시하지 않는다\n\n## 코드 예시\n```hcl\n# CloudFront 배포 (Terraform)\n\
+  resource \"aws_cloudfront_distribution\" \"app\" {\n  origin {\n    domain_name\
+  \ = aws_s3_bucket.static.bucket_regional_domain_name\n    origin_id   = \"S3-static\"\
+  \n    s3_origin_config {\n      origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path\n\
+  \    }\n  }\n\n  default_cache_behavior {\n    allowed_methods  = [\"GET\", \"HEAD\"\
+  ]\n    cached_methods   = [\"GET\", \"HEAD\"]\n    target_origin_id = \"S3-static\"\
+  \n    viewer_protocol_policy = \"redirect-to-https\"\n\n    cache_policy_id = aws_cloudfront_cache_policy.static.id\n\
+  \  }\n\n  # API 경로는 캐시하지 않음\n  ordered_cache_behavior {\n    path_pattern     =\
+  \ \"/api/*\"\n    allowed_methods  = [\"DELETE\", \"GET\", \"HEAD\", \"OPTIONS\"\
+  , \"PATCH\", \"POST\", \"PUT\"]\n    target_origin_id = \"API-origin\"\n    cache_policy_id\
+  \  = data.aws_cloudfront_cache_policy.caching_disabled.id\n    viewer_protocol_policy\
+  \ = \"https-only\"\n  }\n}\n```\n\n```nginx\n# 캐시 헤더 설정 예시\n# 해시된 정적 자산: 1년 캐시\n\
+  location ~* \\.[a-f0-9]{8,}\\.(js|css|woff2)$ {\n  add_header Cache-Control \"public,\
+  \ max-age=31536000, immutable\";\n}\n\n# HTML: CDN 60초, 브라우저 캐시 없음\nlocation ~*\
+  \ \\.html$ {\n  add_header Cache-Control \"public, max-age=0, s-maxage=60\";\n}\n\
+  ```\n"
+domain: development.infra
+id: dev.infra.cloud.cdn
+tags:
+- infra
+- cloud
+- cdn
+- caching
+- performance
+theory: '#267 CDN Architecture (Akamai, CloudFront Documentation)'
+token_estimate: 844
+type: pattern
+version: 1

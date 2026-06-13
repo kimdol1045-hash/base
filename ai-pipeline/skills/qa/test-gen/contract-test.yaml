@@ -1,0 +1,48 @@
+content: "계약 테스트 (API 소비자와 제공자 간 호환성을 보장한다):\n\n### Consumer-Driven Contracts (CDC)\n\
+  소비자가 기대하는 요청/응답 형식을 **계약(Contract)**으로 정의하고,\n제공자가 CI에서 이 계약을 검증한다. E2E 없이도 API\
+  \ 호환성 보장.\n\n### Pact — Consumer 테스트\n```typescript\nimport { PactV3, MatchersV3\
+  \ } from '@pact-foundation/pact';\n\nconst provider = new PactV3({\n  consumer:\
+  \ 'OrderService',\n  provider: 'UserService',\n});\n\n// DO: Consumer가 기대하는 계약을\
+  \ 정의\ndescribe('UserService API Contract', () => {\n  it('GET /api/users/:id — 사용자\
+  \ 정보 반환', async () => {\n    await provider\n      .given('사용자 ID 1이 존재')\n    \
+  \  .uponReceiving('사용자 조회 요청')\n      .withRequest({\n        method: 'GET',\n \
+  \       path: '/api/users/1',\n        headers: { Accept: 'application/json' },\n\
+  \      })\n      .willRespondWith({\n        status: 200,\n        headers: { 'Content-Type':\
+  \ 'application/json' },\n        body: MatchersV3.like({\n          id: 1,\n   \
+  \       name: MatchersV3.string('홍길동'),\n          email: MatchersV3.email(),\n\
+  \          createdAt: MatchersV3.iso8601DateTime(),\n        }),\n      })\n   \
+  \   .executeTest(async (mockServer) => {\n        const res = await fetch(`${mockServer.url}/api/users/1`,\
+  \ {\n          headers: { Accept: 'application/json' },\n        });\n        expect(res.status).toBe(200);\n\
+  \        const body = await res.json();\n        expect(body.id).toBe(1);\n    \
+  \    expect(body.email).toContain('@');\n      });\n  });\n});\n```\n\n### Pact\
+  \ — Provider 검증\n```typescript\n// DO: Provider CI에서 계약 검증\nimport { Verifier }\
+  \ from '@pact-foundation/pact';\n\ndescribe('Provider Verification', () => {\n \
+  \ it('OrderService 계약을 충족한다', async () => {\n    await new Verifier({\n      providerBaseUrl:\
+  \ 'http://localhost:3000',\n      pactUrls: ['./pacts/OrderService-UserService.json'],\n\
+  \      stateHandlers: {\n        '사용자 ID 1이 존재': async () => {\n          await\
+  \ seedUser({ id: 1, name: '홍길동' });\n        },\n      },\n    }).verifyProvider();\n\
+  \  });\n});\n```\n\n### OpenAPI Schema 호환성 검사\n```bash\n# DO: 스키마 변경 시 breaking\
+  \ change 감지\nnpx openapi-diff old-spec.yaml new-spec.yaml\n\n# CI에서 자동 검사\n# breaking:\
+  \ 필드 삭제, 타입 변경, 필수 파라미터 추가\n# non-breaking: 필드 추가, optional 파라미터 추가\n```\n\n###\
+  \ Breaking Change 분류\n| 변경 | 영향 | 판정 |\n|------|------|------|\n| 응답 필드 추가 | 없음\
+  \ | Non-breaking |\n| 응답 필드 삭제 | Consumer 에러 | **Breaking** |\n| 필수 파라미터 추가 | 기존\
+  \ 요청 실패 | **Breaking** |\n| optional 파라미터 추가 | 없음 | Non-breaking |\n| 타입 변경 (string→number)\
+  \ | 파싱 에러 | **Breaking** |\n\nDON'T:\n```typescript\n// ❌ E2E만으로 API 호환성 의존 (느리고\
+  \ 불안정)\ntest('사용자 조회', async () => {\n  // 실제 UserService 호출 → 네트워크, 데이터 의존성\n \
+  \ const res = await fetch('https://user-service.prod/api/users/1');\n  expect(res.status).toBe(200);\n\
+  });\n\n// ❌ API 문서 수동 동기화\n// swagger.yaml은 3개월 전 버전이고 실제 API는 다른 상태\n```\n\n###\
+  \ CI 통합\n- Consumer: PR마다 계약 생성 → Pact Broker에 퍼블리시\n- Provider: Consumer 계약 변경\
+  \ 시 자동 검증 트리거\n- 계약 버전: Git commit SHA 기반으로 관리\n"
+domain: qa
+id: qa.test-gen.contract-test
+tags:
+- qa
+- test
+- contract-test
+- pact
+- api-compatibility
+- openapi
+theory: '#126 Testing Trophy (Dodds, 2019)'
+token_estimate: 1371
+type: pattern
+version: 1

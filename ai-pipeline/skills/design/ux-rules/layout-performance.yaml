@@ -1,0 +1,108 @@
+bloom_level: APPLY
+content: '# UX 규칙: 레이아웃/반응형 + 퍼포먼스 (Priority 3, 5)
+
+  Source: ui-ux-pro-max (nextlevelbuilder)
+
+
+  ## §5 레이아웃 & 반응형 (HIGH)
+
+
+  - `viewport-meta`: width=device-width, initial-scale=1 (줌 비활성화 금지)
+
+  - `mobile-first`: 모바일 우선 설계, 점진적 확장
+
+  - `breakpoint-consistency`: 체계적 브레이크포인트 (375 / 768 / 1024 / 1440)
+
+  - `readable-font-size`: 모바일 본문 최소 16px (iOS 자동 줌 방지)
+
+  - `line-length-control`: 모바일 35-60자/줄, 데스크톱 60-75자
+
+  - `horizontal-scroll`: 모바일에서 수평 스크롤 금지, 콘텐츠가 뷰포트에 맞아야 함
+
+  - `spacing-scale`: 4pt/8dp 증분 시스템 (Material Design)
+
+  - `touch-density`: 터치에 적합한 여유 있는 간격
+
+  - `container-width`: 일관된 max-width (max-w-6xl/7xl)
+
+  - `z-index-management`: 정의된 스케일 (0/10/20/40/100/1000)
+
+  - `fixed-element-offset`: 고정 네비/하단 바가 안전한 패딩 확보
+
+  - `scroll-behavior`: 중첩 스크롤 영역이 메인 스크롤 방해 금지
+
+  - `viewport-units`: 모바일에서 100vh 대신 min-h-dvh 사용
+
+  - `orientation-support`: 가로 모드에서도 읽기/조작 가능
+
+  - `content-priority`: 모바일에서 핵심 콘텐츠 먼저 표시
+
+  - `visual-hierarchy`: 크기, 간격, 대비로 위계 표현 — 색상만으로 금지
+
+
+  ## §3 퍼포먼스 (HIGH)
+
+
+  - `image-optimization`: WebP/AVIF, srcset/sizes 반응형, 레이지 로딩
+
+  - `image-dimension`: width/height 선언 또는 aspect-ratio로 CLS 방지
+
+  - `font-loading`: font-display: swap/optional, 공간 예약
+
+  - `font-preload`: 크리티컬 폰트만 프리로드, 남용 금지
+
+  - `critical-css`: 위쪽(fold) CSS 우선 로딩 (인라인 또는 early load)
+
+  - `lazy-loading`: 동적 import / 라우트 레벨 스플리팅
+
+  - `bundle-splitting`: 라우트/기능별 분할 (React Suspense / Next.js dynamic)
+
+  - `third-party-scripts`: async/defer 로딩, 불필요한 것 제거
+
+  - `reduce-reflows`: DOM 읽기를 모아서 실행 후 쓰기 (스레싱 방지)
+
+  - `content-jumping`: 비동기 콘텐츠에 공간 예약하여 레이아웃 점프 방지
+
+  - `virtualize-lists`: 50개 이상 항목 리스트는 가상화
+
+  - `main-thread-budget`: 프레임당 작업 ~16ms 이내 (60fps)
+
+  - `progressive-loading`: 1초 이상 로딩 시 스켈레톤/쉬머 (스피너 대신)
+
+  - `input-latency`: 탭/스크롤 입력 응답 ~100ms 이내
+
+  - `tap-feedback-speed`: 탭 후 100ms 이내 시각적 피드백
+
+  - `debounce-throttle`: 고빈도 이벤트 (scroll, resize, input)에 디바운스/스로틀
+
+  - `offline-support`: 오프라인 상태에 대한 메시징과 기본 폴백
+
+  - `network-fallback`: 느린 네트워크에 대한 저해상도/애니메이션 축소 모드
+
+
+  ## Core Web Vitals 목표
+
+  - LCP (Largest Contentful Paint): < 2.5초
+
+  - FID (First Input Delay): < 100ms
+
+  - CLS (Cumulative Layout Shift): < 0.1
+
+  - INP (Interaction to Next Paint): < 200ms
+
+  '
+domain: design
+id: design.ux-rules.layout-performance
+tags:
+- design
+- ux
+- layout
+- responsive
+- performance
+- mobile-first
+- web-vitals
+- lazy-loading
+theory: '#ui-ux-pro-max Priority 3,5 (Core Web Vitals + Material Design + Responsive Web Design)'
+token_estimate: 720
+type: rule
+version: 1

@@ -1,0 +1,77 @@
+bloom_level: APPLY
+content: '# RICE 스코어링 가이드
+
+
+  ## 핵심 원칙
+
+  - 직감이 아닌 데이터 기반 우선순위 결정
+
+  - 4개 요소의 균형 잡힌 평가
+
+  - Confidence(확신도)로 추정의 불확실성 반영
+
+  - 정기적 재평가 (분기별)
+
+
+  ## RICE 공식
+
+  RICE Score = (Reach x Impact x Confidence) / Effort
+
+
+  ## 요소별 측정
+
+  | 요소 | 정의 | 단위 |
+
+  |------|------|------|
+
+  | Reach | 영향받는 사용자 수 (분기 기준) | 사람 수 |
+
+  | Impact | 개인에 미치는 영향 (3=대, 2=중, 1=소, 0.5=최소) | 점수 |
+
+  | Confidence | 추정의 확신도 (100%/80%/50%) | 비율 |
+
+  | Effort | 소요 인력*시간 (인월 단위) | 인월 |
+
+
+  ## 적용 예시
+
+  | 기능 | R | I | C | E | RICE |
+
+  |------|---|---|---|---|------|
+
+  | 온보딩 개선 | 5000 | 3 | 80% | 2 | 6000 |
+
+  | 다크 모드 | 3000 | 1 | 100% | 1 | 3000 |
+
+  | AI 추천 | 2000 | 3 | 50% | 4 | 750 |
+
+
+  ## DO
+
+  - Reach를 실제 데이터(DAU, 기능 사용률)로 산출
+
+  - Confidence가 50% 미만이면 먼저 디스커버리 실행
+
+  - 팀 전체가 스코어링에 참여
+
+
+  ## DON''T
+
+  - RICE 점수만으로 기계적 결정하지 않기 (전략적 맥락 고려)
+
+  - Impact를 감으로 매기지 않기 (기준 정의 필수)
+
+  - 한 사람이 모든 점수를 매기지 않기
+
+  '
+domain: planning
+id: planning.rice-scoring
+tags:
+- rice
+- prioritization
+- scoring
+theory: RICE 스코어링은 Intercom이 개발한 우선순위 결정 프레임워크이다. Reach(도달), Impact(영향), Confidence(확신),
+  Effort(노력)의 4요소를 정량화하여 객관적 우선순위를 산출한다.
+token_estimate: 380
+type: pattern
+version: 1

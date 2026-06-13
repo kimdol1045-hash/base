@@ -1,0 +1,56 @@
+---
+id: "marketing.persuasion.verify"
+domain: "marketing"
+type: "verify"
+bloom_level: ""
+tags: ["marketing", "persuasion", "verification", "ethics", "dark-pattern", "checklist"]
+brain_region: "SENSORS"
+token_estimate: 400
+---
+
+# marketing.persuasion.verify
+
+설득 윤리 + 효과 검증 자기 체크리스트:
+
+### 윤리 검증 (다크 패턴 체크)
+- [ ] 허위 희소성이 없는가? (실제로 한정되지 않은 것을 한정이라 하지 않는가?)
+- [ ] 허위 사회적 증거가 없는가? (조작된 리뷰 수, 가짜 카운터가 없는가?)
+- [ ] 죄책감 유발 카피가 없는가? ("정말 포기하시겠어요?" 등)
+- [ ] 해지/취소가 가입만큼 쉬운가? (Roach Motel 패턴 아닌가?)
+- [ ] 기본값이 사용자에게 불리하게 설정되지 않았는가?
+- [ ] 가격 앵커가 허위가 아닌 실제 가격인가?
+- [ ] 카운트다운 타이머가 실제 마감 시한인가? (리셋되지 않는가?)
+- [ ] 과장/검증 불가 주장이 없는가? ("업계 최고", "혁신적" 등)
+- [ ] 사용자가 충분한 정보로 의사결정할 수 있는가?
+- [ ] 감정 조작이 아닌 실제 가치를 전달하고 있는가?
+
+### 설득 효과 검증
+- [ ] 손실 프레이밍이 실제 손실에 기반하는가?
+- [ ] 사회적 증거가 실제 데이터인가? (날짜, 출처 있는가?)
+- [ ] 권위 신호가 해당 분야의 관련 권위인가?
+- [ ] 희소성이 실제 제한에 기반하는가?
+- [ ] 상호성에서 먼저 제공하는 가치가 실질적인가?
+- [ ] 커밋먼트 단계마다 사용자에게 가치를 제공하는가?
+- [ ] 소유 효과 활용 시 데이터 이동/내보내기가 가능한가?
+
+### 전환율 최적화 검증
+- [ ] CTA가 페이지에서 시각적으로 가장 눈에 띄는가?
+- [ ] 행동까지의 클릭 수가 3회 이내인가? (포그 능력 요소)
+- [ ] 동기 카피(Why) + 능력 보장(How easy) + 촉발(CTA)이 모두 있는가?
+- [ ] A/B 테스트 가능한 가설로 구성되어 있는가?
+- [ ] 모바일에서도 CTA가 thumb zone에 위치하는가?
+
+### 법적 준수 사항
+- [ ] 광고 표시법 준수 (할인 전 원가가 실제 판매가인가?)
+- [ ] 개인정보 수집 동의 절차가 적법한가?
+- [ ] 구독 자동 갱신 고지가 명확한가?
+- [ ] 청약 철회 안내가 포함되어 있는가?
+
+## Connections
+
+- [[marketing.persuasion.role]] — REQUIRES (weight: 0.85)
+- [[marketing.persuasion.hook-model]] — FEEDS (weight: 0.8)
+- [[marketing.persuasion.social-proof]] — FEEDS (weight: 0.8)
+- [[marketing.persuasion.reciprocity]] — FEEDS (weight: 0.8)
+- [[marketing.persuasion.authority]] — FEEDS (weight: 0.8)
+- [[marketing.persuasion.scarcity]] — FEEDS (weight: 0.8)

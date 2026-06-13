@@ -1,0 +1,27 @@
+content: "성능 예산 (로딩 성능의 상한선을 설정하고 초과를 방지한다):\n\n### 권장 예산\n| 항목 | 예산 | 측정 |\n|------|------|------|\n\
+  | JS 번들 (gzipped) | < 200KB | `next build` 출력 |\n| 이미지 (페이지당) | < 500KB | DevTools\
+  \ Network |\n| 웹폰트 | < 100KB (2개 이내) | |\n| 전체 페이지 무게 | < 1MB | |\n| LCP | < 2.5s\
+  \ | Lighthouse |\n| TTI (Time to Interactive) | < 3.5s | |\n\n### Next.js 번들 최적화\n\
+  ```typescript\n// DO: 동적 임포트로 코드 스플릿\nconst HeavyChart = dynamic(() => import('@/components/Chart'),\
+  \ {\n  loading: () => <Skeleton className=\"h-[400px]\" />,\n  ssr: false,  // 서버에서\
+  \ 불필요한 경우\n});\n\n// DO: barrel export 지양\n// ❌ import { Button } from '@/components';\
+  \  // 전체 번들 포함\n// ✅ import { Button } from '@/components/ui/button';  // 개별 임포트\n\
+  ```\n\n### 이미지 최적화\n```tsx\n// next/image 필수 사용 (자동 WebP/AVIF, 리사이징, lazy)\n<Image\n\
+  \  src=\"/product.jpg\"\n  alt=\"상품\"\n  width={640} height={480}\n  sizes=\"(max-width:\
+  \ 768px) 100vw, 50vw\"\n  quality={80}  // 기본 75, 80이면 화질 유지하면서 크기 절약\n/>\n```\n\
+  \n### 폰트 최적화\n```typescript\n// next/font로 자동 최적화\nimport { Inter } from 'next/font/google';\n\
+  const inter = Inter({\n  subsets: ['latin'],\n  display: 'swap',  // FOUT > FOIT\
+  \ (텍스트 먼저 보이기)\n  preload: true,\n});\n```\n\n### CI에서 예산 강제\n```yaml\n# GitHub\
+  \ Actions\n- name: Check bundle size\n  run: |\n    npx next build\n    # .next/analyze\
+  \ 또는 @next/bundle-analyzer로 확인\n```\n"
+domain: development.performance
+id: dev.performance.budget
+tags:
+- performance
+- budget
+- optimization
+- next.js
+theory: '#139 Performance Budget (Grigorik, 2013)'
+token_estimate: 620
+type: rule
+version: 1

@@ -1,0 +1,206 @@
+bloom_level: APPLY
+content: '# 에러 응답 민감정보 노출 방어 가이드
+
+
+  ## 핵심 원칙
+
+  - 에러 응답에 스택 트레이스, DB 스키마, 내부 경로를 절대 포함하지 않는다
+
+  - 로그에는 상세 정보를 기록하되, 응답에는 안전한 메시지만 반환한다
+
+  - error.message만 로깅한다 — 전체 에러 객체를 로깅하면 민감 정보 유출 가능
+
+  - 프로덕션과 개발 환경의 에러 출력 수준을 분리한다
+
+
+  ## 위험한 패턴 (DON''T)
+
+
+  ### 1. 스택 트레이스 노출
+
+  ```typescript
+
+  // ❌ 에러 객체를 그대로 응답
+
+  app.onError((err, c) => {
+    return c.json({
+      error: err.message,
+      stack: err.stack,  // 내부 파일 경로, 라인 번호 노출
+    }, 500);
+  });
+
+  // 공격자가 보는 응답:
+
+  // { "stack": "at /app/src/services/user.service.ts:45:12" }
+
+  ```
+
+
+  ### 2. DB 에러 직접 노출
+
+  ```typescript
+
+  // ❌ Postgres 에러를 그대로 반환
+
+  try {
+    await db.insert(users).values(data);
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+    // "duplicate key value violates unique constraint \"users_email_key\""
+    // → DB 스키마 정보(테이블명, 컬럼명, 제약조건명) 노출
+  }
+
+  ```
+
+
+  ### 3. 로그에 전체 에러 객체
+
+  ```typescript
+
+  // ❌ 에러 객체에 민감 정보가 포함될 수 있음
+
+  console.error("Error:", error);  // error.config.headers.Authorization 등 포함 가능
+
+
+  // ❌ 요청 본문을 통째로 로깅
+
+  console.error("Failed request:", req.body);  // 비밀번호, 카드번호 등 포함 가능
+
+  ```
+
+
+  ## 안전한 패턴 (DO)
+
+
+  ### 1. 글로벌 에러 핸들러
+
+  ```typescript
+
+  app.onError((err, c) => {
+    // 에러 ID 생성 (사용자가 문의 시 추적용)
+    const errorId = crypto.randomUUID();
+
+    // 로그에는 상세 기록 (message만, 객체 전체는 피함)
+    logger.error({
+      errorId,
+      message: err.message,
+      name: err.name,
+      path: c.req.path,
+      method: c.req.method,
+      // ❌ stack, req.body, headers는 제외
+    });
+
+    // 알려진 에러 vs 알 수 없는 에러 분리
+    if (err instanceof AppError) {
+      return c.json({
+        error: {
+          code: err.code,
+          message: err.message,  // 안전한 사용자 메시지
+          errorId,
+        },
+      }, err.statusCode);
+    }
+
+    // 알 수 없는 에러는 제네릭 메시지
+    return c.json({
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "서버 오류가 발생했습니다",
+        errorId,  // 추적용 ID만 제공
+      },
+    }, 500);
+  });
+
+  ```
+
+
+  ### 2. DB 에러 안전하게 변환
+
+  ```typescript
+
+  function handleDbError(err: unknown): AppError {
+    if (err instanceof Error) {
+      // Postgres unique violation
+      if ("code" in err && (err as any).code === "23505") {
+        return new AppError("CONFLICT", 409, "이미 존재하는 데이터입니다");
+      }
+      // Postgres foreign key violation
+      if ("code" in err && (err as any).code === "23503") {
+        return new AppError("BAD_REQUEST", 400, "참조하는 데이터가 존재하지 않습니다");
+      }
+    }
+    // 기타 DB 에러는 제네릭 메시지
+    return new AppError("DB_ERROR", 500, "데이터 처리 중 오류가 발생했습니다");
+  }
+
+  ```
+
+
+  ### 3. 안전한 로깅 유틸
+
+  ```typescript
+
+  function safeLog(context: string, error: unknown): void {
+    if (error instanceof Error) {
+      logger.error({
+        context,
+        errorName: error.name,
+        errorMessage: error.message,
+        // stack은 개발 환경에서만
+        ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
+      });
+    } else {
+      logger.error({ context, errorType: typeof error });
+    }
+  }
+
+  ```
+
+
+  ### 4. 환경별 에러 출력
+
+  ```typescript
+
+  const isDev = process.env.NODE_ENV === "development";
+
+
+  function formatError(err: Error, errorId: string) {
+    return {
+      error: {
+        code: "INTERNAL_ERROR",
+        message: isDev ? err.message : "서버 오류가 발생했습니다",
+        errorId,
+        ...(isDev && { stack: err.stack, details: err }),
+      },
+    };
+  }
+
+  ```
+
+
+  ## 체크리스트
+
+  - [ ] 프로덕션 에러 응답에 stack trace가 포함되지 않는가?
+
+  - [ ] DB 에러 메시지가 사용자에게 직접 노출되지 않는가?
+
+  - [ ] 로그에 비밀번호/토큰/카드번호 등 민감 정보가 포함되지 않는가?
+
+  - [ ] error 객체 전체가 아닌 error.message만 로깅하는가?
+
+  - [ ] 에러 추적용 errorId가 응답에 포함되는가?
+
+  '
+domain: development.backend
+id: dev.backend.security.error-exposure
+tags:
+- backend
+- security
+- error-handling
+- logging
+- sensitive-data
+- information-disclosure
+theory: '#OWASP A04:2021 Insecure Design + CWE-209 Error Message Information Leak'
+token_estimate: 720
+type: pattern
+version: 1

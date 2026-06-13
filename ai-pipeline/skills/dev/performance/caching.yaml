@@ -1,0 +1,28 @@
+content: "캐싱 전략 (반복 요청의 비용을 줄인다):\n\n### 캐시 레이어별 전략\n| 레이어 | 도구 | TTL | 대상 |\n|--------|------|-----|------|\n\
+  | 브라우저 | Cache-Control | 1h~1y | 정적 에셋(JS/CSS/이미지) |\n| CDN | CloudFlare/Vercel\
+  \ | 5m~1h | HTML, API 응답 |\n| 서버 메모리 | Map/LRU | 1m~5m | 자주 조회되는 데이터 |\n| Redis\
+  \ | Redis | 5m~1h | 세션, 인기 데이터, 계산 결과 |\n| DB | 쿼리 캐시 | 자동 | 동일 쿼리 반복 |\n\n### HTTP\
+  \ Cache-Control\n```typescript\n// 정적 에셋: 1년 캐시 + 해시 기반 무효화\n// next.config.js가\
+  \ 자동 처리 (_next/static/*)\n\n// API 응답: 상황별\n// 공개 데이터 (제품 목록)\nres.headers.set('Cache-Control',\
+  \ 'public, max-age=300, stale-while-revalidate=60');\n\n// 개인 데이터 (프로필)\nres.headers.set('Cache-Control',\
+  \ 'private, max-age=0, must-revalidate');\n\n// 절대 캐시 금지 (결제, 인증)\nres.headers.set('Cache-Control',\
+  \ 'no-store');\n```\n\n### Redis 캐싱 패턴\n```typescript\nasync function getCachedOrFetch<T>(\n\
+  \  key: string,\n  fetcher: () => Promise<T>,\n  ttlSeconds = 300,\n): Promise<T>\
+  \ {\n  const cached = await redis.get(key);\n  if (cached) return JSON.parse(cached);\n\
+  \n  const data = await fetcher();\n  await redis.set(key, JSON.stringify(data),\
+  \ 'EX', ttlSeconds);\n  return data;\n}\n\n// 사용\nconst products = await getCachedOrFetch(\n\
+  \  'products:popular',\n  () => db.query('SELECT ... ORDER BY sales DESC LIMIT 20'),\n\
+  \  600,  // 10분\n);\n```\n\n### 캐시 무효화 (가장 어려운 부분)\n- 데이터 변경 시 관련 캐시 키 삭제\n- 패턴:\
+  \ Write-through (쓰기 시 캐시 갱신) 또는 Cache-aside (삭제 후 다음 읽기 시 재생성)\n- 절대 하지 말 것: 캐시만\
+  \ 업데이트하고 DB 미반영\n"
+domain: development.performance
+id: dev.performance.caching
+tags:
+- performance
+- caching
+- redis
+- http
+theory: '#102 HTTP Caching (Fielding, 1999)'
+token_estimate: 672
+type: pattern
+version: 1

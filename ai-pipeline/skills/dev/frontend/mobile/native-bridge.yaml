@@ -1,0 +1,36 @@
+bloom_level: ANALYZE
+content: "# 네이티브 브릿지(Native Bridge) 가이드\n\n## 핵심 원칙\n- JavaScript와 네이티브 코드(Swift/Kotlin)\
+  \ 간 통신을 브릿지로 처리한다\n- Expo Modules API를 우선 사용하고, 불가능할 때만 직접 브릿지를 작성한다\n- 브릿지 호출은\
+  \ 비동기로 설계하여 UI 스레드를 블로킹하지 않는다\n- New Architecture(Fabric + TurboModules)를 활용하여 성능을\
+  \ 개선한다\n\n## DO\n- Expo Modules API로 네이티브 기능을 래핑한다\n- 데이터 직렬화 오버헤드를 최소화한다 (큰 데이터는\
+  \ 참조 전달)\n- 네이티브 이벤트를 EventEmitter로 JS에 전달한다\n- 네이티브 모듈의 타입을 TypeScript로 정의한다\n\n\
+  ## DON'T\n- UI 스레드에서 무거운 브릿지 호출을 동기적으로 수행하지 않는다\n- 대용량 데이터를 JSON 직렬화로 브릿지를 통해 전달하지\
+  \ 않는다\n- 네이티브 코드 없이 해결 가능한 기능에 브릿지를 사용하지 않는다\n- Old Architecture의 Bridge를 새 프로젝트에서\
+  \ 사용하지 않는다\n\n## 코드 예시\n```typescript\n// Expo Module (TypeScript + Swift)\n// modules/my-sensor/index.ts\n\
+  import { NativeModulesProxy, EventEmitter } from \"expo-modules-core\";\n\nconst\
+  \ MySensorModule = NativeModulesProxy.MySensor;\nconst emitter = new EventEmitter(MySensorModule);\n\
+  \nexport function startSensor(interval: number): void {\n  MySensorModule.start(interval);\n\
+  }\n\nexport function stopSensor(): void {\n  MySensorModule.stop();\n}\n\nexport\
+  \ function onSensorData(callback: (data: SensorData) => void) {\n  return emitter.addListener(\"\
+  onSensorData\", callback);\n}\n\ninterface SensorData {\n  x: number;\n  y: number;\n\
+  \  z: number;\n  timestamp: number;\n}\n```\n\n```swift\n// modules/my-sensor/ios/MySensorModule.swift\n\
+  import ExpoModulesCore\nimport CoreMotion\n\npublic class MySensorModule: Module\
+  \ {\n  let motionManager = CMMotionManager()\n\n  public func definition() -> ModuleDefinition\
+  \ {\n    Name(\"MySensor\")\n\n    Function(\"start\") { (interval: Double) in\n\
+  \      self.motionManager.accelerometerUpdateInterval = interval / 1000\n      self.motionManager.startAccelerometerUpdates(to:\
+  \ .main) { data, _ in\n        guard let data = data else { return }\n        self.sendEvent(\"\
+  onSensorData\", [\n          \"x\": data.acceleration.x,\n          \"y\": data.acceleration.y,\n\
+  \          \"z\": data.acceleration.z,\n          \"timestamp\": Date().timeIntervalSince1970,\n\
+  \        ])\n      }\n    }\n\n    Function(\"stop\") {\n      self.motionManager.stopAccelerometerUpdates()\n\
+  \    }\n\n    Events(\"onSensorData\")\n  }\n}\n```\n"
+domain: development.frontend
+id: dev.frontend.mobile.native-bridge
+tags:
+- frontend
+- mobile
+- native-bridge
+- react-native
+theory: '#249 Native Bridge Pattern (React Native New Architecture, Meta 2022)'
+token_estimate: 1010
+type: pattern
+version: 1

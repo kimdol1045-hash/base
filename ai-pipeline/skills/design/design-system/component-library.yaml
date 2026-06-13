@@ -1,0 +1,74 @@
+bloom_level: CREATE
+content: '# 컴포넌트 라이브러리 가이드
+
+
+  ## 핵심 원칙
+
+  - Atomic Design: 원자 → 분자 → 유기체 → 템플릿 → 페이지
+
+  - 단일 책임: 하나의 컴포넌트는 하나의 역할
+
+  - 합성(Composition): 작은 컴포넌트를 조합하여 큰 것을 만듦
+
+  - API 일관성: Props 네이밍과 패턴 통일
+
+
+  ## 계층 구조
+
+  | 수준 | 설명 | 예시 |
+
+  |------|------|------|
+
+  | 원자(Atom) | 더 분해 불가한 기본 요소 | Button, Input, Icon |
+
+  | 분자(Molecule) | 원자의 조합 | SearchBar, FormField |
+
+  | 유기체(Organism) | 분자의 조합, 독립 섹션 | Header, Card, Table |
+
+  | 템플릿(Template) | 레이아웃 구조 | DashboardLayout |
+
+  | 페이지(Page) | 실제 데이터 적용 | DashboardPage |
+
+
+  ## 컴포넌트 설계 원칙
+
+  1. **Props 인터페이스**: TypeScript로 명확히 정의
+
+  2. **변형(Variants)**: size, color, state 등 변형 지원
+
+  3. **합성**: children, slots으로 유연한 내부 구조
+
+  4. **접근성**: ARIA 속성, 키보드 지원 내장
+
+  5. **테스트**: 단위 테스트 + 시각적 회귀 테스트
+
+
+  ## DO
+
+  - 스토리북(Storybook)으로 모든 컴포넌트 문서화
+
+  - 사용 예시와 Props 테이블 필수 포함
+
+  - 시맨틱 버전닝으로 변경 관리
+
+
+  ## DON''T
+
+  - 비즈니스 로직을 UI 컴포넌트에 포함하지 않기
+
+  - 글로벌 스타일을 컴포넌트 내부에 정의하지 않기
+
+  - 테스트 없이 컴포넌트 배포하지 않기
+
+  '
+domain: design
+id: design.design-system.component-library
+tags:
+- component-library
+- design-system
+- atomic-design
+theory: 컴포넌트 라이브러리는 재사용 가능한 UI 컴포넌트의 집합으로, 디자인 일관성과 개발 효율성을 동시에 달성한다. Atomic Design(Brad
+  Frost)의 원자-분자-유기체 계층 구조가 대표적 설계 방법론이다.
+token_estimate: 420
+type: pattern
+version: 1

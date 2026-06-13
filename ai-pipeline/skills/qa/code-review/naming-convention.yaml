@@ -1,0 +1,58 @@
+bloom_level: APPLY
+content: '# 네이밍 컨벤션 리뷰 가이드
+
+
+  ## 핵심 원칙
+
+  - 이름만으로 역할과 의도를 파악 가능해야 함
+
+  - 프로젝트 전체에서 일관된 컨벤션 적용
+
+  - 약어 최소화, 도메인 용어를 유비쿼터스 언어로 통일
+
+
+  ## DO
+
+  - 변수/함수: camelCase (TypeScript/JavaScript 기준)
+
+  - 함수: 동사+명사 (getUserById, calculateTotal, validateInput)
+
+  - 불리언: is/has/can/should 접두사 (isValid, hasPermission, canDelete)
+
+  - 상수: UPPER_SNAKE_CASE (MAX_RETRY_COUNT, DEFAULT_TIMEOUT)
+
+  - 컴포넌트: PascalCase (UserProfile, PaymentForm)
+
+  - 이벤트 핸들러: handle/on 접두사 (handleClick, onSubmit)
+
+  - 배열/컬렉션: 복수형 (users, orderItems)
+
+  - 인터페이스/타입: 명사형 PascalCase (UserRepository, PaymentGateway)
+
+
+  ## DON''T
+
+  - 한글자 변수명 (i, j, k 루프 변수 제외) 사용 금지
+
+  - 타입을 이름에 인코딩하지 않기 (strName → name, arrUsers → users)
+
+  - 30자 초과하는 이름 사용 금지. 길면 맥락으로 줄일 수 있는지 검토
+
+  - 부정형 불리언 금지 (isNotValid → isValid로 반전)
+
+  - 범용 이름 금지 (data, info, temp, result → 구체적 의미 부여)
+
+  - 같은 개념에 다른 이름 사용 금지 (user/member/account가 같은 의미면 하나로 통일)
+
+  '
+domain: qa.testing
+id: qa.code-review.naming-convention
+tags:
+- naming
+- convention
+- readability
+- clean-code
+theory: 네이밍 컨벤션 — 의도를 드러내는 이름 짓기
+token_estimate: 408
+type: rule
+version: 1

@@ -1,0 +1,37 @@
+bloom_level: APPLY
+content: "# Debounce/Throttle 훅 가이드\n\n## 핵심 원칙\n- Debounce: 마지막 호출 후 지정 시간이 지나면 실행\
+  \ (검색 입력)\n- Throttle: 지정 시간 동안 최대 1회만 실행 (스크롤, 리사이즈)\n- 불필요한 API 호출과 렌더링을 줄여 성능을\
+  \ 개선한다\n- cleanup 함수에서 타이머를 정리하여 메모리 누수를 방지한다\n\n## DO\n- 검색 입력에 300-500ms debounce를\
+  \ 적용한다\n- 스크롤 이벤트에 100-200ms throttle을 적용한다\n- debounced 값과 원본 값을 모두 제공한다\n- 컴포넌트\
+  \ 언마운트 시 대기 중인 콜백을 취소한다\n\n## DON'T\n- debounce 간격을 너무 길게 설정하지 않는다 (UX 저하)\n- 매\
+  \ 렌더링마다 새로운 debounce 함수를 생성하지 않는다\n- submit 같은 즉시 실행이 필요한 액션에 debounce를 적용하지 않는다\n\
+  - throttle과 debounce를 혼동하지 않는다\n\n## 코드 예시\n```tsx\nimport { useState, useEffect,\
+  \ useRef, useCallback } from \"react\";\n\n// useDebounce: 값 디바운싱\nfunction useDebounce<T>(value:\
+  \ T, delayMs: number): T {\n  const [debouncedValue, setDebouncedValue] = useState(value);\n\
+  \n  useEffect(() => {\n    const timer = setTimeout(() => setDebouncedValue(value),\
+  \ delayMs);\n    return () => clearTimeout(timer);\n  }, [value, delayMs]);\n\n\
+  \  return debouncedValue;\n}\n\n// useDebouncedCallback: 함수 디바운싱\nfunction useDebouncedCallback<T\
+  \ extends (...args: any[]) => void>(\n  callback: T,\n  delayMs: number,\n): T {\n\
+  \  const timerRef = useRef<ReturnType<typeof setTimeout>>();\n\n  useEffect(() =>\
+  \ {\n    return () => { if (timerRef.current) clearTimeout(timerRef.current); };\n\
+  \  }, []);\n\n  return useCallback(\n    ((...args) => {\n      if (timerRef.current)\
+  \ clearTimeout(timerRef.current);\n      timerRef.current = setTimeout(() => callback(...args),\
+  \ delayMs);\n    }) as T,\n    [callback, delayMs],\n  );\n}\n\n// 사용: 검색 입력\nfunction\
+  \ SearchInput() {\n  const [query, setQuery] = useState(\"\");\n  const debouncedQuery\
+  \ = useDebounce(query, 300);\n  const { data: results } = useSearch(debouncedQuery);\n\
+  \n  return (\n    <div>\n      <input\n        value={query}\n        onChange={e\
+  \ => setQuery(e.target.value)}\n        placeholder=\"검색...\"\n      />\n      {/*\
+  \ debouncedQuery가 변경될 때만 API 호출 */}\n      <SearchResults results={results} />\n\
+  \    </div>\n  );\n}\n```\n"
+domain: development.frontend
+id: dev.frontend.hook.debounce
+tags:
+- frontend
+- hooks
+- debounce
+- throttle
+- performance
+theory: '#239 Debounce & Throttle (Lodash, Underscore.js)'
+token_estimate: 930
+type: pattern
+version: 1

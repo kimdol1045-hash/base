@@ -1,0 +1,28 @@
+content: "통합 테스트 (모듈 간 상호작용을 검증한다):\n\n### Testing Trophy (Kent C. Dodds)\n단위 < **통합**\
+  \ < E2E\n통합 테스트가 가장 투자 대비 효과가 높다.\n\n### API 통합 테스트\n```typescript\nimport { describe,\
+  \ it, expect, beforeAll, afterAll } from 'vitest';\nimport { app } from '../src/app';\n\
+  \ndescribe('POST /api/users', () => {\n  it('유효한 데이터로 사용자 생성', async () => {\n \
+  \   const res = await app.request('/api/users', {\n      method: 'POST',\n     \
+  \ headers: { 'Content-Type': 'application/json' },\n      body: JSON.stringify({\
+  \ email: 'test@test.com', name: 'Test' }),\n    });\n\n    expect(res.status).toBe(201);\n\
+  \    const body = await res.json();\n    expect(body.data).toMatchObject({\n   \
+  \   email: 'test@test.com',\n      name: 'Test',\n    });\n    expect(body.data.id).toBeDefined();\n\
+  \  });\n\n  it('중복 이메일 시 409 반환', async () => {\n    // 첫 번째 생성\n    await app.request('/api/users',\
+  \ {\n      method: 'POST',\n      body: JSON.stringify({ email: 'dup@test.com',\
+  \ name: 'A' }),\n    });\n    // 중복 시도\n    const res = await app.request('/api/users',\
+  \ {\n      method: 'POST',\n      body: JSON.stringify({ email: 'dup@test.com',\
+  \ name: 'B' }),\n    });\n    expect(res.status).toBe(409);\n  });\n});\n```\n\n\
+  ### 테스트 격리\n- 각 테스트 전 DB 초기화 (트랜잭션 롤백 또는 테스트 DB)\n- 테스트 간 상태 공유 금지\n- 외부 서비스: MSW(Mock\
+  \ Service Worker)로 mocking\n\n### 테스트 대상 우선순위\n1. 인증/인가 플로우 (가장 중요)\n2. 핵심 비즈니스\
+  \ 로직 (결제, 주문)\n3. 데이터 무결성 (CRUD 정합성)\n4. 에러 핸들링 (잘못된 입력, 서버 에러)\n"
+domain: qa
+id: qa.test-gen.integration
+tags:
+- qa
+- test
+- integration-test
+- api
+theory: '#124 Testing Trophy (Dodds, 2019)'
+token_estimate: 671
+type: pattern
+version: 1

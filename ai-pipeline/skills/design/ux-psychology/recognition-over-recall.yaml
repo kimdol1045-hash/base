@@ -1,0 +1,55 @@
+content: "재인 > 회상 — 사용자에게 기억에서 꺼내라고 요구하지 말고, 보여주고 선택하게 하라.\n회상(recall)은 인지 부하가 높고,\
+  \ 재인(recognition)은 단서만 있으면 즉시 작동한다.\n\n### 우선순위: 빈칸 입력 < 선택지 제시 < 자동완성/추천\n\n###\
+  \ 1. 검색 — 자동완성 + 최근 검색\n\n```tsx\n{/* 빈 검색창 대신: 최근 검색어 + 자동완성으로 재인 지원 */}\n<Command\
+  \ className=\"rounded-lg border shadow-md\">\n  <CommandInput placeholder=\"검색어를\
+  \ 입력하세요...\" />\n  <CommandList>\n    <CommandEmpty>결과가 없습니다.</CommandEmpty>\n \
+  \   <CommandGroup heading=\"최근 검색\">\n      {recentSearches.map((term) => (\n  \
+  \      <CommandItem key={term}>\n          <Clock className=\"mr-2 h-4 w-4 text-muted-foreground\"\
+  \ />\n          {term}\n        </CommandItem>\n      ))}\n    </CommandGroup>\n\
+  \    <CommandSeparator />\n    <CommandGroup heading=\"추천 검색어\">\n      {suggestions.map((s)\
+  \ => (\n        <CommandItem key={s.id}>\n          <TrendingUp className=\"mr-2\
+  \ h-4 w-4 text-muted-foreground\" />\n          {s.label}\n        </CommandItem>\n\
+  \      ))}\n    </CommandGroup>\n  </CommandList>\n</Command>\n```\n\n### 2. 폼 입력\
+  \ — 선택지 > 빈칸\n\nDO:\n```tsx\n{/* 드롭다운으로 선택지 제시 → 회상 불필요 */}\n<div className=\"space-y-4\"\
+  >\n  <div className=\"space-y-1.5\">\n    <Label>직종</Label>\n    <Select>\n    \
+  \  <SelectTrigger><SelectValue placeholder=\"직종을 선택하세요\" /></SelectTrigger>\n  \
+  \    <SelectContent>\n        <SelectItem value=\"frontend\">프론트엔드 개발자</SelectItem>\n\
+  \        <SelectItem value=\"backend\">백엔드 개발자</SelectItem>\n        <SelectItem\
+  \ value=\"design\">UI/UX 디자이너</SelectItem>\n        <SelectItem value=\"pm\">프로덕트\
+  \ 매니저</SelectItem>\n      </SelectContent>\n    </Select>\n  </div>\n  <div className=\"\
+  space-y-1.5\">\n    <Label>경력</Label>\n    <RadioGroup defaultValue=\"mid\" className=\"\
+  flex gap-4\">\n      <RadioGroupItem value=\"junior\" label=\"1-3년\" />\n      <RadioGroupItem\
+  \ value=\"mid\" label=\"4-7년\" />\n      <RadioGroupItem value=\"senior\" label=\"\
+  8년+\" />\n    </RadioGroup>\n  </div>\n</div>\n```\n\nDON'T:\n```tsx\n{/* 빈칸에 직접\
+  \ 입력 요구 → 높은 인지 부하, 입력 오류 */}\n<Input placeholder=\"직종을 입력하세요\" />\n<Input placeholder=\"\
+  경력 연차를 입력하세요\" />\n```\n\n### 3. 네비게이션 — 현재 위치 표시\n\n```tsx\n{/* 브레드크럼 + 활성 메뉴 강조\
+  \ → \"내가 어디 있지?\" 회상 불필요 */}\n<Breadcrumb>\n  <BreadcrumbItem><BreadcrumbLink href=\"\
+  /\">홈</BreadcrumbLink></BreadcrumbItem>\n  <BreadcrumbSeparator />\n  <BreadcrumbItem><BreadcrumbLink\
+  \ href=\"/settings\">설정</BreadcrumbLink></BreadcrumbItem>\n  <BreadcrumbSeparator\
+  \ />\n  <BreadcrumbItem><BreadcrumbPage>알림</BreadcrumbPage></BreadcrumbItem>\n</Breadcrumb>\n\
+  ```\n\n### 4. 최근 항목 / 즐겨찾기\n\n```tsx\n{/* 대시보드 상단에 최근 접근 항목 → 재방문 시 즉시 재인 */}\n\
+  <section className=\"space-y-3\">\n  <h3 className=\"text-sm font-medium text-muted-foreground\"\
+  >최근 작업</h3>\n  <div className=\"flex gap-3 overflow-x-auto pb-2\">\n    {recentItems.map((item)\
+  \ => (\n      <Link key={item.id} href={item.href}\n        className=\"flex items-center\
+  \ gap-2 rounded-lg border p-3\n                   min-w-[200px] hover:bg-accent\
+  \ transition-colors\">\n        <item.icon className=\"h-4 w-4 text-muted-foreground\
+  \ shrink-0\" />\n        <div className=\"min-w-0\">\n          <p className=\"\
+  text-sm font-medium truncate\">{item.name}</p>\n          <p className=\"text-xs\
+  \ text-muted-foreground\">{item.updatedAt}</p>\n        </div>\n      </Link>\n\
+  \    ))}\n  </div>\n</section>\n```\n\n### 적용 체크리스트\n- 텍스트 입력 → 드롭다운/라디오/체크박스로 대체\
+  \ 가능한가?\n- 현재 위치/상태가 시각적으로 표시되는가?\n- 최근 사용/즐겨찾기 기능이 있는가?\n- 검색에 자동완성/추천이 제공되는가?\n"
+domain: design
+id: design.ux-psychology.recognition-over-recall
+tags:
+- design
+- ux
+- recognition
+- recall
+- autocomplete
+- search
+- form
+- navigation
+theory: '#45 재인 vs 회상 (Nielsen, 1993)'
+token_estimate: 1577
+type: rule
+version: 1

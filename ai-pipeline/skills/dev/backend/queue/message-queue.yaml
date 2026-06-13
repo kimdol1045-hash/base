@@ -1,0 +1,29 @@
+bloom_level: APPLY
+content: "# 메시지 큐 설계 가이드\n\n## 핵심 원칙\n- 동기 처리가 불필요한 작업은 메시지 큐로 비동기 처리한다\n- 메시지는 멱등성(idempotent)을\
+  \ 보장하도록 설계한다\n- 메시지 순서 보장이 필요한 경우 파티션 키를 활용한다\n- 소비자(Consumer)는 at-least-once 전달을\
+  \ 가정하고 중복 처리를 대비한다\n\n## DO\n- 메시지에 고유 ID를 부여하여 중복 감지에 사용한다\n- 메시지 스키마를 버전 관리한다\
+  \ (하위 호환성 유지)\n- Consumer 그룹을 활용하여 수평 확장한다\n- 처리 실패 시 재시도 횟수와 간격을 설정한다\n\n## DON'T\n\
+  - 메시지 본문에 대용량 데이터를 직접 포함하지 않는다 (참조 URL 사용)\n- 무한 재시도를 설정하지 않는다 (최대 재시도 후 DLQ로 이동)\n\
+  - 단일 큐에 모든 종류의 메시지를 혼합하지 않는다\n- 메시지 처리 순서에 의존하는 로직을 기본으로 하지 않는다\n\n## 코드 예시\n```typescript\n\
+  import { SQSClient, SendMessageCommand } from \"@aws-sdk/client-sqs\";\n\ninterface\
+  \ QueueMessage<T> {\n  id: string;\n  type: string;\n  version: number;\n  payload:\
+  \ T;\n  timestamp: string;\n  metadata: { correlationId: string; source: string\
+  \ };\n}\n\n// Producer\nasync function publishMessage<T>(queueUrl: string, msg:\
+  \ QueueMessage<T>) {\n  const client = new SQSClient({});\n  await client.send(new\
+  \ SendMessageCommand({\n    QueueUrl: queueUrl,\n    MessageBody: JSON.stringify(msg),\n\
+  \    MessageDeduplicationId: msg.id,\n    MessageGroupId: msg.type,\n  }));\n}\n\
+  \n// Consumer (멱등성 보장)\nasync function handleMessage(msg: QueueMessage<OrderCreated>)\
+  \ {\n  const processed = await redis.get(`processed:${msg.id}`);\n  if (processed)\
+  \ return; // 중복 메시지 무시\n\n  await processOrder(msg.payload);\n  await redis.set(`processed:${msg.id}`,\
+  \ \"1\", \"EX\", 86400);\n}\n```\n"
+domain: development.backend
+id: dev.backend.queue.message-queue
+tags:
+- queue
+- message-queue
+- async
+- backend
+theory: '#210 Message Queue Fundamentals (Enterprise Integration Patterns, Hohpe 2003)'
+token_estimate: 655
+type: pattern
+version: 1

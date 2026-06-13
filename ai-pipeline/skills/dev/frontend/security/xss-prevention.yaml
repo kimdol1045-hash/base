@@ -1,0 +1,176 @@
+bloom_level: APPLY
+content: '# React XSS 방어 가이드
+
+
+  ## 핵심 원칙
+
+  - dangerouslySetInnerHTML은 원칙적으로 사용하지 않는다
+
+  - 사용자 입력/외부 데이터를 HTML로 렌더링해야 할 때는 반드시 안전한 대안을 사용한다
+
+  - React의 기본 이스케이핑을 우회하는 모든 패턴은 잠재적 XSS 벡터이다
+
+
+  ## 위험한 패턴 (DON''T)
+
+  ```tsx
+
+  // ❌ 외부 데이터를 dangerouslySetInnerHTML로 렌더링
+
+  function AIReport({ html }: { html: string }) {
+    return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  }
+
+
+  // ❌ innerHTML 직접 조작
+
+  useEffect(() => {
+    ref.current!.innerHTML = userContent;
+  }, [userContent]);
+
+
+  // ❌ eval, Function 생성자로 동적 코드 실행
+
+  eval(userInput);
+
+  new Function(userInput)();
+
+  ```
+
+
+  ## 안전한 패턴 (DO)
+
+
+  ### 1. SafeMarkdown 컴포넌트 (마크다운 → React 엘리먼트)
+
+  ```tsx
+
+  // DOMPurify + marked 조합
+
+  import DOMPurify from "dompurify";
+
+  import { marked } from "marked";
+
+
+  const ALLOWED_TAGS = ["p", "strong", "em", "ul", "ol", "li", "code", "pre", "h1", "h2", "h3",
+  "a", "blockquote"];
+
+  const ALLOWED_ATTR = ["href", "target", "rel"];
+
+
+  function SafeMarkdown({ content }: { content: string }) {
+    const html = DOMPurify.sanitize(marked.parse(content), {
+      ALLOWED_TAGS,
+      ALLOWED_ATTR,
+    });
+    return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  }
+
+  ```
+
+
+  ### 2. react-markdown (권장 — DOM 파싱 없이 React 엘리먼트 직접 생성)
+
+  ```tsx
+
+  import ReactMarkdown from "react-markdown";
+
+  import remarkGfm from "remark-gfm";
+
+
+  function SafeContent({ content }: { content: string }) {
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        allowedElements={["p", "strong", "em", "ul", "ol", "li", "code", "pre", "a"]}
+        components={{
+          a: ({ href, children }) => (
+            <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    );
+  }
+
+  ```
+
+
+  ### 3. 텍스트 전용 출력 (HTML 불필요 시)
+
+  ```tsx
+
+  // React의 기본 이스케이핑이 XSS를 방어
+
+  function SafeText({ text }: { text: string }) {
+    return <p>{text}</p>;  // <script> 태그도 문자열로 렌더링
+  }
+
+  ```
+
+
+  ## href/src 속성 XSS
+
+  ```tsx
+
+  // ❌ 사용자 입력을 href에 직접 사용
+
+  <a href={userUrl}>Link</a>  // javascript:alert(1) 가능
+
+
+  // ✅ 프로토콜 화이트리스트 검증
+
+  function safeHref(url: string): string {
+    try {
+      const parsed = new URL(url);
+      if (!["http:", "https:", "mailto:"].includes(parsed.protocol)) {
+        return "#";
+      }
+      return url;
+    } catch {
+      return "#";
+    }
+  }
+
+  <a href={safeHref(userUrl)}>Link</a>
+
+  ```
+
+
+  ## CSP (Content Security Policy) 연동
+
+  ```
+
+  Content-Security-Policy: default-src ''self''; script-src ''self'' ''nonce-{random}'';
+  style-src ''self'' ''unsafe-inline''; img-src ''self'' data: https:;
+
+  ```
+
+  CSP는 XSS가 성공하더라도 실행을 차단하는 2차 방어선이다.
+
+
+  ## 체크리스트
+
+  - [ ] dangerouslySetInnerHTML 사용처를 모두 검토했는가?
+
+  - [ ] 외부 HTML 렌더링 시 DOMPurify 또는 react-markdown을 사용하는가?
+
+  - [ ] href/src에 사용자 입력이 들어갈 때 프로토콜 검증을 하는가?
+
+  - [ ] CSP 헤더가 설정되어 있는가?
+
+  '
+domain: development.frontend
+id: dev.frontend.security.xss-prevention
+tags:
+- frontend
+- security
+- xss
+- react
+- sanitization
+- dompurify
+theory: '#OWASP A03:2021 Injection + React Security Best Practices'
+token_estimate: 720
+type: pattern
+version: 1

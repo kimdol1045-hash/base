@@ -1,0 +1,131 @@
+bloom_level: APPLY
+content: '# UX 규칙: 폼/피드백 + 네비게이션 (Priority 8-9)
+
+  Source: ui-ux-pro-max (nextlevelbuilder)
+
+
+  ## §8 폼 & 피드백 (MEDIUM)
+
+
+  - `input-labels`: 모든 입력에 가시적 라벨 (placeholder만 사용 금지)
+
+  - `error-placement`: 에러는 관련 필드 아래에 표시
+
+  - `submit-feedback`: 제출 시 로딩 → 성공/에러 상태 표시
+
+  - `required-indicators`: 필수 필드 표시 (예: 별표 *)
+
+  - `empty-states`: 콘텐츠 없을 때 도움 메시지 + 액션 제공
+
+  - `toast-dismiss`: 토스트 3-5초 후 자동 해제
+
+  - `confirmation-dialogs`: 파괴적 액션 전 확인 다이얼로그
+
+  - `input-helper-text`: 복잡한 입력 아래 도움 텍스트 (placeholder 아님)
+
+  - `disabled-states`: 투명도 0.38-0.5 + 커서 변경 + 시맨틱 속성
+
+  - `progressive-disclosure`: 옵션을 점진적으로 공개, 한꺼번에 압도하지 않음
+
+  - `inline-validation`: blur 시 검증 (keystroke 아님), 입력 완료 후 에러 표시
+
+  - `input-type-keyboard`: 시맨틱 타입 (email, tel, number)으로 올바른 모바일 키보드 유도
+
+  - `password-toggle`: 비밀번호 필드에 보기/숨기기 토글
+
+  - `autofill-support`: autocomplete 속성으로 시스템 자동완성 지원
+
+  - `undo-support`: 파괴적/대량 액션에 실행취소 허용 ("삭제 취소" 토스트)
+
+  - `success-feedback`: 완료된 액션에 짧은 시각적 피드백 확인
+
+  - `error-recovery`: 에러 메시지에 복구 경로 포함 (재시도, 수정, 도움 링크)
+
+  - `multi-step-progress`: 단계 표시기/프로그레스 바, 뒤로 탐색 허용
+
+  - `form-autosave`: 긴 폼에서 초안 자동 저장 (데이터 손실 방지)
+
+  - `sheet-dismiss-confirm`: 미저장 변경 시 시트 해제 전 확인
+
+  - `error-clarity`: 원인 + 해결방법 명시 ("잘못된 입력" 만 금지)
+
+  - `field-grouping`: 관련 필드를 논리적으로 그룹화 (fieldset/legend)
+
+  - `focus-management`: 제출 에러 후 첫 번째 잘못된 필드에 자동 포커스
+
+  - `error-summary`: 다수 에러 시 상단에 요약 + 앵커 링크
+
+  - `touch-friendly-input`: 모바일 입력 높이 ≥44px
+
+  - `destructive-emphasis`: 파괴적 액션에 시맨틱 위험 색상(빨강) 사용
+
+  - `toast-accessibility`: 포커스 빼앗기 금지, aria-live="polite"로 알림
+
+  - `contrast-feedback`: 에러/성공 색상 4.5:1 대비 충족
+
+  - `timeout-feedback`: 요청 타임아웃 시 메시지 + 재시도 옵션
+
+
+  ## §9 네비게이션 패턴 (HIGH)
+
+
+  - `bottom-nav-limit`: 하단 네비 최대 5개, 아이콘+라벨 함께 사용
+
+  - `drawer-usage`: 드로어/사이드바는 보조 네비용, 주요 액션에 사용 금지
+
+  - `back-behavior`: 예측 가능한 일관된 뒤로가기, 스크롤/상태 보존
+
+  - `deep-linking`: 모든 주요 화면에 딥 링크/URL로 직접 도달 가능
+
+  - `tab-bar-ios`: iOS는 하단 Tab Bar로 최상위 탐색
+
+  - `top-app-bar-android`: Android는 Top App Bar로 주요 구조
+
+  - `nav-label-icon`: 아이콘+텍스트 라벨 함께 사용, 아이콘만은 발견성 저해
+
+  - `nav-state-active`: 현재 위치 시각적 강조 (색상, 굵기, 인디케이터)
+
+  - `nav-hierarchy`: Primary(탭/하단바) vs Secondary(드로어) 명확 분리
+
+  - `modal-escape`: 명확한 닫기/해제 어포던스, 모바일 스와이프 다운
+
+  - `search-accessible`: 쉽게 접근 가능 (상단 바 또는 탭), 최근/추천 쿼리
+
+  - `breadcrumb-web`: 웹에서 3단계 이상 계층에 브레드크럼
+
+  - `state-preservation`: 뒤로 탐색 시 스크롤/필터/입력 상태 복원
+
+  - `gesture-nav-support`: iOS 스와이프백, Android 예측 뒤로 등 시스템 제스처 지원
+
+  - `overflow-menu`: 공간 부족 시 액션 우겨넣기 대신 더보기 메뉴
+
+  - `adaptive-navigation`: 큰 화면(≥1024px) 사이드바, 작은 화면 하단/상단
+
+  - `back-stack-integrity`: 자동 홈 리셋/예상치 못한 점프 금지
+
+  - `navigation-consistency`: 네비게이션 위치가 모든 페이지에서 동일
+
+  - `modal-vs-navigation`: 주요 흐름에 모달 사용 금지 — 사용자 경로 끊김
+
+  - `focus-on-route-change`: 전환 후 메인 콘텐츠에 포커스 이동
+
+  - `persistent-nav`: 깊은 페이지에서도 핵심 네비 접근 가능
+
+  - `destructive-nav-separation`: 위험한 액션을 시각적/공간적으로 분리
+
+  '
+domain: design
+id: design.ux-rules.forms-navigation
+tags:
+- design
+- ux
+- forms
+- navigation
+- feedback
+- mobile
+- validation
+- toast
+theory: '#ui-ux-pro-max Priority 8-9 (Apple HIG + Material Design + Nielsen Norman Group)'
+token_estimate: 780
+type: rule
+version: 1

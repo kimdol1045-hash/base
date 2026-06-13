@@ -1,0 +1,58 @@
+bloom_level: APPLY
+content: '# 접근성 테스트 가이드
+
+
+  ## 적용 상황
+
+  - 웹/모바일 애플리케이션의 WCAG 2.1 AA 준수를 검증할 때
+
+  - 공공기관/대기업 프로젝트에서 접근성 법적 요구사항을 충족해야 할 때
+
+  - 새 컴포넌트나 페이지 추가 시 접근성을 사전 검증할 때
+
+  - 기존 서비스의 접근성 감사(audit)를 수행할 때
+
+
+  ## 구현 방법
+
+  - 자동 테스트: CI/CD에 axe-core 통합하여 매 PR마다 자동 검사 실행
+
+  - 키보드 네비게이션: Tab 순서, Focus 표시, Enter/Space 활성화 전수 검사
+
+  - 스크린리더: NVDA(Windows), VoiceOver(Mac)로 주요 플로우 수동 검증
+
+  - 색상 대비: WCAG AA 기준 텍스트 4.5:1, 대형 텍스트 3:1 비율 확인
+
+  - ARIA 검증: role, aria-label, aria-describedby 누락 여부 체크
+
+  - 이미지: 모든 img에 alt 텍스트, 장식 이미지는 alt="" 또는 role="presentation"
+
+  - 폼: label 연결, 에러 메시지 aria-live로 실시간 전달, required 표시
+
+  - Lighthouse 접근성 점수 90점 이상 유지 목표
+
+
+  ## 주의사항
+
+  - 자동 도구는 접근성 이슈의 30-40%만 감지. 수동 테스트 필수 병행
+
+  - 마우스 전용 인터랙션(호버 툴팁, 드래그앤드롭) 설계 시 키보드 대안 제공
+
+  - 색상만으로 정보(성공/실패 등)를 구분하지 말 것. 아이콘/텍스트 병기
+
+  - 동적 콘텐츠(모달, 토스트, SPA 라우팅) 변경 시 포커스 관리와 aria-live 필수
+
+  - 접근성은 한 번의 점검이 아닌 지속적 프로세스. 디자인 시스템에 내장
+
+  '
+domain: qa.testing
+id: qa.test-gen.accessibility-testing
+tags:
+- accessibility
+- a11y
+- wcag
+- testing
+theory: 접근성 테스트 — WCAG 2.1 준수 자동화 검증
+token_estimate: 405
+type: pattern
+version: 1

@@ -1,0 +1,33 @@
+bloom_level: ANALYZE
+content: "# 용량 계획(Capacity Planning) 가이드\n\n## 핵심 원칙\n- 현재 사용량 추세를 기반으로 미래 리소스 수요를\
+  \ 예측한다\n- 유기적 성장(Organic)과 비유기적 성장(Inorganic: 캠페인, 신기능)을 구분한다\n- 피크 대비 최소 2배의 헤드룸을\
+  \ 확보한다\n- 정기적으로(분기별) 용량 계획을 갱신한다\n\n## DO\n- 핵심 리소스(CPU, 메모리, DB 연결, 스토리지)의 추세를\
+  \ 모니터링한다\n- 부하 테스트로 시스템의 최대 처리량을 파악한다\n- 오토스케일링을 설정하되, 확장 한도를 정의한다\n- 비용 대비 성능을\
+  \ 고려하여 인스턴스 타입을 선택한다\n\n## DON'T\n- 현재 트래픽만 보고 리소스를 프로비저닝하지 않는다\n- 부하 테스트 없이 피크\
+  \ 대응 능력을 가정하지 않는다\n- 오토스케일링만 믿고 용량 계획을 생략하지 않는다\n- DB, 메시지 큐 같은 상태 저장 컴포넌트의 확장을\
+  \ 간과하지 않는다\n\n## 용량 계획 체크리스트\n```\n1. 현재 상태 파악\n   - 일별/주별 피크 트래픽\n   - 리소스 사용률\
+  \ (CPU, 메모리, 디스크, 네트워크)\n   - DB 쿼리 처리량 및 연결 수\n   - 지연시간 p50, p95, p99\n\n2. 성장\
+  \ 예측\n   - 지난 3개월 트래픽 증가율\n   - 예정된 마케팅 캠페인/이벤트\n   - 신규 기능 출시 예정\n\n3. 부하 테스트\n\
+  \   - 현재 피크의 2배 부하에서 성능 확인\n   - 병목 지점 식별 (DB? 네트워크? CPU?)\n   - 스케일링 한계점 파악\n\n\
+  4. 조치 계획\n   - 6개월 후 필요 리소스 산정\n   - 비용 추정 및 승인\n   - 확장 시점과 방법 결정 (수직/수평)\n```\n\
+  \n## 코드 예시\n```yaml\n# Kubernetes HPA (Horizontal Pod Autoscaler)\napiVersion: autoscaling/v2\n\
+  kind: HorizontalPodAutoscaler\nmetadata:\n  name: order-service\nspec:\n  scaleTargetRef:\n\
+  \    apiVersion: apps/v1\n    kind: Deployment\n    name: order-service\n  minReplicas:\
+  \ 3\n  maxReplicas: 20    # 확장 한도\n  metrics:\n    - type: Resource\n      resource:\n\
+  \        name: cpu\n        target:\n          type: Utilization\n          averageUtilization:\
+  \ 60\n    - type: Pods\n      pods:\n        metric:\n          name: http_requests_per_second\n\
+  \        target:\n          type: AverageValue\n          averageValue: \"100\"\n\
+  \  behavior:\n    scaleUp:\n      stabilizationWindowSeconds: 60\n      policies:\n\
+  \        - type: Pods\n          value: 3\n          periodSeconds: 60\n    scaleDown:\n\
+  \      stabilizationWindowSeconds: 300\n```\n"
+domain: development.infra
+id: dev.infra.sre.capacity-planning
+tags:
+- infra
+- sre
+- capacity-planning
+- scaling
+theory: '#278 Capacity Planning (Google SRE Book, Chapter 18)'
+token_estimate: 807
+type: pattern
+version: 1

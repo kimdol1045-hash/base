@@ -1,0 +1,56 @@
+content: "RAG 패턴 (외부 지식을 검색하여 LLM 응답의 정확성과 최신성을 보장한다):\n\n### RAG 파이프라인\n```\nQuery\
+  \ → Embed → Retrieve → Rerank → Augment → Generate\n  ↓        ↓        ↓      \
+  \    ↓         ↓          ↓\n사용자   벡터화   Top-K     관련성    프롬프트    LLM\n질문      \
+  \        검색      재정렬    조합       응답\n```\n\n### Chunking 전략\n| 전략 | 청크 크기 | 용도 |\
+  \ 특징 |\n|------|-----------|------|------|\n| Fixed-size | 512 tokens | 범용 | 단순,\
+  \ 빠름 |\n| Semantic | 문단/섹션 단위 | 문서 | 의미 보존 |\n| Recursive | AST 기반 | 코드 | 함수/클래스\
+  \ 단위 |\n\n### 임베딩 + 벡터 저장\n```typescript\nimport OpenAI from 'openai';\nimport {\
+  \ pgvector } from 'pgvector';\n\nconst openai = new OpenAI();\n\n// DO: 청크 간 10-20%\
+  \ 오버랩으로 맥락 유지\nfunction chunkText(text: string, size = 512, overlap = 64): string[]\
+  \ {\n  const tokens = tokenize(text);\n  const chunks: string[] = [];\n  for (let\
+  \ i = 0; i < tokens.length; i += size - overlap) {\n    chunks.push(detokenize(tokens.slice(i,\
+  \ i + size)));\n  }\n  return chunks;\n}\n\n// 임베딩 생성\nasync function embed(texts:\
+  \ string[]): Promise<number[][]> {\n  const res = await openai.embeddings.create({\n\
+  \    model: 'text-embedding-3-small', // 1536차원, $0.02/1M tokens\n    input: texts,\n\
+  \  });\n  return res.data.map(d => d.embedding);\n}\n\n// pgvector에 저장\nasync function\
+  \ storeChunks(chunks: string[], docId: string) {\n  const embeddings = await embed(chunks);\n\
+  \  for (let i = 0; i < chunks.length; i++) {\n    await db.query(\n      `INSERT\
+  \ INTO documents (doc_id, chunk_index, content, embedding)\n       VALUES ($1, $2,\
+  \ $3, $4)`,\n      [docId, i, chunks[i], pgvector.toSql(embeddings[i])]\n    );\n\
+  \  }\n}\n```\n\n### 검색 + Reranking\n```typescript\n// DO: Top-K 검색 후 Reranker로 관련성\
+  \ 재정렬\nasync function retrieve(query: string, topK = 20, finalK = 5) {\n  const\
+  \ queryEmbedding = (await embed([query]))[0];\n\n  // 1단계: 벡터 유사도로 후보 검색 (빠르지만 부정확할\
+  \ 수 있음)\n  const candidates = await db.query(\n    `SELECT content, doc_id, 1 -\
+  \ (embedding <=> $1) as similarity\n     FROM documents\n     ORDER BY embedding\
+  \ <=> $1\n     LIMIT $2`,\n    [pgvector.toSql(queryEmbedding), topK]\n  );\n\n\
+  \  // 2단계: Reranker로 정밀 재정렬\n  const reranked = await rerank(query, candidates.rows,\
+  \ finalK);\n\n  return reranked;\n}\n\n// Cross-encoder reranking (더 정확한 관련성 판단)\n\
+  async function rerank(query: string, docs: Doc[], topK: number) {\n  const scored\
+  \ = await Promise.all(\n    docs.map(async (doc) => ({\n      ...doc,\n      score:\
+  \ await crossEncoderScore(query, doc.content),\n    }))\n  );\n  return scored.sort((a,\
+  \ b) => b.score - a.score).slice(0, topK);\n}\n```\n\n### 프롬프트 조합 (Augment)\n```typescript\n\
+  // DO: 출처 명시 + 컨텍스트 윈도우 관리\nfunction buildPrompt(query: string, contexts: Doc[]):\
+  \ string {\n  const contextBlock = contexts\n    .map((c, i) => `[출처 ${i + 1}: ${c.doc_id}]\\\
+  n${c.content}`)\n    .join('\\n\\n');\n\n  return `다음 참고 자료를 기반으로 질문에 답변하세요.\n참고\
+  \ 자료에 없는 내용은 \"해당 정보가 없습니다\"라고 답하세요.\n답변에 사용한 출처 번호를 반드시 표기하세요.\n\n## 참고 자료\n${contextBlock}\n\
+  \n## 질문\n${query}`;\n}\n```\n\nDON'T:\n```typescript\n// ❌ 오버랩 없는 청킹 → 문맥 단절\nfor\
+  \ (let i = 0; i < tokens.length; i += 512) {\n  chunks.push(tokens.slice(i, i +\
+  \ 512)); // 경계에서 문장 잘림\n}\n\n// ❌ Reranking 없이 벡터 검색 결과만 사용\nconst results = await\
+  \ vectorSearch(query, 5); // 유사도 높지만 관련 없는 결과 포함 가능\n\n// ❌ 전체 문서를 하나의 청크로\nawait\
+  \ embed([entireDocument]); // 50페이지 문서를 하나로 → 검색 정밀도 급락\n\n// ❌ 출처 없는 답변 → 할루시네이션\
+  \ 검증 불가\nreturn llmResponse.text; // 어떤 문서에서 왔는지 알 수 없음\n```\n\n### 성능 기준\n- 검색\
+  \ 지연: p95 < 100ms (pgvector HNSW 인덱스)\n- 청크 크기: 256-1024 tokens (도메인별 실험 필요)\n-\
+  \ 오버랩: 청크 크기의 10-20%\n- Top-K 후보: 20개 검색 → Rerank 후 5개 사용\n"
+domain: development.backend
+id: dev.backend.patterns.rag-pattern
+tags:
+- backend
+- rag
+- vector-db
+- embedding
+- chunking
+- llm
+theory: '#108 Data Architecture'
+token_estimate: 1675
+type: pattern
+version: 1

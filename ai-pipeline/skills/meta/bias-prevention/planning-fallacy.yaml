@@ -1,0 +1,19 @@
+content: "계획 오류 (소요 시간/비용을 체계적으로 과소 추정):\n\n### AI에서 발현\n- \"이 기능은 2-3일이면 됩니다\" (실제\
+  \ 2주)\n- MVP 범위를 과소 추정\n- 예외 처리, 테스트, 배포 시간 미포함\n\n### 방지 패턴\n1. **참조 클래스 예측 (Reference\
+  \ Class Forecasting)**\n   과거 유사 프로젝트 데이터 기반 추정:\n   \"유사한 CRUD API 프로젝트의 실제 소요\
+  \ 시간 분포: 최소 1주, 평균 2주, 최대 4주\"\n\n2. **범위 추정 (3점 추정)**\n   | 항목 | 낙관 | 기대 | 비관 |\n\
+  \   |------|------|------|------|\n   | 인증 API | 3일 | 5일 | 10일 |\n   | 결제 연동 | 5일\
+  \ | 10일 | 20일 |\n   - 기대치 = (낙관 + 4×기대 + 비관) / 6\n\n3. **숨겨진 작업 포함 필수**\n   개발 외\
+  \ 시간: 설계 리뷰, 코드 리뷰, 테스트 작성, 문서화, 배포, 버그 수정\n   경험칙: 순수 코딩 시간 × 2~3 = 실제 소요 시간\n\n\
+  4. **절대 하지 말 것**\n   - 구체적 일수/시간 추정 제시\n   - \"금방 됩니다\", \"간단합니다\" 같은 표현\n"
+domain: meta
+id: meta.bias-prevention.planning-fallacy
+tags:
+- meta
+- bias
+- planning-fallacy
+- estimation
+theory: '#A9 Planning Fallacy (Buehler, Griffin & Ross, 1994)'
+token_estimate: 298
+type: rule
+version: 1

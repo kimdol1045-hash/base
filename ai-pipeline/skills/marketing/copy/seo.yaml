@@ -1,0 +1,21 @@
+content: "SEO 카피라이팅 (검색 엔진과 사람 모두를 위한 글쓰기):\n\n### 키워드 배치\n1. **제목 (H1)**: 핵심 키워드\
+  \ 포함, 60자 이내\n2. **메타 디스크립션**: 핵심 키워드 + CTA, 155자 이내\n3. **URL**: 짧고 키워드 포함 (/nextjs-deployment-guide)\n\
+  4. **첫 100단어**: 핵심 키워드 자연스럽게 포함\n5. **H2/H3**: 관련 키워드를 소제목에\n\n### Next.js Metadata\n\
+  ```tsx\nexport const metadata: Metadata = {\n  title: 'Next.js 배포 가이드 | 10분 만에 Vercel\
+  \ 배포',\n  description: 'Next.js 프로젝트를 Vercel에 배포하는 단계별 가이드. 환경변수 설정부터 도메인 연결까지.',\n\
+  \  openGraph: {\n    title: 'Next.js 배포 가이드',\n    description: '10분 만에 프로덕션 배포하기',\n\
+  \    images: ['/og-image.png'],\n  },\n};\n```\n\n### 검색 의도 매칭\n| 의도 | 키워드 패턴 |\
+  \ 콘텐츠 형식 |\n|------|-----------|-----------|\n| 정보형 | \"~란\", \"~방법\", \"~차이\" |\
+  \ 블로그, 가이드 |\n| 비교형 | \"~vs~\", \"~비교\", \"~추천\" | 비교표, 리뷰 |\n| 거래형 | \"~가격\", \"\
+  ~구매\", \"~시작\" | 랜딩페이지, 가격표 |\n\n### 규칙\n- 키워드 밀도: 자연스럽게 (2-3% 이하). 키워드 스터핑 금지.\n\
+  - 내부 링크: 관련 페이지 2-3개 자연스럽게 연결\n- 이미지 alt 태그: 키워드 포함 설명\n"
+domain: marketing
+id: marketing.copy.seo
+tags:
+- marketing
+- copy
+- seo
+- search
+token_estimate: 420
+type: rule
+version: 1

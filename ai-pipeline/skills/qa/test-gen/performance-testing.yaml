@@ -1,0 +1,62 @@
+bloom_level: APPLY
+content: '# 성능 테스트 가이드
+
+
+  ## 적용 상황
+
+  - 새 기능 배포 전 성능 기준선(baseline) 대비 회귀를 확인할 때
+
+  - 시스템 용량 계획(capacity planning)을 수립할 때
+
+  - 프로덕션 트래픽 급증(이벤트, 런칭)에 대비할 때
+
+  - 성능 병목 지점을 식별하고 최적화 방향을 결정할 때
+
+
+  ## 구현 방법
+
+  - 핵심 지표 정의: 응답시간(P50/P95/P99), 처리량(TPS/RPS), 에러율
+
+  - 부하 프로파일 설계: ramp-up(5분) → steady-state(15분) → ramp-down(5분)
+
+  - 실 사용 패턴 기반 시나리오: 읽기 80% + 쓰기 15% + 검색 5% 등 실제 비율 반영
+
+  - 테스트 유형별 실행:
+
+  - Smoke: 최소 부하로 시스템 정상 동작 확인
+
+  - Load: 예상 트래픽 수준에서 성능 검증
+
+  - Stress: 한계 트래픽까지 점진적 증가하여 한계점 식별
+
+  - Spike: 순간 부하 급증 시 복원력 확인
+
+  - 베이스라인 측정 후 매 변경사항마다 비교 (자동화 권장)
+
+  - 모니터링 병행: CPU, 메모리, DB 커넥션, 네트워크 I/O 상관관계 분석
+
+
+  ## 주의사항
+
+  - 프로덕션 환경에서 사전 고지 없이 실행 금지. 별도 스테이징 환경 사용
+
+  - 단일 요청 유형만 테스트하면 실제 워크로드와 괴리 발생
+
+  - 네트워크 지연(latency) 무시 금지. CDN/리전 간 지연 시뮬레이션 포함
+
+  - 테스트 데이터 규모가 프로덕션과 유사해야 의미 있는 결과
+
+  - k6, Artillery, Locust 등 코드 기반 도구로 버전 관리 가능하게 작성
+
+  '
+domain: qa.testing
+id: qa.test-gen.performance-testing
+tags:
+- performance
+- testing
+- latency
+- throughput
+theory: 성능 테스트 — 응답시간, 처리량, 리소스 사용량 검증
+token_estimate: 382
+type: pattern
+version: 1

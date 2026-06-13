@@ -1,0 +1,53 @@
+---
+id: "analytics.bayesian"
+domain: "analytics"
+type: "rule"
+bloom_level: ""
+tags: ["analytics", "bayesian", "ab-testing", "statistics"]
+brain_region: "THALAMUS"
+token_estimate: 420
+---
+
+# analytics.bayesian
+
+> #145 Bayes' Theorem (Bayes, 1763)
+
+베이지안 접근 (사전 지식을 업데이트하며 판단한다):
+
+### 베이즈 정리
+P(A|B) = P(B|A) × P(A) / P(B)
+- 사전 확률 P(A): 데이터 보기 전 믿음
+- 우도 P(B|A): A가 참일 때 B가 관측될 확률
+- 사후 확률 P(A|B): 데이터 본 후 업데이트된 믿음
+
+### A/B 테스트 베이지안 접근
+빈도주의: "p < 0.05이므로 유의하다" (이해하기 어렵고 자주 오해됨)
+베이지안: "B안이 A안보다 나을 확률 95%" (직관적)
+
+장점:
+- 실시간 의사결정 가능 (표본 크기 사전 고정 불필요)
+- "B안이 이길 확률 73%" 같은 직관적 해석
+- 사전 지식(과거 실험 결과) 반영 가능
+
+### Multi-Armed Bandit (MAB)
+탐색(exploration)과 활용(exploitation) 균형:
+- 초반: 모든 변형에 균등 트래픽 (탐색)
+- 데이터 쌓이면: 성과 좋은 변형에 트래픽 집중 (활용)
+- 장점: 실험 중에도 전환율 손실 최소화
+- 적합: 단기 프로모션, 빠른 의사결정 필요 시
+
+### 가중치 업데이트 (시스템 내부용)
+성공 시: weight × 1.05 (5% 강화)
+실패 시: weight × 0.95 (5% 감쇠)
+미사용 30일: weight × 0.95 (자연 감쇠)
+
+## Connections
+
+- [[analytics.role]] — REQUIRES (weight: 0.9)
+- [[analytics.verify]] — FEEDS (weight: 0.8)
+- [[analytics.cohort-analysis]] — FEEDS (weight: 0.7)
+- [[analytics.role]] — FEEDS (weight: 0.5)
+- [[analytics.metrics]] — FEEDS (weight: 0.5)
+- [[analytics.ab-testing]] — FEEDS (weight: 0.5)
+- [[analytics.funnel-analysis]] — FEEDS (weight: 0.5)
+- [[analytics.simpsons-paradox]] — FEEDS (weight: 0.5)

@@ -1,0 +1,36 @@
+bloom_level: APPLY
+content: "# SSR (Server-Side Rendering) 가이드\n\n## 핵심 원칙\n- 매 요청마다 서버에서 HTML을 생성하여\
+  \ 클라이언트에 전달한다\n- SEO가 중요하고, 데이터가 자주 변경되는 페이지에 적합하다\n- Next.js App Router에서는 Server\
+  \ Components가 기본 SSR이다\n- TTFB(Time to First Byte)와 데이터 신선도 사이의 균형을 고려한다\n\n## DO\n\
+  - 사용자별 맞춤 콘텐츠(대시보드, 프로필)에 SSR을 사용한다\n- `cache: 'no-store'` 또는 `dynamic = 'force-dynamic'`으로\
+  \ 동적 렌더링을 명시한다\n- Streaming SSR로 긴 데이터 로딩의 체감 속도를 개선한다\n- 에러 페이지(error.tsx)를 준비한다\n\
+  \n## DON'T\n- 변경이 드문 정적 콘텐츠에 SSR을 사용하지 않는다 (SSG/ISR 사용)\n- 서버 컴포넌트에서 브라우저 전용 API(window,\
+  \ localStorage)를 호출하지 않는다\n- 무거운 연산을 매 요청마다 서버에서 수행하지 않는다 (캐시 활용)\n- 모든 페이지를 SSR로\
+  \ 구현하지 않는다 (렌더링 전략 혼합)\n\n## 코드 예시\n```tsx\n// app/dashboard/page.tsx (SSR - 매 요청마다\
+  \ 데이터 페칭)\nexport const dynamic = \"force-dynamic\";\n\nasync function getDashboardData(userId:\
+  \ string) {\n  const res = await fetch(`${API_URL}/dashboard/${userId}`, {\n   \
+  \ cache: \"no-store\",\n    headers: { Authorization: `Bearer ${getToken()}` },\n\
+  \  });\n  if (!res.ok) throw new Error(\"대시보드 데이터 로딩 실패\");\n  return res.json();\n\
+  }\n\nexport default async function DashboardPage() {\n  const session = await getServerSession();\n\
+  \  if (!session) redirect(\"/login\");\n\n  const data = await getDashboardData(session.user.id);\n\
+  \n  return (\n    <div className=\"grid grid-cols-12 gap-6 p-6\">\n      <div className=\"\
+  col-span-8\">\n        <Suspense fallback={<ChartSkeleton />}>\n          <AnalyticsSection\
+  \ data={data.analytics} />\n        </Suspense>\n      </div>\n      <div className=\"\
+  col-span-4\">\n        <Suspense fallback={<ListSkeleton />}>\n          <RecentActivity\
+  \ items={data.activities} />\n        </Suspense>\n      </div>\n    </div>\n  );\n\
+  }\n\n// app/dashboard/error.tsx\n\"use client\";\nexport default function Error({\
+  \ error, reset }: { error: Error; reset: () => void }) {\n  return (\n    <div className=\"\
+  flex flex-col items-center gap-4 p-8\">\n      <p>데이터를 불러오지 못했습니다.</p>\n      <button\
+  \ onClick={reset} className=\"btn-primary\">다시 시도</button>\n    </div>\n  );\n}\n\
+  ```\n"
+domain: development.frontend
+id: dev.frontend.page.ssr
+tags:
+- frontend
+- ssr
+- nextjs
+- rendering
+theory: '#241 Server-Side Rendering (Next.js App Router Documentation, Vercel 2023)'
+token_estimate: 938
+type: pattern
+version: 1

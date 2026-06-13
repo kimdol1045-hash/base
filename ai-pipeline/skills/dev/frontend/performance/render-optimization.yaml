@@ -1,0 +1,35 @@
+bloom_level: APPLY
+content: "# React 렌더링 최적화 가이드\n\n## 핵심 원칙\n- 불필요한 리렌더링을 방지하여 UI 응답성을 유지한다\n- 측정 먼저,\
+  \ 최적화는 나중에 (React DevTools Profiler 활용)\n- React Compiler(React 19)를 우선 도입하고, 수동\
+  \ 최적화는 보조적으로 사용한다\n- 상태를 가능한 아래쪽(지역적)에 위치시킨다\n\n## DO\n- `React.memo()`로 props가\
+  \ 변하지 않으면 리렌더링을 방지한다\n- `useMemo()`로 비용이 큰 계산을 캐시한다\n- `useCallback()`으로 이벤트 핸들러\
+  \ 참조를 안정화한다\n- 상태를 필요한 컴포넌트에 가장 가까이 위치시킨다\n- React DevTools Profiler로 병목을 먼저 확인한다\n\
+  \n## DON'T\n- 모든 컴포넌트에 memo를 적용하지 않는다 (오버헤드 발생)\n- 프로파일링 없이 최적화하지 않는다 (추측 금지)\n\
+  - 객체/배열 리터럴을 JSX props에 인라인으로 전달하지 않는다\n- key에 index를 사용하지 않는다 (목록이 변경되는 경우)\n-\
+  \ Context의 값이 너무 자주 변경되도록 하지 않는다\n\n## 코드 예시\n```tsx\nimport { memo, useMemo, useCallback\
+  \ } from \"react\";\n\n// memo: props가 같으면 리렌더링 방지\nconst ExpensiveList = memo(function\
+  \ ExpensiveList({ items }: { items: Item[] }) {\n  return (\n    <ul>\n      {items.map(item\
+  \ => <ListItem key={item.id} item={item} />)}\n    </ul>\n  );\n});\n\n// 부모 컴포넌트\
+  \ 최적화\nfunction Dashboard() {\n  const [filter, setFilter] = useState(\"\");\n \
+  \ const [count, setCount] = useState(0);\n\n  // useMemo: 비싼 필터링 결과 캐시\n  const\
+  \ filteredItems = useMemo(\n    () => items.filter(item => item.name.includes(filter)),\n\
+  \    [items, filter], // count 변경 시 재계산하지 않음\n  );\n\n  // useCallback: 핸들러 참조 안정화\n\
+  \  const handleSelect = useCallback((id: string) => {\n    setSelectedId(id);\n\
+  \  }, []);\n\n  return (\n    <>\n      <Counter count={count} onIncrement={() =>\
+  \ setCount(c => c + 1)} />\n      <ExpensiveList items={filteredItems} onSelect={handleSelect}\
+  \ />\n    </>\n  );\n}\n\n// ❌ 안티패턴: 매 렌더링마다 새 객체 생성\n<Component style={{ color:\
+  \ \"red\" }} />  // 매번 새 참조\n<Component data={items.filter(x => x.active)} />  //\
+  \ 매번 새 배열\n\n// ✅ 개선\nconst style = useMemo(() => ({ color: \"red\" }), []);\nconst\
+  \ activeItems = useMemo(() => items.filter(x => x.active), [items]);\n```\n"
+domain: development.frontend
+id: dev.frontend.performance.render-optimization
+tags:
+- frontend
+- performance
+- rendering
+- react
+- memo
+theory: '#255 React Rendering Optimization (React Documentation, Reconciliation Algorithm)'
+token_estimate: 855
+type: pattern
+version: 1

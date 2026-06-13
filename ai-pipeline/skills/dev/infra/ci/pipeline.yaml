@@ -1,0 +1,24 @@
+content: "CI 파이프라인 (코드 변경마다 자동으로 품질을 보증한다):\n\n### 파이프라인 단계\n```yaml\n# .github/workflows/ci.yml\n\
+  name: CI\non: [push, pull_request]\njobs:\n  ci:\n    runs-on: ubuntu-latest\n \
+  \   steps:\n      - uses: actions/checkout@v4\n\n      - name: Setup Node\n    \
+  \    uses: actions/setup-node@v4\n        with:\n          node-version: 20\n  \
+  \        cache: 'npm'  # 의존성 캐시로 속도 향상\n\n      - name: Install\n        run: npm\
+  \ ci  # npm install 대신 ci (lock 파일 기반)\n\n      - name: Lint\n        run: npm run\
+  \ lint  # ESLint + Prettier\n\n      - name: Type Check\n        run: npm run type-check\
+  \  # tsc --noEmit\n\n      - name: Test\n        run: npm run test  # vitest\n\n\
+  \      - name: Build\n        run: npm run build\n```\n\n### 규칙\n- 순서: lint → type-check\
+  \ → test → build (빠른 것부터)\n- 실패 시 즉시 중단 (느린 단계까지 기다리지 않음)\n- PR에서만 전체 실행, push는\
+  \ lint+type-check만 (속도)\n- 테스트 병렬화: vitest --pool=threads\n\n### 캐시 전략\n- node_modules:\
+  \ package-lock.json 해시 기반 캐시\n- Next.js: .next/cache 캐시\n- Docker: 레이어 캐시\n\n###\
+  \ 목표 시간\n- lint + type-check: < 1분\n- 테스트: < 3분\n- 빌드: < 3분\n- 전체 파이프라인: < 5분\n"
+domain: development.infra
+id: dev.infra.ci.pipeline
+tags:
+- infra
+- ci
+- github-actions
+- pipeline
+theory: '#133 Continuous Integration (Fowler, 2006)'
+token_estimate: 420
+type: pattern
+version: 1

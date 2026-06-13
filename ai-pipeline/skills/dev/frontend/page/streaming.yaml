@@ -1,0 +1,33 @@
+bloom_level: APPLY
+content: "# Streaming SSR 가이드\n\n## 핵심 원칙\n- HTML을 한 번에 보내지 않고, 준비된 부분부터 점진적으로 스트리밍한다\n\
+  - TTFB를 크게 개선하여 사용자가 빠르게 콘텐츠를 볼 수 있다\n- Suspense 경계 단위로 스트리밍이 동작한다\n- Selective\
+  \ Hydration으로 인터랙티브 부분을 우선 활성화한다\n\n## DO\n- 느린 데이터 소스를 포함하는 컴포넌트를 Suspense로 감싼다\n\
+  - 레이아웃 쉘(header, sidebar)은 즉시 전송하고 콘텐츠는 스트리밍한다\n- `loading.tsx` 파일로 자동 스트리밍을 구성한다\n\
+  - 독립적인 데이터 요청은 병렬로 실행한다\n\n## DON'T\n- 전체 페이지를 하나의 await로 블로킹하지 않는다\n- 스트리밍이 필요\
+  \ 없는 단순 페이지에 불필요한 Suspense를 추가하지 않는다\n- 데이터 의존성 체인을 길게 만들지 않는다 (워터폴 방지)\n- fallback\
+  \ UI의 높이를 실제 콘텐츠와 크게 다르게 만들지 않는다\n\n## 코드 예시\n```tsx\n// app/dashboard/page.tsx\
+  \ - 스트리밍 SSR\nimport { Suspense } from \"react\";\n\nexport default function DashboardPage()\
+  \ {\n  return (\n    <div className=\"grid grid-cols-12 gap-6\">\n      {/* 레이아웃\
+  \ 쉘은 즉시 전송 */}\n      <header className=\"col-span-12\">\n        <DashboardHeader\
+  \ />\n      </header>\n\n      {/* 각 섹션이 독립적으로 스트리밍 */}\n      <div className=\"\
+  col-span-4\">\n        <Suspense fallback={<StatsSkeleton />}>\n          <StatsSection\
+  \ />     {/* DB 조회 500ms */}\n        </Suspense>\n      </div>\n\n      <div className=\"\
+  col-span-8\">\n        <Suspense fallback={<ChartSkeleton />}>\n          <ChartSection\
+  \ />     {/* 외부 API 2초 */}\n        </Suspense>\n      </div>\n\n      <div className=\"\
+  col-span-12\">\n        <Suspense fallback={<TableSkeleton rows={10} />}>\n    \
+  \      <DataTable />        {/* 무거운 쿼리 3초 */}\n        </Suspense>\n      </div>\n\
+  \    </div>\n  );\n}\n\n// 병렬 데이터 페칭\nasync function StatsSection() {\n  const [users,\
+  \ revenue, orders] = await Promise.all([\n    fetchUserCount(),\n    fetchRevenue(),\n\
+  \    fetchOrderCount(),\n  ]);\n  return <StatsGrid users={users} revenue={revenue}\
+  \ orders={orders} />;\n}\n```\n"
+domain: development.frontend
+id: dev.frontend.page.streaming
+tags:
+- frontend
+- streaming
+- ssr
+- suspense
+theory: '#244 Streaming SSR (React 18 Selective Hydration, Meta 2022)'
+token_estimate: 801
+type: pattern
+version: 1

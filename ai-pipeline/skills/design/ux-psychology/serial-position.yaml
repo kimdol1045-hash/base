@@ -1,0 +1,47 @@
+content: "직렬 위치 효과 — 목록에서 첫 번째(초두 효과)와 마지막(최신 효과) 항목이 가장 잘 기억된다.\n중간 항목은 기억 확률이 가장\
+  \ 낮다.\n\n### 핵심 원칙\n- **핵심 기능/메뉴**를 첫 번째와 마지막에 배치\n- 덜 중요한 항목은 중간에 배치\n- 탭바: 홈(첫째)\
+  \ + 프로필/CTA(마지막)\n- 리스트/카드: 가장 중요한 정보를 상단과 하단에\n\n### 1. 모바일 탭바 — 핵심 기능을 양 끝에\n\n\
+  ```tsx\n{/* 홈(초두) ... 프로필(최신) — 가장 많이 쓰는 기능이 양 끝 */}\n<nav className=\"fixed bottom-0\
+  \ inset-x-0 bg-background border-t\n                flex justify-around h-16 pb-safe\"\
+  >\n  {/* 1st: 홈 — 초두 효과 (Primacy) */}\n  <TabBarItem icon={Home} label=\"홈\" href=\"\
+  /\" active />\n  {/* 2nd~4th: 중간 — 기억률 낮은 위치 */}\n  <TabBarItem icon={Search} label=\"\
+  탐색\" href=\"/explore\" />\n  <TabBarItem icon={PlusCircle} label=\"작성\" href=\"\
+  /create\" />\n  <TabBarItem icon={Bell} label=\"알림\" href=\"/notifications\" />\n\
+  \  {/* 5th: 프로필 — 최신 효과 (Recency) */}\n  <TabBarItem icon={User} label=\"내 정보\"\
+  \ href=\"/profile\" />\n</nav>\n```\n\n### 2. 기능 소개 리스트 — 핵심 가치를 처음/마지막\n\n```tsx\n\
+  {/* 랜딩 페이지: 첫/마지막 feature가 가장 기억에 남는다 */}\n<div className=\"space-y-12\">\n  {/*\
+  \ 1st — 초두: 가장 강력한 USP */}\n  <FeatureSection\n    icon={<Zap className=\"h-8 w-8\
+  \ text-primary\" />}\n    title=\"10배 빠른 배포\"\n    description=\"원클릭 배포로 개발 시간을\
+  \ 90% 단축합니다.\"\n  />\n  {/* 중간: 보조 기능들 */}\n  <FeatureSection\n    icon={<Shield\
+  \ className=\"h-8 w-8 text-muted-foreground\" />}\n    title=\"엔터프라이즈 보안\"\n   \
+  \ description=\"SOC2, GDPR 인증 완료.\"\n  />\n  <FeatureSection\n    icon={<Users className=\"\
+  h-8 w-8 text-muted-foreground\" />}\n    title=\"실시간 협업\"\n    description=\"팀원과\
+  \ 동시 편집 가능.\"\n  />\n  {/* Last — 최신: 행동 유도 메시지 */}\n  <FeatureSection\n    icon={<Sparkles\
+  \ className=\"h-8 w-8 text-primary\" />}\n    title=\"지금 무료로 시작하세요\"\n    description=\"\
+  신용카드 없이 14일 무료 체험.\"\n    cta={<Button size=\"lg\">무료 시작</Button>}\n  />\n</div>\n\
+  ```\n\n### 3. 드롭다운 메뉴 — 자주 쓰는 액션을 위/아래\n\n```tsx\n<DropdownMenuContent>\n  {/* 첫\
+  \ 번째: 가장 자주 쓰는 액션 */}\n  <DropdownMenuItem><Edit className=\"mr-2 h-4 w-4\" />편집</DropdownMenuItem>\n\
+  \  <DropdownMenuItem><Copy className=\"mr-2 h-4 w-4\" />복제</DropdownMenuItem>\n\
+  \  <DropdownMenuSeparator />\n  {/* 중간: 덜 빈번한 액션 */}\n  <DropdownMenuItem><Archive\
+  \ className=\"mr-2 h-4 w-4\" />보관</DropdownMenuItem>\n  <DropdownMenuItem><Download\
+  \ className=\"mr-2 h-4 w-4\" />내보내기</DropdownMenuItem>\n  <DropdownMenuSeparator\
+  \ />\n  {/* 마지막: 명확한 구분이 필요한 위험 액션 */}\n  <DropdownMenuItem className=\"text-destructive\"\
+  >\n    <Trash className=\"mr-2 h-4 w-4\" />삭제\n  </DropdownMenuItem>\n</DropdownMenuContent>\n\
+  ```\n\n### 적용 가이드\n| UI 요소 | 첫 번째 (초두) | 마지막 (최신) |\n|---------|---------------|--------------|\n\
+  | 탭바 | 홈 / 핵심 기능 | 프로필 / 설정 |\n| 랜딩 feature | 최대 USP | CTA / 전환 유도 |\n| 메뉴 | 가장\
+  \ 빈번한 액션 | 위험/구분 액션 |\n| 카드 리스트 | 추천/인기 항목 | 최신 항목 |\n"
+domain: design
+id: design.ux-psychology.serial-position
+tags:
+- design
+- ux
+- serial-position
+- primacy
+- recency
+- navigation
+- tab-bar
+- menu
+theory: '#47 직렬 위치 효과 (Murdock, 1962)'
+token_estimate: 1241
+type: rule
+version: 1

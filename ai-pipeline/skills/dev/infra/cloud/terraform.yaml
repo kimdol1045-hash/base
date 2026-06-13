@@ -1,0 +1,33 @@
+bloom_level: APPLY
+content: "# Terraform 가이드\n\n## 핵심 원칙\n- 인프라를 코드로 선언하여 재현 가능하고 버전 관리 가능하게 한다\n- 상태(State)를\
+  \ 원격 백엔드(S3 + DynamoDB)에 저장한다\n- 모듈을 활용하여 재사용 가능한 인프라 패턴을 만든다\n- Plan → Apply →\
+  \ Verify 워크플로를 따른다\n\n## DO\n- 원격 상태 저장소를 사용한다 (S3 + DynamoDB Lock)\n- 환경별(dev/staging/prod)\
+  \ 워크스페이스 또는 디렉토리를 분리한다\n- `terraform plan`을 PR에서 자동 실행하고 결과를 리뷰한다\n- 리소스 네이밍 규칙을\
+  \ 일관되게 적용한다\n- sensitive 변수를 `sensitive = true`로 표시한다\n\n## DON'T\n- 로컬에 상태 파일(terraform.tfstate)을\
+  \ 보관하지 않는다\n- `terraform apply -auto-approve`를 프로덕션에서 사용하지 않는다\n- 하나의 state 파일에\
+  \ 모든 리소스를 넣지 않는다 (분리)\n- 수동으로 만든 리소스를 Terraform으로 관리하지 않는다 (import 필요)\n\n## 코드\
+  \ 예시\n```hcl\n# 원격 백엔드 설정\nterraform {\n  backend \"s3\" {\n    bucket         =\
+  \ \"my-terraform-state\"\n    key            = \"production/terraform.tfstate\"\n\
+  \    region         = \"ap-northeast-2\"\n    dynamodb_table = \"terraform-locks\"\
+  \n    encrypt        = true\n  }\n  required_providers {\n    aws = { source = \"\
+  hashicorp/aws\", version = \"~> 5.0\" }\n  }\n}\n\n# 모듈 사용\nmodule \"web_server\"\
+  \ {\n  source = \"./modules/ecs-service\"\n\n  name          = \"my-app\"\n  environment\
+  \   = var.environment\n  image         = \"${var.ecr_repo}:${var.image_tag}\"\n\
+  \  cpu           = 256\n  memory        = 512\n  desired_count = var.environment\
+  \ == \"production\" ? 3 : 1\n\n  vpc_id     = module.vpc.vpc_id\n  subnet_ids =\
+  \ module.vpc.private_subnet_ids\n}\n\n# 변수 정의\nvariable \"environment\" {\n  type\
+  \        = string\n  description = \"배포 환경 (dev, staging, production)\"\n  validation\
+  \ {\n    condition     = contains([\"dev\", \"staging\", \"production\"], var.environment)\n\
+  \    error_message = \"environment는 dev, staging, production 중 하나여야 합니다.\"\n  }\n\
+  }\n```\n"
+domain: development.infra
+id: dev.infra.cloud.terraform
+tags:
+- infra
+- cloud
+- terraform
+- iac
+theory: '#265 Infrastructure as Code (HashiCorp, Terraform 2014)'
+token_estimate: 774
+type: pattern
+version: 1

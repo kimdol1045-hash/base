@@ -1,0 +1,49 @@
+content: "Redis 고급 패턴 (캐싱, 실시간 통신, 분산 락을 위한 인메모리 데이터 구조):\n\n### 1. Cache-Aside 패턴\n\
+  읽기 시 캐시 확인 → miss면 DB 조회 → 캐시 저장. 쓰기 시 DB 갱신 → 캐시 삭제.\n\nDO:\n```typescript\n//\
+  \ ✅ Cache-Aside with TTL\nasync function getUser(id: string): Promise<User> {\n\
+  \  const cached = await redis.get(`user:${id}`);\n  if (cached) return JSON.parse(cached);\n\
+  \n  const user = await db.user.findUnique({ where: { id } });\n  if (user) {\n \
+  \   await redis.set(`user:${id}`, JSON.stringify(user), \"EX\", 3600); // TTL 1시간\n\
+  \  }\n  return user;\n}\n\n// ✅ 쓰기 시 캐시 무효화 (Write-Through 아님)\nasync function updateUser(id:\
+  \ string, data: UpdateUserDto) {\n  const user = await db.user.update({ where: {\
+  \ id }, data });\n  await redis.del(`user:${id}`);  // 캐시 삭제 (갱신 아님)\n  return user;\n\
+  }\n```\n\n### 2. Pub/Sub — 실시간 이벤트 브로드캐스트\n```typescript\n// ✅ 채널 기반 Pub/Sub (1:N\
+  \ 브로드캐스트)\nconst subscriber = redis.duplicate();\nawait subscriber.subscribe(\"\
+  notifications:user:123\");\nsubscriber.on(\"message\", (channel, message) => {\n\
+  \  const event = JSON.parse(message);\n  ws.send(event); // WebSocket으로 전달\n});\n\
+  \n// Publisher\nawait redis.publish(\"notifications:user:123\", JSON.stringify({\n\
+  \  type: \"NEW_MESSAGE\",\n  payload: { from: \"alice\", text: \"Hello\" },\n}));\n\
+  ```\n\n### 3. Sorted Set — 리더보드, 랭킹\n```typescript\n// ✅ 리더보드: O(log N) 삽입, O(log\
+  \ N + M) 범위 조회\nawait redis.zadd(\"leaderboard:weekly\", score, `user:${userId}`);\n\
+  \n// 상위 10명 조회 (높은 점수순)\nconst top10 = await redis.zrevrange(\"leaderboard:weekly\"\
+  , 0, 9, \"WITHSCORES\");\n\n// 특정 유저 순위 조회 (0-based)\nconst rank = await redis.zrevrank(\"\
+  leaderboard:weekly\", `user:${userId}`);\n```\n\n### 4. 분산 락 (Redlock 알고리즘)\nDO:\n\
+  ```typescript\n// ✅ SET NX + EX 로 원자적 락 획득 (단일 인스턴스)\nconst lockKey = `lock:order:${orderId}`;\n\
+  const lockValue = crypto.randomUUID(); // 소유권 식별\nconst acquired = await redis.set(lockKey,\
+  \ lockValue, \"NX\", \"EX\", 30); // 30초 TTL\n\nif (acquired) {\n  try {\n    await\
+  \ processOrder(orderId);\n  } finally {\n    // ✅ Lua 스크립트로 원자적 해제 (소유자만 해제)\n \
+  \   await redis.eval(\n      `if redis.call(\"get\", KEYS[1]) == ARGV[1] then\n\
+  \         return redis.call(\"del\", KEYS[1])\n       end return 0`,\n      1, lockKey,\
+  \ lockValue\n    );\n  }\n}\n```\n\n### 5. 세션 스토어\n- TTL: 30분 (sliding window),\
+  \ `EXPIRE` 갱신\n- Hash 타입으로 필드별 접근: `HSET session:abc userId \"123\" role \"admin\"\
+  `\n- 최대 메모리 정책: `maxmemory-policy allkeys-lru`\n\nDON'T:\n```typescript\n// ❌ KEYS\
+  \ * 프로덕션 사용 — O(N) 전체 스캔, 블로킹\nconst allKeys = await redis.keys(\"user:*\"); //\
+  \ 서버 멈춤 위험\n\n// ❌ TTL 없는 캐시 — 메모리 무한 증가\nawait redis.set(`user:${id}`, JSON.stringify(user));\
+  \ // TTL 미설정\n\n// ❌ 단일 Redis로 Redlock — 최소 5개 독립 인스턴스 필요\n// 단일 인스턴스 장애 시 락 보장\
+  \ 불가 (CP 위반)\n```\n\n### 운영 수치\n- 단일 인스턴스 처리량: ~100,000 ops/sec (GET/SET)\n- Pub/Sub\
+  \ 지연: < 1ms (같은 인스턴스)\n- 권장 최대 키 크기: 512MB (실무 1MB 이하 권장)\n- Cluster 최소 구성: 3 master\
+  \ + 3 replica\n"
+domain: development.database
+id: dev.backend.database.redis-patterns
+tags:
+- database
+- redis
+- caching
+- pubsub
+- distributed-lock
+- sorted-set
+- session
+theory: '#108 CAP Theorem (Brewer, 2000)'
+token_estimate: 1342
+type: pattern
+version: 1

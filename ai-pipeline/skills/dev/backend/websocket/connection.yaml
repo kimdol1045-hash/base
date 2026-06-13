@@ -1,0 +1,30 @@
+bloom_level: APPLY
+content: "# WebSocket 연결 관리 가이드\n\n## 핵심 원칙\n- 연결 수명주기를 명확히 관리한다 (open → message →\
+  \ close)\n- 재연결 로직은 클라이언트 측에 지수 백오프로 구현한다\n- 서버 측에서 연결 상태를 추적하고 비정상 연결을 정리한다\n-\
+  \ 프로토콜 레벨 핑/퐁으로 연결 상태를 확인한다\n\n## DO\n- 연결 시 핸드셰이크 단계에서 인증을 수행한다\n- 연결 ID를 부여하여\
+  \ 개별 연결을 추적한다\n- 연결 풀 크기에 제한을 설정한다\n- 비정상 종료 시 리소스를 정리하는 cleanup 로직을 구현한다\n- 메시지\
+  \ 형식을 JSON 스키마로 정의한다\n\n## DON'T\n- 인증 없이 WebSocket 연결을 허용하지 않는다\n- 연결 수 제한 없이 무한정\
+  \ 연결을 수락하지 않는다\n- 메시지 크기 제한을 설정하지 않고 방치하지 않는다\n- HTTP 폴링으로 충분한 경우 WebSocket을 사용하지\
+  \ 않는다\n\n## 코드 예시\n```typescript\nimport { WebSocketServer } from \"ws\";\n\nconst\
+  \ wss = new WebSocketServer({ noServer: true });\nconst connections = new Map<string,\
+  \ WebSocket>();\n\nserver.on(\"upgrade\", async (req, socket, head) => {\n  try\
+  \ {\n    const user = await authenticateFromHeaders(req.headers);\n    wss.handleUpgrade(req,\
+  \ socket, head, (ws) => {\n      const connId = generateId();\n      connections.set(connId,\
+  \ ws);\n\n      ws.on(\"message\", (data) => handleMessage(connId, user, data));\n\
+  \      ws.on(\"close\", () => {\n        connections.delete(connId);\n        cleanupResources(connId);\n\
+  \      });\n      ws.on(\"pong\", () => markAlive(connId));\n    });\n  } catch\
+  \ {\n    socket.write(\"HTTP/1.1 401 Unauthorized\\r\\n\\r\\n\");\n    socket.destroy();\n\
+  \  }\n});\n\n// Heartbeat: 30초마다 ping 전송\nsetInterval(() => {\n  for (const [id,\
+  \ ws] of connections) {\n    if (!isAlive(id)) { ws.terminate(); return; }\n   \
+  \ markDead(id);\n    ws.ping();\n  }\n}, 30_000);\n```\n"
+domain: development.backend
+id: dev.backend.websocket.connection
+tags:
+- websocket
+- connection
+- realtime
+- backend
+theory: '#206 WebSocket Protocol (RFC 6455, IETF 2011)'
+token_estimate: 692
+type: pattern
+version: 1

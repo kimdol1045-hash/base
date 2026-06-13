@@ -1,0 +1,29 @@
+bloom_level: ANALYZE
+content: "# Sidecar 패턴 가이드\n\n## 핵심 원칙\n- 주 애플리케이션과 별도의 프로세스/컨테이너로 부가 기능을 제공한다\n-\
+  \ 로깅, 모니터링, 프록시, 설정 관리 등 횡단 관심사를 분리한다\n- 주 애플리케이션과 동일한 호스트/Pod에서 실행되어 로컬 통신이 가능하다\n\
+  - 주 애플리케이션의 언어/프레임워크에 종속되지 않는다\n\n## DO\n- Kubernetes Pod에서 Sidecar 컨테이너로 구현한다\n\
+  - 주 애플리케이션과 볼륨 또는 localhost 네트워크를 공유한다\n- 로그 수집(Fluentd), 프록시(Envoy), 인증서 관리 등에\
+  \ 활용한다\n- Sidecar의 수명주기를 주 애플리케이션과 연동한다\n\n## DON'T\n- 비즈니스 로직을 Sidecar에 넣지 않는다\n\
+  - Sidecar 장애가 주 애플리케이션을 중단시키도록 설계하지 않는다\n- 과도한 수의 Sidecar를 붙이지 않는다 (리소스 오버헤드)\n\
+  - 단일 서비스에서만 필요한 기능을 Sidecar로 분리하지 않는다\n\n## 코드 예시\n```yaml\n# Kubernetes Pod - Envoy\
+  \ Sidecar 예시\napiVersion: v1\nkind: Pod\nmetadata:\n  name: my-app\nspec:\n  containers:\n\
+  \    - name: app\n      image: my-app:latest\n      ports:\n        - containerPort:\
+  \ 8080\n    - name: envoy-proxy\n      image: envoyproxy/envoy:v1.28\n      ports:\n\
+  \        - containerPort: 9901  # admin\n        - containerPort: 8443  # TLS 종료\n\
+  \      volumeMounts:\n        - name: envoy-config\n          mountPath: /etc/envoy\n\
+  \    - name: log-collector\n      image: fluent/fluentd:v1.16\n      volumeMounts:\n\
+  \        - name: app-logs\n          mountPath: /var/log/app\n  volumes:\n    -\
+  \ name: app-logs\n      emptyDir: {}\n    - name: envoy-config\n      configMap:\n\
+  \        name: envoy-config\n```\n\n**적용 기준**: 여러 서비스에서 공통으로 필요하고, 주 애플리케이션 코드 변경\
+  \ 없이 적용해야 할 때 Sidecar 패턴을 선택한다.\n"
+domain: development.backend
+id: dev.backend.patterns.sidecar
+tags:
+- patterns
+- sidecar
+- microservices
+- kubernetes
+theory: '#222 Sidecar Pattern (Burns, Designing Distributed Systems 2018)'
+token_estimate: 636
+type: pattern
+version: 1

@@ -1,0 +1,82 @@
+content: "Webhook 패턴 (수신과 발신 모두 멱등성과 서명 검증이 필수다 -- 한 번의 이벤트가 여러 번 도착할 수 있다):\n\n###\
+  \ 수신 Webhook (Receiving)\n외부 서비스(Stripe, GitHub 등)에서 이벤트를 수신할 때의 패턴.\n\nDO:\n```typescript\n\
+  import { createHmac, timingSafeEqual } from \"crypto\";\n\n// 1. 서명 검증 미들웨어\nfunction\
+  \ webhookSignatureMiddleware(secret: string) {\n  return async (c: Context, next:\
+  \ Next) => {\n    const signature = c.req.header(\"x-webhook-signature\");\n   \
+  \ const timestamp = c.req.header(\"x-webhook-timestamp\");\n    if (!signature ||\
+  \ !timestamp) {\n      return c.json({ error: \"Missing signature headers\" }, 401);\n\
+  \    }\n\n    // 타임스탬프 검증 (5분 이내만 허용 -- replay attack 방지)\n    const age = Date.now()\
+  \ - parseInt(timestamp) * 1000;\n    if (age > 300_000) {\n      return c.json({\
+  \ error: \"Webhook timestamp expired\" }, 401);\n    }\n\n    const body = await\
+  \ c.req.text();\n    const expected = createHmac(\"sha256\", secret)\n      .update(`${timestamp}.${body}`)\n\
+  \      .digest(\"hex\");\n\n    const signatureBuffer = Buffer.from(signature, \"\
+  hex\");\n    const expectedBuffer = Buffer.from(expected, \"hex\");\n\n    // timing-safe\
+  \ 비교 (타이밍 공격 방지)\n    if (!timingSafeEqual(signatureBuffer, expectedBuffer)) {\n\
+  \      return c.json({ error: \"Invalid signature\" }, 401);\n    }\n\n    c.set(\"\
+  webhookBody\", JSON.parse(body));\n    await next();\n  };\n}\n\n// 2. 멱등성 보장 핸들러\n\
+  app.post(\"/webhooks/payment\", webhookSignatureMiddleware(env.PAYMENT_WEBHOOK_SECRET),\
+  \ async (c) => {\n  const event = c.get(\"webhookBody\") as WebhookEvent;\n\n  //\
+  \ 멱등성 키로 중복 처리 방지\n  const existing = await db.query.webhookEvents.findFirst({\n\
+  \    where: eq(webhookEvents.eventId, event.id),\n  });\n  if (existing) {\n   \
+  \ return c.json({ received: true, duplicate: true }); // 200 반환하여 재전송 중단\n  }\n\n\
+  \  // 이벤트 저장 (처리 전에 기록)\n  await db.insert(webhookEvents).values({\n    eventId:\
+  \ event.id,\n    type: event.type,\n    payload: event,\n    status: \"processing\"\
+  ,\n  });\n\n  // 비동기 처리 (빠른 응답을 위해 큐에 위임)\n  await webhookQueue.add(\"process\"\
+  , { eventId: event.id, type: event.type });\n\n  return c.json({ received: true\
+  \ }, 200); // 즉시 200 반환 (3초 이내)\n});\n\n// 3. Worker에서 이벤트 타입별 처리\nconst webhookWorker\
+  \ = new Worker(\"webhook\", async (job) => {\n  const { eventId, type } = job.data;\n\
+  \  const event = await db.query.webhookEvents.findFirst({\n    where: eq(webhookEvents.eventId,\
+  \ eventId),\n  });\n\n  switch (type) {\n    case \"payment.completed\":\n     \
+  \ await handlePaymentCompleted(event!.payload);\n      break;\n    case \"subscription.cancelled\"\
+  :\n      await handleSubscriptionCancelled(event!.payload);\n      break;\n    default:\n\
+  \      logger.warn(`Unknown webhook type: ${type}`);\n  }\n\n  await db.update(webhookEvents)\n\
+  \    .set({ status: \"processed\", processedAt: new Date() })\n    .where(eq(webhookEvents.eventId,\
+  \ eventId));\n}, { connection });\n```\n\n### 발신 Webhook (Sending)\n우리 서비스에서 외부로\
+  \ 이벤트를 전송할 때의 패턴.\n\n```typescript\n// 발신 Webhook 시스템\nasync function sendWebhook(subscription:\
+  \ WebhookSubscription, event: AppEvent): Promise<void> {\n  const payload = JSON.stringify({\n\
+  \    id: randomUUID(),\n    type: event.type,\n    data: event.data,\n    createdAt:\
+  \ new Date().toISOString(),\n  });\n\n  const timestamp = Math.floor(Date.now()\
+  \ / 1000);\n  const signature = createHmac(\"sha256\", subscription.secret)\n  \
+  \  .update(`${timestamp}.${payload}`)\n    .digest(\"hex\");\n\n  // 재시도 로직 (exponential\
+  \ backoff)\n  const MAX_RETRIES = 5;\n  const retryDelays = [0, 1_000, 5_000, 30_000,\
+  \ 120_000]; // 즉시, 1초, 5초, 30초, 2분\n\n  for (let attempt = 0; attempt < MAX_RETRIES;\
+  \ attempt++) {\n    if (attempt > 0) await sleep(retryDelays[attempt]);\n\n    try\
+  \ {\n      const response = await fetch(subscription.url, {\n        method: \"\
+  POST\",\n        headers: {\n          \"Content-Type\": \"application/json\",\n\
+  \          \"X-Webhook-Signature\": signature,\n          \"X-Webhook-Timestamp\"\
+  : String(timestamp),\n          \"X-Webhook-Id\": event.id,\n        },\n      \
+  \  body: payload,\n        signal: AbortSignal.timeout(10_000), // 10초 타임아웃\n  \
+  \    });\n\n      // 200-299만 성공으로 간주\n      if (response.ok) {\n        await recordDelivery(subscription.id,\
+  \ event.id, \"delivered\", attempt + 1);\n        return;\n      }\n\n      // 4xx는\
+  \ 재시도하지 않음 (클라이언트 오류)\n      if (response.status >= 400 && response.status < 500)\
+  \ {\n        await recordDelivery(subscription.id, event.id, \"rejected\", attempt\
+  \ + 1);\n        return;\n      }\n    } catch (err) {\n      logger.warn(`Webhook\
+  \ delivery attempt ${attempt + 1} failed`, { error: err });\n    }\n  }\n\n  await\
+  \ recordDelivery(subscription.id, event.id, \"failed\", MAX_RETRIES);\n  // 연속 실패\
+  \ 시 구독 비활성화 검토\n  await checkAndDisableSubscription(subscription.id);\n}\n```\n\n\
+  DON'T:\n```typescript\n// ❌ 서명 검증 없이 webhook 수신 -- 누구나 위조 가능\napp.post(\"/webhooks/payment\"\
+  , async (c) => {\n  const body = await c.req.json();  // 서명 확인 없이 바로 처리\n  await\
+  \ processPayment(body);\n});\n\n// ❌ 동기적으로 처리 후 응답 -- 타임아웃으로 재전송 폭탄\napp.post(\"\
+  /webhooks/order\", async (c) => {\n  const event = await c.req.json();\n  await\
+  \ processOrder(event);       // 30초 걸리는 작업\n  await sendNotification(event);   //\
+  \ 추가 10초\n  return c.json({ ok: true });     // 외부 서비스는 이미 타임아웃\n});\n\n// ❌ 멱등성\
+  \ 키 없이 처리 -- 재전송 시 이중 결제\nawait chargeUser(event.data.userId, event.data.amount);\
+  \  // 매번 과금\n```\n\n### 발신 재시도 전략\n| 시도 | 대기 시간 | 누적 대기 | 비고 |\n|------|-----------|-----------|------|\n\
+  | 1차 | 즉시 | 0초 | 초기 시도 |\n| 2차 | 1초 | 1초 | 일시 오류 대응 |\n| 3차 | 5초 | 6초 | 서버 복구 대기\
+  \ |\n| 4차 | 30초 | 36초 | 장기 복구 대기 |\n| 5차 | 2분 | 156초 | 최종 시도 후 실패 기록 |\n\n### 흔한\
+  \ 실수\n- timingSafeEqual 대신 === 로 서명 비교 -> 타이밍 공격 취약\n- Webhook 응답을 3초 이내에 반환하지 않음\
+  \ -> 발신자가 타임아웃으로 재전송\n- eventId 기반 멱등성 체크 없이 처리 -> 재전송 시 이중 처리\n- 수신 webhook 엔드포인트에\
+  \ Rate Limiting 미적용 -> 악의적 대량 요청 가능\n- 발신 시 4xx 에러에도 재시도 -> 불필요한 트래픽 발생\n"
+domain: development.backend
+id: dev.backend.api.webhook
+tags:
+- backend
+- api
+- webhook
+- idempotency
+- hmac
+- event-driven
+theory: '#104 Idempotency'
+token_estimate: 1375
+type: pattern
+version: 1

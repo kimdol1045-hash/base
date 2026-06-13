@@ -1,0 +1,49 @@
+content: "CIA Triad -- 정보 보안의 3대 목표 (ISO 27001 기반):\n\n모든 보안 결정은 Confidentiality,\
+  \ Integrity, Availability 중 어떤 속성을 보호하는지 명확히 해야 한다.\n\n### C: Confidentiality (기밀성)\n\
+  허가되지 않은 주체가 정보에 접근할 수 없도록 보장한다.\n\n```typescript\n// DO: 전송 중 암호화 + 저장 시 암호화\nimport\
+  \ { createCipheriv, randomBytes } from \"node:crypto\";\n\nconst ALGORITHM = \"\
+  aes-256-gcm\";\nfunction encrypt(plaintext: string, key: Buffer): EncryptedData\
+  \ {\n  const iv = randomBytes(16);\n  const cipher = createCipheriv(ALGORITHM, key,\
+  \ iv);\n  const encrypted = Buffer.concat([cipher.update(plaintext, \"utf8\"), cipher.final()]);\n\
+  \  const tag = cipher.getAuthTag();\n  return { encrypted: encrypted.toString(\"\
+  base64\"), iv: iv.toString(\"base64\"), tag: tag.toString(\"base64\") };\n}\n\n\
+  // DO: 접근 제어 -- 필드 레벨 필터링\nfunction toPublicUser(user: InternalUser): PublicUser\
+  \ {\n  const { passwordHash, ssn, internalNotes, ...publicFields } = user;\n  return\
+  \ publicFields;\n}\n\n// DON'T: 민감 정보 평문 저장\nawait db.insert(users).values({ password:\
+  \ body.password }); // 평문 저장 금지\n```\n\n**구현 체크리스트:**\n- 비밀번호: bcrypt cost=12 또는\
+  \ argon2id (memoryCost=65536, timeCost=3)\n- API 키/토큰: AES-256-GCM 암호화 후 DB 저장\n\
+  - 전송: TLS 1.3 강제, HSTS 헤더 적용\n- 로그: PII(이메일, 전화, IP) 마스킹 처리\n\n### I: Integrity\
+  \ (무결성)\n데이터가 비인가 변경 없이 정확하고 완전함을 보장한다.\n\n```typescript\n// DO: 해시 기반 무결성 검증 +\
+  \ 감사 로그\nimport { createHash } from \"node:crypto\";\n\nfunction computeChecksum(data:\
+  \ string): string {\n  return createHash(\"sha256\").update(data).digest(\"hex\"\
+  );\n}\n\n// 감사 로그 -- 누가, 언제, 무엇을 변경했는지 기록\nasync function auditLog(action: string,\
+  \ userId: string, details: Record<string, unknown>) {\n  await db.insert(auditLogs).values({\n\
+  \    action,\n    userId,\n    details: JSON.stringify(details),\n    timestamp:\
+  \ new Date().toISOString(),\n    checksum: computeChecksum(JSON.stringify(details)),\n\
+  \  });\n}\n\n// DON'T: 감사 추적 없이 직접 수정\nawait db.update(accounts).set({ balance:\
+  \ newBalance }).where(eq(accounts.id, id));\n// 누가 왜 변경했는지 기록 없음\n```\n\n**구현 체크리스트:**\n\
+  - DB: 핵심 테이블에 `updated_by`, `updated_at` 컬럼 필수\n- 파일 업로드: SHA-256 체크섬 검증\n- API\
+  \ 요청: HMAC 서명으로 요청 변조 탐지\n- 감사 로그: append-only 스토리지, 삭제 불가 정책\n\n### A: Availability\
+  \ (가용성)\n인가된 사용자가 필요할 때 정보와 시스템에 접근할 수 있도록 보장한다.\n\n```typescript\n// DO: Rate Limiting으로\
+  \ DoS 방어\nimport { rateLimiter } from \"hono-rate-limiter\";\napp.use(rateLimiter({\n\
+  \  windowMs: 60_000,            // 1분\n  limit: 100,                  // 일반 API:\
+  \ 100 req/min\n  keyGenerator: (c) => c.req.header(\"x-forwarded-for\") ?? \"unknown\"\
+  ,\n}));\n\n// 인증 엔드포인트는 더 엄격하게: 5 req/min\napp.use(\"/auth/*\", rateLimiter({ windowMs:\
+  \ 60_000, limit: 5 }));\n\n// DON'T: Rate limiting 없음, 무제한 payload 허용\napp.post(\"\
+  /upload\", async (c) => {\n  const file = await c.req.blob(); // 크기 제한 없음 = OOM\
+  \ 공격 가능\n});\n```\n\n**구현 체크리스트:**\n- Rate Limiting: 인증 5 req/min, 일반 API 100 req/min\n\
+  - 파일 업로드: 최대 10MB 제한\n- DB: 커넥션 풀링 (max 20), 쿼리 타임아웃 30초\n- 배포: 헬스체크 + 자동 재시작 +\
+  \ 이중화(최소 2 인스턴스)\n"
+domain: development.security
+id: dev.security.cia-triad
+tags:
+- security
+- cia-triad
+- confidentiality
+- integrity
+- availability
+- iso27001
+theory: '#114 CIA 삼각형 (ISO 27001)'
+token_estimate: 1383
+type: pattern
+version: 1

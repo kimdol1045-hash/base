@@ -1,0 +1,21 @@
+content: "진행 기부 효과 (이미 시작된 것처럼 보여주면 완료 동기가 높아진다):\n\n### 실험 결과\n- A: 빈 카드 8칸 스탬프 →\
+  \ 완료율 19%\n- B: 10칸 카드 중 2칸 이미 찍힘 → 완료율 34%\n- 실제 필요 스탬프 수는 같지만 B가 80% 더 높은 완료율\n\
+  \n### UX 적용\n1. **온보딩**: \"1/5 완료\" 대신 \"3/7 완료\" (계정 생성+이메일 인증 이미 카운트)\n2. **프로필**:\
+  \ \"프로필 20% 완성됨!\" (이름/이메일 자동 포함)\n3. **로열티**: \"첫 구매 보너스 포인트 포함! 3/10 적립 완료\"\n\
+  4. **코스**: \"기초 레벨 통과! 중급 2/8 진행 중\"\n\n### 구현 패턴\n```tsx\nconst totalSteps = 7;\n\
+  const preFilledSteps = 2; // 자동 완료 단계\nconst userSteps = 1; // 사용자가 완료한 단계\nconst\
+  \ progress = ((preFilledSteps + userSteps) / totalSteps) * 100;\n\n<div>\n  <p className=\"\
+  text-sm font-medium\">{preFilledSteps + userSteps}/{totalSteps} 완료</p>\n  <Progress\
+  \ value={progress} />\n</div>\n```\n\n### 주의\n- 과도한 부풀리기는 역효과 (신뢰 상실)\n- 기부된 진행이\
+  \ 합리적으로 설명 가능해야 함\n"
+domain: design
+id: design.ux-psychology.endowed-progress
+tags:
+- design
+- ux
+- endowed-progress
+- onboarding
+theory: '#51 Endowed Progress Effect (Nunes & Drèze, 2006)'
+token_estimate: 380
+type: rule
+version: 1

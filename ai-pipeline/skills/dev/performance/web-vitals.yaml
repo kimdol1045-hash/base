@@ -1,0 +1,28 @@
+content: "Core Web Vitals (사용자 체감 성능의 핵심 3대 지표):\n\n### 목표치\n| 지표 | Good | Needs Improvement\
+  \ | Poor |\n|------|------|-------------------|------|\n| LCP (Largest Contentful\
+  \ Paint) | < 2.5s | 2.5-4s | > 4s |\n| INP (Interaction to Next Paint) | < 200ms\
+  \ | 200-500ms | > 500ms |\n| CLS (Cumulative Layout Shift) | < 0.1 | 0.1-0.25 |\
+  \ > 0.25 |\n\n### LCP 최적화\n```tsx\n// DO: 히어로 이미지 우선 로딩\nimport Image from 'next/image';\n\
+  <Image src=\"/hero.webp\" alt=\"hero\" width={1200} height={600}\n  priority  //\
+  \ LCP 요소에 priority 필수\n  sizes=\"100vw\"\n/>\n\n// DON'T: lazy loading on LCP element\n\
+  <Image src=\"/hero.webp\" loading=\"lazy\" />  // ❌ LCP 지연\n```\n\n### INP 최적화\n\
+  ```tsx\n// DO: 무거운 작업은 비동기 또는 Web Worker\nconst handleSearch = useDeferredValue(searchTerm);\n\
+  // 또는\nstartTransition(() => setSearchResults(heavyFilter(data)));\n\n// DON'T:\
+  \ 메인 스레드 블로킹\nconst results = data.filter(item => expensiveMatch(item)); // ❌ 동기\
+  \ 처리\n```\n\n### CLS 방지\n```tsx\n// DO: 이미지/영상에 크기 명시\n<Image width={640} height={360}\
+  \ />\n// DO: 스켈레톤 UI로 공간 확보\n{isLoading ? <Skeleton className=\"h-[360px] w-full\"\
+  \ /> : <Content />}\n\n// DON'T: 동적 콘텐츠 삽입으로 레이아웃 밀림\n{ad && <Banner />}  // ❌ 갑자기\
+  \ 나타나면 CLS 발생\n```\n\n### 측정 도구\n- Chrome DevTools → Performance 탭\n- Lighthouse\
+  \ (lab data)\n- PageSpeed Insights (field data)\n- web-vitals 라이브러리 (RUM)\n"
+domain: development.performance
+id: dev.performance.web-vitals
+tags:
+- performance
+- web-vitals
+- frontend
+- lcp
+- cls
+theory: '#139 Core Web Vitals (Google, 2020)'
+token_estimate: 311
+type: rule
+version: 1

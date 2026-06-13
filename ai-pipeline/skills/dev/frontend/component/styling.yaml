@@ -1,0 +1,57 @@
+content: "스타일 아키텍처 규칙 (일관된 디자인 시스템을 코드로 구현한다):\n\n### 기술 스택 선택\n- **Tailwind CSS**:\
+  \ 유틸리티-퍼스트, 빌드 타임 최적화, 디자인 토큰 내장\n- **CSS Modules**: 스코프 격리가 필요한 복잡한 컴포넌트\n- **CSS\
+  \ Variables**: 테마, 다크모드, 런타임 동적 값\n\n### 1. cn() 유틸리티 — 조건부 클래스 병합\n\nDO:\n```typescript\n\
+  // ✅ clsx + tailwind-merge = cn()\nimport { clsx, type ClassValue } from \"clsx\"\
+  ;\nimport { twMerge } from \"tailwind-merge\";\n\nexport function cn(...inputs:\
+  \ ClassValue[]) {\n  return twMerge(clsx(inputs));\n}\n\n// 사용: 충돌하는 클래스를 자동 병합\n\
+  cn(\"px-4 py-2\", \"px-6\")          // → \"py-2 px-6\" (px-4 제거)\ncn(\"text-red-500\"\
+  , isActive && \"text-blue-500\") // 조건부\n```\n\n### 2. cva — 컴포넌트 Variant 시스템\n\n\
+  DO:\n```typescript\n// ✅ class-variance-authority로 variant 관리\nimport { cva, type\
+  \ VariantProps } from \"class-variance-authority\";\n\nconst buttonVariants = cva(\n\
+  \  \"inline-flex items-center justify-center rounded-md font-medium transition-colors\
+  \ focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none\
+  \ disabled:opacity-50\",\n  {\n    variants: {\n      variant: {\n        primary:\
+  \ \"bg-primary text-primary-foreground hover:bg-primary/90\",\n        secondary:\
+  \ \"bg-secondary text-secondary-foreground hover:bg-secondary/80\",\n        ghost:\
+  \ \"hover:bg-accent hover:text-accent-foreground\",\n        destructive: \"bg-destructive\
+  \ text-destructive-foreground hover:bg-destructive/90\",\n      },\n      size:\
+  \ {\n        sm: \"h-8 px-3 text-xs\",\n        md: \"h-10 px-4 text-sm\",\n   \
+  \     lg: \"h-12 px-6 text-base\",\n      },\n    },\n    defaultVariants: { variant:\
+  \ \"primary\", size: \"md\" },\n  }\n);\n\ninterface ButtonProps\n  extends React.ButtonHTMLAttributes<HTMLButtonElement>,\n\
+  \    VariantProps<typeof buttonVariants> {}\n\nfunction Button({ variant, size,\
+  \ className, ...props }: ButtonProps) {\n  return <button className={cn(buttonVariants({\
+  \ variant, size }), className)} {...props} />;\n}\n```\n\n### 3. 디자인 토큰 — CSS Variables\n\
+  \n```typescript\n// ✅ tailwind.config.ts — CSS Variable 기반 테마\n// theme: {\n// \
+  \  extend: {\n//     colors: {\n//       primary: \"hsl(var(--primary))\",\n// \
+  \      \"primary-foreground\": \"hsl(var(--primary-foreground))\",\n//       muted:\
+  \ \"hsl(var(--muted))\",\n//       destructive: \"hsl(var(--destructive))\",\n//\
+  \     },\n//     spacing: {\n//       // 4px base system: 4, 8, 12, 16, 24, 32,\
+  \ 48, 64\n//     },\n//     borderRadius: {\n//       lg: \"var(--radius)\",\n//\
+  \       md: \"calc(var(--radius) - 2px)\",\n//       sm: \"calc(var(--radius) -\
+  \ 4px)\",\n//     },\n//   },\n// }\n```\n\n### 4. 다크모드 — CSS Variable 전환\n\n```css\n\
+  /* ✅ globals.css — 라이트/다크 변수 정의 */\n:root {\n  --background: 0 0% 100%;\n  --foreground:\
+  \ 240 10% 3.9%;\n  --primary: 240 5.9% 10%;\n  --muted: 240 4.8% 95.9%;\n}\n.dark\
+  \ {\n  --background: 240 10% 3.9%;\n  --foreground: 0 0% 98%;\n  --primary: 0 0%\
+  \ 98%;\n  --muted: 240 3.7% 15.9%;\n}\n```\n\n### 5. 반응형 — Mobile-First\n\n```tsx\n\
+  // ✅ Tailwind 반응형 — 모바일 기본, 브레이크포인트로 확장\n<div className=\"\n  grid grid-cols-1 gap-4\n\
+  \  sm:grid-cols-2\n  lg:grid-cols-3\n  xl:grid-cols-4\n\">\n```\n\nDON'T:\n```typescript\n\
+  // ❌ 인라인 스타일 — 캐싱 불가, 미디어쿼리 불가\n<div style={{ padding: \"16px\", color: \"#333\"\
+  \ }} />\n\n// ❌ !important — 우선순위 전쟁 유발\n<div className=\"!text-red-500\" />\n\n\
+  // ❌ 일관성 없는 간격값 — 13px, 17px, 22px 등 임의 값\n<div className=\"p-[13px] mt-[17px]\"\
+  \ />  // 디자인 토큰 사용할 것\n\n// ❌ 깊은 CSS 중첩 — 3단계 이상 중첩은 특이도 문제\n// .card .header .title\
+  \ .icon { ... } → 직접 클래스 적용\n```\n"
+domain: development.frontend
+id: dev.frontend.component.styling
+tags:
+- frontend
+- styling
+- tailwind
+- css-variables
+- cva
+- design-tokens
+- dark-mode
+- responsive
+theory: '#101 DRY + Single Source of Truth (Hunt & Thomas, 1999)'
+token_estimate: 807
+type: rule
+version: 1

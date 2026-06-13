@@ -1,0 +1,24 @@
+content: "Atomic Design (UI를 5단계 계층으로 체계적으로 구성한다):\n\n### 5단계 계층\n```\nAtoms → Molecules\
+  \ → Organisms → Templates → Pages\n```\n\n| 단계 | 설명 | 예시 |\n|------|------|------|\n\
+  | Atoms | 더 이상 분해 불가한 기본 요소 | Button, Input, Label, Icon |\n| Molecules | Atom 조합의\
+  \ 단일 기능 | SearchBar (Input + Button), FormField (Label + Input) |\n| Organisms |\
+  \ Molecule/Atom 조합의 섹션 | Header (Logo + Nav + SearchBar), ProductCard |\n| Templates\
+  \ | 레이아웃 구조 (콘텐츠 없이) | DashboardTemplate, AuthTemplate |\n| Pages | Template + 실제\
+  \ 콘텐츠 | HomePage, ProductDetailPage |\n\n### 디렉토리 구조\n```\ncomponents/\n  atoms/\n\
+  \    Button/\n      Button.tsx\n      Button.styles.ts\n      Button.test.tsx\n\
+  \      index.ts\n  molecules/\n    SearchBar/\n  organisms/\n    Header/\n  templates/\n\
+  \    DashboardTemplate/\n```\n\n### 네이밍 규칙\n- Atom: 역할 기반 (`PrimaryButton`, `TextInput`)\n\
+  - Molecule: 기능 기반 (`SearchBar`, `UserAvatar`)\n- Organism: 영역 기반 (`SiteHeader`,\
+  \ `ProductGrid`)\n- Template: 레이아웃 기반 (`TwoColumnTemplate`)\n\n### 주의사항\n- 5단계를\
+  \ 엄격히 따를 필요 없음 — 팀에 맞게 조정\n- Atom이 너무 세분화되면 조합 비용 증가\n- 중요한 건 계층 사고방식 (상향식 구성)\n"
+domain: design
+id: design.ui-component.atomic-design
+tags:
+- design
+- atomic-design
+- component
+- design-system
+theory: '#170 Atomic Design (Brad Frost, 2016)'
+token_estimate: 420
+type: pattern
+version: 1

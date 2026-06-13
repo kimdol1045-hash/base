@@ -1,0 +1,205 @@
+{
+  "main": {
+    "id": "c57e804a1d148292",
+    "type": "split",
+    "children": [
+      {
+        "id": "1ce857c5d5ce7ef8",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "832f8da2b51dff73",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PREFRONTAL/planning.business.lean-startup.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "planning.business.lean-startup"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "d2758cb9117a8bda",
+    "type": "split",
+    "children": [
+      {
+        "id": "545bc8edc882b7da",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "de5899ca5bd93fca",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "파일 탐색기"
+            }
+          },
+          {
+            "id": "f4acde7161573e85",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "검색"
+            }
+          },
+          {
+            "id": "56e0bc46693da154",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "북마크"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "8014bee1a5eb36b1",
+    "type": "split",
+    "children": [
+      {
+        "id": "331acf94c6abcde8",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "39774b1d0d56dd9d",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "PREFRONTAL/planning.business.lean-startup.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "planning.business.lean-startup 의 백링크"
+            }
+          },
+          {
+            "id": "367fd017fc30db7f",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "PREFRONTAL/planning.business.lean-startup.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "planning.business.lean-startup 의 나가는 링크"
+            }
+          },
+          {
+            "id": "ae4fc4f553a0e913",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "태그"
+            }
+          },
+          {
+            "id": "5fa7c33407948ae9",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "모든 속성"
+            }
+          },
+          {
+            "id": "7ce401de4b98ec39",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "PREFRONTAL/planning.business.lean-startup.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "planning.business.lean-startup 의 개요"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:빠른 전환기 열기": false,
+      "graph:그래프 뷰 열기": false,
+      "canvas:새 캔버스 만들기": false,
+      "daily-notes:오늘의 일일 노트 열기": false,
+      "templates:템플릿 삽입": false,
+      "command-palette:명령어 팔레트 열기": false,
+      "bases:새 베이스 생성하기": false
+    }
+  },
+  "active": "832f8da2b51dff73",
+  "lastOpenFiles": [
+    "PREFRONTAL/planning.business.design-thinking.md",
+    "EGO/qa.test-gen.component-test.md",
+    "EGO/qa.code-review.performance.md",
+    "EGO/meta.bias-prevention.confirmation-bias.md",
+    "CORTEX/dev.frontend.component.animation.md",
+    "BRAINSTEM/dev.infra.ci.pipeline.md",
+    "BRAINSTEM/dev.backend.api.websocket.md",
+    "BRAINSTEM/dev.backend.api.validation.md",
+    "BRAINSTEM/dev.backend.api.search.md",
+    "BRAINSTEM/dev.backend.api.payment.md",
+    "BRAINSTEM/dev.backend.api.graphql.md",
+    "BRAINSTEM/dev.backend.api.batch-operations.md",
+    "BRAINSTEM/dev.backend.api.background-jobs.md",
+    "PREFRONTAL/planning.competitive-analysis.verify.md",
+    "EGO.md",
+    "EGO/meta.bias-prevention.hindsight-bias.md"
+  ]
+}

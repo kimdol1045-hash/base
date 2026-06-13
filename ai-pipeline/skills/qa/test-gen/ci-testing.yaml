@@ -1,0 +1,56 @@
+bloom_level: APPLY
+content: '# CI 테스트 통합 가이드
+
+
+  ## 적용 상황
+
+  - GitHub Actions/GitLab CI 등에서 자동 테스트 파이프라인을 구축할 때
+
+  - PR 병합 전 품질 게이트를 설정하고 싶을 때
+
+  - 테스트 실행 시간을 최적화하여 개발 피드백 루프를 단축할 때
+
+  - 팀 규모가 커지면서 코드 품질 자동화가 필요해졌을 때
+
+
+  ## 구현 방법
+
+  - 테스트 피라미드 순차 실행: lint → 단위 테스트 → 통합 테스트 → E2E 테스트
+
+  - 빠른 실패(fail-fast): 린트/타입 체크 실패 시 후속 테스트 스킵
+
+  - 테스트 병렬 실행: Jest --shard, Playwright --workers로 시간 단축
+
+  - 커버리지 리포트: codecov/coveralls 연동하여 PR 댓글에 자동 표시
+
+  - 캐싱: node_modules, 빌드 아티팩트 캐시로 설치 시간 단축
+
+  - Flaky 테스트 격리: 불안정 테스트는 별도 job으로 분리, 자동 재시도(retry: 2)
+
+  - 커버리지 임계값: 새 코드 최소 80%, 전체 70% 이상 유지
+
+
+  ## 주의사항
+
+  - 실패한 테스트를 skip/disable로 무시하면 품질 게이트 의미 상실
+
+  - CI에서만 돌아가는 테스트 금지. 로컬에서도 동일하게 실행 가능해야 함
+
+  - 테스트 실행 시간 15분 초과 시 반드시 최적화 (병렬화, 불필요 테스트 제거)
+
+  - 시크릿이 필요한 테스트는 환경변수로 관리. YAML에 노출 금지
+
+  - E2E 테스트는 핵심 플로우만 CI에 포함. 전수 E2E는 야간 빌드로 분리
+
+  '
+domain: qa.testing
+id: qa.test-gen.ci-testing
+tags:
+- ci
+- continuous-integration
+- pipeline
+- automation
+theory: CI 테스트 통합 — 지속적 품질 게이트 자동화
+token_estimate: 369
+type: pattern
+version: 1

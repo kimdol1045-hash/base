@@ -1,0 +1,62 @@
+content: "디자인 토큰 관리 규칙 (단일 소스에서 디자인 속성을 체계적으로 관리한다):\n\n### 토큰 계층 구조\n```\nGlobal\
+  \ Token (원시값)\n  → Semantic Token (의미 부여)\n    → Component Token (컴포넌트별)\n\n예시:\n\
+  blue-600 (#2563EB)               ← Global: 원시 색상값\n  → --color-primary (#2563EB)\
+  \    ← Semantic: \"주요 액션\" 의미\n    → --button-bg (#2563EB)      ← Component: 버튼\
+  \ 배경\n```\n\n절대 원칙: **컴포넌트 코드에서 Global Token을 직접 참조하지 않는다.**\n항상 Semantic Token을\
+  \ 통해 접근한다.\n\n### 1. 색상 토큰 — Semantic Naming\n\nDO:\n```typescript\n// ✅ tailwind.config.ts\
+  \ — CSS Variable 기반 시맨틱 색상\nconst config = {\n  theme: {\n    extend: {\n      colors:\
+  \ {\n        // Semantic tokens — 의미 기반 이름\n        background: \"hsl(var(--background))\"\
+  ,\n        foreground: \"hsl(var(--foreground))\",\n        primary: {\n       \
+  \   DEFAULT: \"hsl(var(--primary))\",\n          foreground: \"hsl(var(--primary-foreground))\"\
+  ,\n        },\n        secondary: {\n          DEFAULT: \"hsl(var(--secondary))\"\
+  ,\n          foreground: \"hsl(var(--secondary-foreground))\",\n        },\n   \
+  \     muted: {\n          DEFAULT: \"hsl(var(--muted))\",\n          foreground:\
+  \ \"hsl(var(--muted-foreground))\",\n        },\n        destructive: {\n      \
+  \    DEFAULT: \"hsl(var(--destructive))\",\n          foreground: \"hsl(var(--destructive-foreground))\"\
+  ,\n        },\n        accent: {\n          DEFAULT: \"hsl(var(--accent))\",\n \
+  \         foreground: \"hsl(var(--accent-foreground))\",\n        },\n        border:\
+  \ \"hsl(var(--border))\",\n        ring: \"hsl(var(--ring))\",\n      },\n    },\n\
+  \  },\n};\n```\n\n```css\n/* ✅ globals.css — HSL 변수 (다크모드 전환 용이) */\n:root {\n \
+  \ --background: 0 0% 100%;        /* white */\n  --foreground: 240 10% 3.9%;   \
+  \  /* near-black */\n  --primary: 240 5.9% 10%;        /* dark navy */\n  --primary-foreground:\
+  \ 0 0% 98%; /* near-white */\n  --muted: 240 4.8% 95.9%;        /* light gray */\n\
+  \  --muted-foreground: 240 3.8% 46.1%;\n  --border: 240 5.9% 90%;\n  --radius: 0.5rem;\n\
+  }\n.dark {\n  --background: 240 10% 3.9%;\n  --foreground: 0 0% 98%;\n  --primary:\
+  \ 0 0% 98%;\n  --primary-foreground: 240 5.9% 10%;\n  --muted: 240 3.7% 15.9%;\n\
+  \  --muted-foreground: 240 5% 64.9%;\n  --border: 240 3.7% 15.9%;\n}\n```\n\n###\
+  \ 2. 간격 토큰 — 4px 기반 스케일\n\n| 토큰 | 값 | 용도 |\n|------|------|------|\n| spacing-1\
+  \ | 4px | 아이콘-텍스트 간격 |\n| spacing-2 | 8px | 같은 그룹 내 요소 간격 |\n| spacing-3 | 12px\
+  \ | 폼 필드-라벨 간격 |\n| spacing-4 | 16px | 카드 내부 패딩 |\n| spacing-6 | 24px | 섹션 내부 패딩\
+  \ |\n| spacing-8 | 32px | 그룹 간 간격 |\n| spacing-12 | 48px | 섹션 간 간격 |\n| spacing-16\
+  \ | 64px | 페이지 섹션 간격 |\n\n규칙: Tailwind 기본 스케일(4px 단위)을 준수. **임의값([13px]) 사용 금지.**\n\
+  \n### 3. 타이포그래피 토큰\n\n```typescript\n// ✅ 체계적인 타입 스케일 (1.25 비율)\n// text-xs:   12px\
+  \ / 16px (캡션, 보조 텍스트)\n// text-sm:   14px / 20px (본문 보조, 라벨)\n// text-base: 16px\
+  \ / 24px (본문)\n// text-lg:   18px / 28px (서브 헤딩)\n// text-xl:   20px / 28px (카드\
+  \ 제목)\n// text-2xl:  24px / 32px (섹션 제목)\n// text-3xl:  30px / 36px (페이지 제목)\n//\
+  \ text-4xl:  36px / 40px (히어로 헤딩)\n\n// ✅ 폰트 패밀리 토큰\n// fontFamily: {\n//   sans:\
+  \ [\"var(--font-pretendard)\", \"system-ui\", \"sans-serif\"],\n//   mono: [\"var(--font-jetbrains-mono)\"\
+  , \"monospace\"],\n// }\n```\n\n### 4. 라운딩 토큰\n\n```typescript\n// ✅ 일관된 border-radius\n\
+  // borderRadius: {\n//   sm: \"calc(var(--radius) - 4px)\",  // 4px — 작은 요소 (태그,\
+  \ 배지)\n//   md: \"calc(var(--radius) - 2px)\",  // 6px — 입력 필드, 버튼\n//   lg: \"\
+  var(--radius)\",              // 8px — 카드, 모달\n//   xl: \"calc(var(--radius) + 4px)\"\
+  ,  // 12px — 대형 카드\n//   full: \"9999px\",                   // 원형 (아바타, 토글)\n//\
+  \ }\n```\n\nDON'T:\n```typescript\n// ❌ 매직 넘버 — 의미 불명, 일관성 없음\n<div className=\"\
+  p-[13px] mt-[17px] text-[#3B82F6]\" />\n// → p-3 mt-4 text-primary 사용\n\n// ❌ 컴포넌트에서\
+  \ 직접 색상값 사용\n<div className=\"bg-blue-600 text-white\" />\n// → bg-primary text-primary-foreground\
+  \ 사용\n\n// ❌ 일관성 없는 스케일 — 5px, 7px, 11px 등\n// 4px 기반 스케일만 사용: 4, 8, 12, 16, 20,\
+  \ 24, 32, 48, 64\n```\n"
+domain: design
+id: design.design-system.tokens
+tags:
+- design
+- design-tokens
+- css-variables
+- tailwind
+- spacing
+- typography
+- color-system
+- theming
+theory: '#29 게슈탈트 유사성 원리 (Wertheimer, 1923) — 일관된 시각 언어가 인지 부하를 줄인다'
+token_estimate: 906
+type: rule
+version: 1

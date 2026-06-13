@@ -1,0 +1,31 @@
+content: "멱등성 (같은 요청을 N번 보내도 결과가 동일해야 한다):\n\n### HTTP 메서드별 멱등성\n| 메서드 | 멱등? | 설명\
+  \ |\n|--------|-------|------|\n| GET | ✅ | 항상 멱등 |\n| PUT | ✅ | 전체 교체이므로 멱등 |\n\
+  | DELETE | ✅ | 이미 삭제된 것 삭제 = 동일 결과 |\n| POST | ❌ | 기본적으로 비멱등 → Idempotency Key 필요\
+  \ |\n| PATCH | ❌ | 상대적 변경 가능 → 주의 필요 |\n\n### Idempotency Key 패턴\n```typescript\n\
+  // 클라이언트: 요청마다 고유 키 생성\n// POST /api/payments\n// Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000\n\
+  \nasync function handlePayment(req: Request) {\n  const idempotencyKey = req.headers.get('Idempotency-Key');\n\
+  \  if (!idempotencyKey) return error(400, 'Idempotency-Key 헤더 필수');\n\n  // 1. 이미\
+  \ 처리된 요청인지 확인\n  const existing = await db.query(\n    'SELECT response_body, status_code\
+  \ FROM idempotency_keys WHERE key = $1',\n    [idempotencyKey]\n  );\n  if (existing)\
+  \ return new Response(existing.response_body, { status: existing.status_code });\n\
+  \n  // 2. 락 획득 (동시 중복 요청 방지)\n  const locked = await db.query(\n    'INSERT INTO\
+  \ idempotency_keys (key, status) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING\
+  \ key',\n    [idempotencyKey, 'processing']\n  );\n  if (!locked) return error(409,\
+  \ '동일 요청 처리 중');\n\n  // 3. 실제 처리\n  try {\n    const result = await processPayment(req.body);\n\
+  \    await db.query(\n      'UPDATE idempotency_keys SET status = $1, response_body\
+  \ = $2, status_code = $3 WHERE key = $4',\n      ['completed', JSON.stringify(result),\
+  \ 200, idempotencyKey]\n    );\n    return json(result);\n  } catch (e) {\n    await\
+  \ db.query('DELETE FROM idempotency_keys WHERE key = $1', [idempotencyKey]);\n \
+  \   throw e;\n  }\n}\n```\n\n### 적용 대상\n- 결제/송금 API (필수)\n- 주문 생성 (필수)\n- 이메일/알림\
+  \ 발송 (권장)\n- 일반 CRUD POST (선택)\n\n### 키 만료: 24시간 후 자동 삭제 (TTL)\n"
+domain: development.backend
+id: dev.backend.patterns.idempotency
+tags:
+- backend
+- api
+- idempotency
+- payment
+theory: '#106 Idempotency (RFC 7231, 2014)'
+token_estimate: 804
+type: pattern
+version: 1

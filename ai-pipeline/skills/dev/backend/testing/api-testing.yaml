@@ -1,0 +1,37 @@
+bloom_level: APPLY
+content: "# API 통합 테스트 가이드\n\n## 핵심 원칙\n- API 테스트는 HTTP 레벨에서 엔드포인트의 전체 동작을 검증한다\n\
+  - 인증, 유효성 검사, 비즈니스 로직, 에러 처리를 모두 포함한다\n- 실제 서버를 시작하여 E2E에 가까운 테스트를 수행한다\n- 외부 서비스는\
+  \ Mock하되, DB는 실제 사용한다\n\n## DO\n- 각 엔드포인트의 성공/실패 케이스를 모두 테스트한다\n- 인증 토큰을 테스트 헬퍼로\
+  \ 자동 생성한다\n- 응답 스키마(status code, 구조)를 검증한다\n- 사이드 이펙트(DB 변경, 이벤트 발행)를 확인한다\n\n##\
+  \ DON'T\n- 테스트 간 상태를 공유하지 않는다 (각 테스트가 독립적)\n- 구현 세부사항(내부 함수 호출)을 테스트하지 않는다\n- 테스트에서\
+  \ 실제 외부 API를 호출하지 않는다\n- 하드코딩된 포트를 사용하지 않는다\n\n## 코드 예시\n```typescript\nimport {\
+  \ describe, it, expect, beforeAll, afterAll } from \"vitest\";\nimport request from\
+  \ \"supertest\";\nimport { createApp } from \"../src/app\";\n\nlet app: Express;\n\
+  let authToken: string;\n\nbeforeAll(async () => {\n  app = await createApp({ database:\
+  \ testDb });\n  const admin = await createUser({ role: \"admin\" });\n  authToken\
+  \ = await generateTestToken(admin.id);\n});\n\ndescribe(\"POST /api/v1/users\",\
+  \ () => {\n  it(\"유효한 데이터로 사용자를 생성한다\", async () => {\n    const res = await request(app)\n\
+  \      .post(\"/api/v1/users\")\n      .set(\"Authorization\", `Bearer ${authToken}`)\n\
+  \      .send({ email: \"new@test.com\", displayName: \"신규\" });\n\n    expect(res.status).toBe(201);\n\
+  \    expect(res.body.data).toMatchObject({\n      email: \"new@test.com\",\n   \
+  \   displayName: \"신규\",\n    });\n\n    // DB에 실제로 저장되었는지 확인\n    const user =\
+  \ await testDb.users.findByEmail(\"new@test.com\");\n    expect(user).toBeDefined();\n\
+  \  });\n\n  it(\"중복 이메일은 409를 반환한다\", async () => {\n    await createUser({ email:\
+  \ \"dup@test.com\" });\n    const res = await request(app)\n      .post(\"/api/v1/users\"\
+  )\n      .set(\"Authorization\", `Bearer ${authToken}`)\n      .send({ email: \"\
+  dup@test.com\", displayName: \"중복\" });\n\n    expect(res.status).toBe(409);\n \
+  \   expect(res.body.error.code).toBe(\"ALREADY_EXISTS\");\n  });\n\n  it(\"인증 없이\
+  \ 요청하면 401을 반환한다\", async () => {\n    const res = await request(app)\n      .post(\"\
+  /api/v1/users\")\n      .send({ email: \"no-auth@test.com\" });\n\n    expect(res.status).toBe(401);\n\
+  \  });\n});\n```\n"
+domain: development.backend
+id: dev.backend.testing.api-testing
+tags:
+- testing
+- api
+- integration
+- supertest
+theory: '#232 API Testing Pyramid (Cohn, Succeeding with Agile 2009)'
+token_estimate: 943
+type: pattern
+version: 1

@@ -1,0 +1,74 @@
+content: "필터링/정렬 쿼리 설계 (동적 필터는 화이트리스트 기반으로만 허용한다 -- 사용자 입력을 쿼리에 직접 넣는 것은 SQL Injection의\
+  \ 시작이다):\n\n### 쿼리 파라미터 컨벤션\n```\nGET /api/v1/products?status=active&minPrice=100&maxPrice=500&category=electronics&sort=-createdAt&limit=20&cursor=abc123\n\
+  ```\n\n| 파라미터 | 형식 | 예시 | 설명 |\n|----------|------|------|------|\n| 필터 | `field=value`\
+  \ | `status=active` | 정확한 일치 |\n| 범위 | `minField`, `maxField` | `minPrice=100` |\
+  \ 범위 필터 |\n| 다중 값 | `field=a,b,c` | `status=active,pending` | IN 연산 |\n| 정렬 | `sort=field`\
+  \ / `sort=-field` | `sort=-createdAt` | -는 DESC |\n| 검색 | `search=term` | `search=키보드`\
+  \ | 텍스트 검색 |\n\n### 필터 연산자 설계\n| 연산자 | URL 형식 | SQL 매핑 | 예시 |\n|--------|----------|----------|------|\n\
+  | eq | `field=value` | `= value` | `status=active` |\n| gt | `minField=value` |\
+  \ `> value` | `minPrice=100` |\n| gte | `minField=value` | `>= value` | `minCreatedAt=2024-01-01`\
+  \ |\n| lt | `maxField=value` | `< value` | `maxPrice=500` |\n| lte | `maxField=value`\
+  \ | `<= value` | `maxAge=30` |\n| in | `field=a,b` | `IN (a, b)` | `category=a,b`\
+  \ |\n| contains | `search=term` | `ILIKE %term%` | 텍스트 검색 |\n\nDO:\n```typescript\n\
+  // 1. 화이트리스트 기반 필터 스키마 정의\nconst FILTERABLE_FIELDS = {\n  status: { type: \"enum\"\
+  , values: [\"active\", \"pending\", \"archived\"] },\n  category: { type: \"enum\"\
+  , values: [\"electronics\", \"clothing\", \"food\"] },\n  minPrice: { type: \"number\"\
+  , column: \"price\", operator: \">=\" },\n  maxPrice: { type: \"number\", column:\
+  \ \"price\", operator: \"<=\" },\n  minCreatedAt: { type: \"date\", column: \"created_at\"\
+  , operator: \">=\" },\n  maxCreatedAt: { type: \"date\", column: \"created_at\"\
+  , operator: \"<=\" },\n} as const;\n\nconst SORTABLE_FIELDS = [\"createdAt\", \"\
+  updatedAt\", \"price\", \"name\"] as const;\n\nconst ProductFilterSchema = z.object({\n\
+  \  status: z.enum([\"active\", \"pending\", \"archived\"]).optional(),\n  category:\
+  \ z.string().optional(),\n  minPrice: z.coerce.number().min(0).optional(),\n  maxPrice:\
+  \ z.coerce.number().max(1_000_000).optional(),\n  minCreatedAt: z.coerce.date().optional(),\n\
+  \  maxCreatedAt: z.coerce.date().optional(),\n  search: z.string().max(100).optional(),\n\
+  \  sort: z.string().regex(/^-?(createdAt|updatedAt|price|name)$/).default(\"-createdAt\"\
+  ),\n  limit: z.coerce.number().int().min(1).max(100).default(20),\n  cursor: z.string().optional(),\n\
+  });\n\n// 2. 동적 쿼리 빌더 (Drizzle)\nimport { and, eq, gte, lte, ilike, desc, asc, SQL\
+  \ } from \"drizzle-orm\";\n\nfunction buildProductQuery(filters: z.infer<typeof\
+  \ ProductFilterSchema>) {\n  const conditions: SQL[] = [];\n\n  // 화이트리스트 필드만 조건\
+  \ 추가\n  if (filters.status) conditions.push(eq(products.status, filters.status));\n\
+  \  if (filters.category) conditions.push(eq(products.category, filters.category));\n\
+  \  if (filters.minPrice != null) conditions.push(gte(products.price, filters.minPrice));\n\
+  \  if (filters.maxPrice != null) conditions.push(lte(products.price, filters.maxPrice));\n\
+  \  if (filters.minCreatedAt) conditions.push(gte(products.createdAt, filters.minCreatedAt));\n\
+  \  if (filters.maxCreatedAt) conditions.push(lte(products.createdAt, filters.maxCreatedAt));\n\
+  \  if (filters.search) conditions.push(ilike(products.name, `%${filters.search}%`));\n\
+  \n  // 정렬 파싱\n  const isDesc = filters.sort.startsWith(\"-\");\n  const sortField\
+  \ = filters.sort.replace(/^-/, \"\") as keyof typeof products;\n  const sortColumn\
+  \ = products[sortField];\n  const orderBy = isDesc ? desc(sortColumn) : asc(sortColumn);\n\
+  \n  return { where: conditions.length > 0 ? and(...conditions) : undefined, orderBy\
+  \ };\n}\n\n// 3. API 핸들러\napp.get(\"/api/v1/products\", async (c) => {\n  const\
+  \ filters = ProductFilterSchema.parse(c.req.query());\n  const { where, orderBy\
+  \ } = buildProductQuery(filters);\n\n  const results = await db.query.products.findMany({\n\
+  \    where,\n    orderBy,\n    limit: filters.limit + 1,  // +1로 다음 페이지 존재 여부 확인\n\
+  \    ...(filters.cursor ? { offset: decodeCursor(filters.cursor) } : {}),\n  });\n\
+  \n  const hasNext = results.length > filters.limit;\n  const data = hasNext ? results.slice(0,\
+  \ -1) : results;\n\n  return c.json({\n    data,\n    meta: {\n      hasNext,\n\
+  \      nextCursor: hasNext ? encodeCursor(data[data.length - 1]) : null,\n    },\n\
+  \  });\n});\n```\n\nDON'T:\n```typescript\n// ❌ eval() 또는 문자열 보간으로 동적 필터 -- SQL\
+  \ Injection / 코드 실행\napp.get(\"/products\", async (c) => {\n  const { filter } =\
+  \ c.req.query();\n  const where = eval(filter);  // 치명적 보안 취약점\n});\n\n// ❌ 사용자\
+  \ 입력을 직접 컬럼명으로 사용\nconst sortColumn = c.req.query(\"sort\");  // \"price; DROP TABLE\
+  \ products--\"\nawait db.execute(`SELECT * FROM products ORDER BY ${sortColumn}`);\n\
+  \n// ❌ 필터 가능 필드 제한 없음 -- 내부 필드(password_hash 등) 노출\nconst filters = c.req.query();\n\
+  Object.entries(filters).forEach(([key, value]) => {\n  conditions.push(eq(products[key],\
+  \ value));  // 모든 컬럼 필터 허용\n});\n\n// ❌ 정렬 방향을 검증하지 않음\nconst order = c.req.query(\"\
+  order\");  // \"ASC; DROP TABLE--\"\n```\n\n### 흔한 실수\n- 필터 가능 필드를 화이트리스트로 관리하지\
+  \ 않음 -> 민감한 컬럼 노출\n- 숫자 범위 필터에 최대값 제한 없음 -> maxPrice=999999999로 풀스캔 유도\n- sort 파라미터에\
+  \ 여러 컬럼 허용 시 인덱스 미스 -> 복합 인덱스 설계 필요\n- 검색어에 SQL 와일드카드(%, _) 이스케이프 누락 -> 의도치 않은 패턴\
+  \ 매칭\n- 날짜 필터에 타임존 처리 누락 -> UTC 기준 통일 필수\n"
+domain: development.backend
+id: dev.backend.api.filtering
+tags:
+- backend
+- api
+- filtering
+- sorting
+- query-builder
+- drizzle
+- security
+theory: '#102 RESTful Design'
+token_estimate: 1220
+type: rule
+version: 1

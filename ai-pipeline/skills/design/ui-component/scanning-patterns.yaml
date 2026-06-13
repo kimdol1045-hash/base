@@ -1,0 +1,22 @@
+content: "시선 스캔 패턴 (사용자의 자연스러운 시선 흐름에 맞춰 배치한다):\n\n### F-Pattern (텍스트 중심 페이지)\n```\n\
+  ████████████████     ← 상단 수평 스캔\n████████████████\n██████████           ← 두 번째 수평\
+  \ (더 짧음)\n██████████\n████                 ← 좌측 수직 스캔\n████\n████\n```\n**적용:**\
+  \ 블로그, 검색 결과, 기사 목록\n- 핵심 정보를 좌측 상단에 배치\n- 중요 키워드를 각 문단 첫 2단어에\n- 소제목으로 스캔 포인트 제공\n\
+  \n### Z-Pattern (비주얼 중심 페이지)\n```\n① ─────────── ②\n              ╱\n          \
+  \  ╱\n③ ─────────── ④\n```\n**적용:** 랜딩페이지, 히어로 섹션, 대시보드\n- ① 로고/네비게이션\n- ② CTA 또는\
+  \ 핵심 메시지\n- ③ 부가 정보/이미지\n- ④ 최종 CTA (가입, 구매)\n\n### 구텐베르크 다이어그램 (균일 콘텐츠)\n```\n\
+  [Primary]  [Strong]\n[Weak]     [Terminal]\n```\n- CTA는 Terminal Area (우하단)에 배치\n\
+  - 적용: 폼, 다이얼로그, 카드\n\n### 실무 규칙\n- Above the fold: 핵심 가치 제안 + CTA\n- 좌측 정렬 텍스트 (우측\
+  \ 정렬은 스캔 방해)\n- 시선 흐름을 끊는 요소 제거 (자동 재생 영상, 팝업)\n- 시각적 앵커 (이미지, 아이콘)로 시선 유도\n"
+domain: design
+id: design.ui-component.scanning-patterns
+tags:
+- design
+- ui
+- f-pattern
+- z-pattern
+- scanning
+theory: '#159 F-Pattern & Z-Pattern (Nielsen Norman Group, 2006)'
+token_estimate: 400
+type: rule
+version: 1

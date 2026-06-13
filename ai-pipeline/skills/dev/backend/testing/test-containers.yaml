@@ -1,0 +1,33 @@
+bloom_level: APPLY
+content: "# Testcontainers 통합 테스트 가이드\n\n## 핵심 원칙\n- 실제 데이터베이스, Redis, 메시지 브로커를 Docker\
+  \ 컨테이너로 실행하여 테스트한다\n- Mock 대신 실제 인프라를 사용하므로 프로덕션에 가까운 테스트가 가능하다\n- 테스트 종료 시 컨테이너가\
+  \ 자동으로 정리된다\n- CI/CD 환경에서도 Docker만 있으면 실행 가능하다\n\n## DO\n- 데이터베이스 마이그레이션과 쿼리를 실제\
+  \ DB에서 테스트한다\n- 테스트 간 데이터 격리를 보장한다 (트랜잭션 롤백 또는 DB 초기화)\n- 컨테이너 시작 시간을 최소화하기 위해 재사용(Reusable)\
+  \ 옵션을 활용한다\n- 글로벌 설정(beforeAll)에서 컨테이너를 시작한다\n\n## DON'T\n- 각 테스트마다 컨테이너를 새로 시작하지\
+  \ 않는다 (느림)\n- 테스트에서 외부 공유 DB에 의존하지 않는다\n- 컨테이너 포트를 하드코딩하지 않는다 (동적 포트 매핑 사용)\n- 단위\
+  \ 테스트에 Testcontainers를 사용하지 않는다 (통합 테스트용)\n\n## 코드 예시\n```typescript\nimport { PostgreSqlContainer\
+  \ } from \"@testcontainers/postgresql\";\nimport { RedisContainer } from \"@testcontainers/redis\"\
+  ;\nimport { describe, beforeAll, afterAll, it, expect } from \"vitest\";\n\nlet\
+  \ pgContainer: StartedPostgreSqlContainer;\nlet redisContainer: StartedRedisContainer;\n\
+  let db: Database;\n\nbeforeAll(async () => {\n  pgContainer = await new PostgreSqlContainer(\"\
+  postgres:16\")\n    .withReuse()\n    .start();\n\n  redisContainer = await new\
+  \ RedisContainer(\"redis:7\")\n    .withReuse()\n    .start();\n\n  db = createDatabase({\n\
+  \    connectionString: pgContainer.getConnectionUri(),\n  });\n\n  // 마이그레이션 실행\n\
+  \  await runMigrations(db);\n}, 60_000); // 컨테이너 시작 대기\n\nafterAll(async () => {\n\
+  \  await db.close();\n  await pgContainer?.stop();\n  await redisContainer?.stop();\n\
+  });\n\ndescribe(\"UserRepository\", () => {\n  it(\"사용자를 생성하고 조회할 수 있다\", async\
+  \ () => {\n    const repo = new UserRepository(db);\n    const user = await repo.create({\n\
+  \      email: \"test@example.com\",\n      displayName: \"테스트\",\n    });\n\n  \
+  \  const found = await repo.findById(user.id);\n    expect(found?.email).toBe(\"\
+  test@example.com\");\n  });\n});\n```\n"
+domain: development.backend
+id: dev.backend.testing.test-containers
+tags:
+- testing
+- testcontainers
+- docker
+- integration
+theory: '#230 Testcontainers (AtomicJar, 2015)'
+token_estimate: 816
+type: pattern
+version: 1

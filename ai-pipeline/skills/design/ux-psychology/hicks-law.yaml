@@ -1,0 +1,42 @@
+content: "힉스 법칙 — 선택지 수가 증가하면 결정 시간이 로그 비례로 증가한다.\nRT = a + b * log2(n+1) — 선택지 n개일\
+  \ 때 반응 시간 RT.\n\n### 핵심 원칙\n- 한 화면의 선택지: **3-5개** 이하로 제한\n- 7개 이상 → 카테고리 그룹핑 또는\
+  \ 프로그레시브 디스클로저\n- 10개 이상 → 검색/필터 UI 필수 제공\n\n### 1. 네비게이션 메뉴 — 5개 이하 유지\n\nDO:\n\
+  ```tsx\n{/* 최상위 메뉴 5개, 하위는 드롭다운으로 숨김 */}\n<nav className=\"flex items-center gap-6\"\
+  >\n  <NavLink href=\"/dashboard\">대시보드</NavLink>\n  <NavLink href=\"/projects\"\
+  >프로젝트</NavLink>\n  <NavLink href=\"/analytics\">분석</NavLink>\n  <NavLink href=\"\
+  /team\">팀</NavLink>\n  <DropdownMenu>\n    <DropdownMenuTrigger className=\"text-sm\
+  \ text-muted-foreground\">\n      더보기 <ChevronDown className=\"ml-1 h-4 w-4\" />\n\
+  \    </DropdownMenuTrigger>\n    <DropdownMenuContent>\n      <DropdownMenuItem>설정</DropdownMenuItem>\n\
+  \      <DropdownMenuItem>도움말</DropdownMenuItem>\n      <DropdownMenuItem>API 문서</DropdownMenuItem>\n\
+  \    </DropdownMenuContent>\n  </DropdownMenu>\n</nav>\n```\n\nDON'T:\n```tsx\n\
+  {/* 8개 메뉴가 한 줄에 나열 → 결정 시간 증가, 시각 과부하 */}\n<nav className=\"flex gap-4\">\n  <NavLink>대시보드</NavLink><NavLink>프로젝트</NavLink>\n\
+  \  <NavLink>분석</NavLink><NavLink>팀</NavLink>\n  <NavLink>설정</NavLink><NavLink>도움말</NavLink>\n\
+  \  <NavLink>API</NavLink><NavLink>요금</NavLink>\n</nav>\n```\n\n### 2. 폼 설계 — 프로그레시브\
+  \ 디스클로저\n\n```tsx\n{/* 복잡한 폼을 단계별로 분리 → 각 단계 선택지 3-4개 */}\n<div className=\"space-y-6\"\
+  >\n  <div className=\"flex items-center gap-2 text-sm text-muted-foreground\">\n\
+  \    <span className=\"font-medium text-primary\">1. 기본 정보</span>\n    <ChevronRight\
+  \ className=\"h-4 w-4\" />\n    <span>2. 상세 설정</span>\n    <ChevronRight className=\"\
+  h-4 w-4\" />\n    <span>3. 확인</span>\n  </div>\n  {/* 현재 단계의 3개 필드만 표시 */}\n  <div\
+  \ className=\"space-y-4\">\n    <Input placeholder=\"프로젝트 이름\" />\n    <Select><SelectTrigger>카테고리\
+  \ 선택</SelectTrigger></Select>\n    <Textarea placeholder=\"간단한 설명\" rows={3} />\n\
+  \  </div>\n  <Button className=\"w-full\">다음 단계</Button>\n</div>\n```\n\n### 3.\
+  \ 카테고리 그룹핑 — 설정 화면\n\n```tsx\n{/* 20개 설정을 4개 그룹으로 분류 → 각 그룹 5개 이하 */}\n<div className=\"\
+  space-y-8\">\n  {[\"일반\", \"알림\", \"보안\", \"결제\"].map((group) => (\n    <section\
+  \ key={group} className=\"rounded-lg border p-6 space-y-4\">\n      <h3 className=\"\
+  text-lg font-semibold\">{group}</h3>\n      {/* 그룹당 3-5개 설정 항목 */}\n    </section>\n\
+  \  ))}\n</div>\n```\n\n### 측정 지표\n- 메뉴 클릭 결정 시간: 5개 이하 → 평균 1.5초, 10개 이상 → 평균 4초+\n\
+  - 폼 완료율: 한 화면 10개 필드 → 약 20% 이탈, 3-4개 단계 분리 → 이탈 60% 감소\n"
+domain: design
+id: design.ux-psychology.hicks-law
+tags:
+- design
+- ux
+- hicks-law
+- decision-time
+- navigation
+- form
+- progressive-disclosure
+theory: '#41 힉스 법칙 (Hick, 1952)'
+token_estimate: 1114
+type: rule
+version: 1

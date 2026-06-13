@@ -1,0 +1,22 @@
+content: "데이터 파이프라인 (원시 데이터를 분석 가능한 형태로 변환한다):\n\n### ETL vs ELT\n| 구분 | ETL | ELT\
+  \ |\n|------|-----|-----|\n| 순서 | Extract→Transform→Load | Extract→Load→Transform\
+  \ |\n| 변환 위치 | 중간 서버 | 데이터 웨어하우스 내부 |\n| 적합 | 정형 데이터, 소규모 | 빅데이터, 클라우드 DW |\n\n\
+  ### 파이프라인 설계 원칙\n- 멱등성: 같은 데이터 재처리해도 결과 동일\n- 재처리 가능: 실패 시 특정 시점부터 재실행\n- 모니터링:\
+  \ 처리량, 지연시간, 에러율 추적\n- 스키마 진화: 소스 스키마 변경에 graceful 대응\n\n### 이벤트 트래킹 설계\n```json\n\
+  {\n  \"event\": \"button_clicked\",\n  \"properties\": {\n    \"button_name\": \"\
+  signup_cta\",\n    \"page\": \"/landing\",\n    \"variant\": \"A\"\n  },\n  \"user_id\"\
+  : \"u-123\",\n  \"timestamp\": \"2024-03-15T10:30:00Z\",\n  \"session_id\": \"s-456\"\
+  \n}\n```\n\n### 이벤트 네이밍 컨벤션\n- `object_action` 형식: `page_viewed`, `button_clicked`,\
+  \ `order_completed`\n- 과거형 사용 (이벤트는 이미 발생한 것)\n- 일관된 property 네이밍 (camelCase 또는\
+  \ snake_case 통일)\n"
+domain: analytics
+id: analytics.data-pipeline
+tags:
+- analytics
+- data-pipeline
+- etl
+- event-tracking
+theory: '#181 Data Pipeline / ETL Best Practices'
+token_estimate: 380
+type: pattern
+version: 1

@@ -1,0 +1,56 @@
+content: "상태 관리 패턴 (상태를 유형별로 분류하고 적합한 도구를 선택한다):\n\n### 상태 유형 분류표\n\n| 상태 유형 | 예시\
+  \ | 권장 도구 | 갱신 빈도 |\n|-----------|------|-----------|-----------|\n| Server State\
+  \ | API 데이터, 목록, 상세 | TanStack Query / SWR | 서버 변경 시 |\n| Client Global | 테마, 사이드바\
+  \ 열림, 토스트 | Zustand | 사용자 액션 |\n| Client Local | 폼 입력, 모달 열림, 토글 | useState | 즉시\
+  \ |\n| URL State | 필터, 페이지, 정렬, 탭 | nuqs / searchParams | 네비게이션 |\n| Form State\
+  \ | 폼 값, 유효성, 제출 상태 | React Hook Form | 입력 시 |\n\n핵심 원칙: **Server State와 Client\
+  \ State를 절대 섞지 않는다.**\n\n### 1. Server State — TanStack Query\nDO:\n```typescript\n\
+  // ✅ TanStack Query — 캐싱, 리페칭, 로딩/에러 자동 관리\nimport { useQuery, useMutation, useQueryClient\
+  \ } from \"@tanstack/react-query\";\n\nfunction useProjects() {\n  return useQuery({\n\
+  \    queryKey: [\"projects\"],\n    queryFn: () => api.get<Project[]>(\"/projects\"\
+  ),\n    staleTime: 5 * 60 * 1000,   // 5분간 fresh (불필요한 리페칭 방지)\n    gcTime: 30 *\
+  \ 60 * 1000,     // 30분간 캐시 유지\n  });\n}\n\nfunction useCreateProject() {\n  const\
+  \ queryClient = useQueryClient();\n  return useMutation({\n    mutationFn: (data:\
+  \ CreateProjectDto) => api.post(\"/projects\", data),\n    onSuccess: () => {\n\
+  \      queryClient.invalidateQueries({ queryKey: [\"projects\"] }); // 목록 갱신\n \
+  \   },\n  });\n}\n```\n\n### 2. Client Global State — Zustand\n```typescript\n//\
+  \ ✅ Zustand — 보일러플레이트 최소, 선택적 구독\nimport { create } from \"zustand\";\n\ninterface\
+  \ UIStore {\n  sidebarOpen: boolean;\n  toggleSidebar: () => void;\n  theme: \"\
+  light\" | \"dark\";\n  setTheme: (theme: \"light\" | \"dark\") => void;\n}\n\nconst\
+  \ useUIStore = create<UIStore>((set) => ({\n  sidebarOpen: true,\n  toggleSidebar:\
+  \ () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),\n  theme: \"light\",\n  setTheme:\
+  \ (theme) => set({ theme }),\n}));\n\n// ✅ 선택적 구독 — 필요한 값만 구독 (불필요한 리렌더 방지)\nfunction\
+  \ Sidebar() {\n  const isOpen = useUIStore((s) => s.sidebarOpen); // sidebarOpen만\
+  \ 구독\n  return isOpen ? <SidebarContent /> : null;\n}\n```\n\n### 3. URL State —\
+  \ 필터/검색/페이지\n```typescript\n// ✅ nuqs — type-safe URL state (Next.js App Router)\n\
+  import { useQueryState, parseAsInteger } from \"nuqs\";\n\nfunction ProductList()\
+  \ {\n  const [search, setSearch] = useQueryState(\"q\", { defaultValue: \"\" });\n\
+  \  const [page, setPage] = useQueryState(\"page\", parseAsInteger.withDefault(1));\n\
+  \  const [sort, setSort] = useQueryState(\"sort\", { defaultValue: \"newest\" });\n\
+  \n  const { data } = useQuery({\n    queryKey: [\"products\", { search, page, sort\
+  \ }],\n    queryFn: () => api.get(\"/products\", { params: { q: search, page, sort\
+  \ } }),\n  });\n}\n```\n\n### 4. Context — 소규모 주입 (테마, 인증)\n```typescript\n// ✅\
+  \ Context는 자주 변경되지 않는 값에만 사용\nconst AuthContext = createContext<AuthState | null>(null);\n\
+  \nfunction useAuth() {\n  const ctx = useContext(AuthContext);\n  if (!ctx) throw\
+  \ new Error(\"useAuth must be used within AuthProvider\");\n  return ctx;\n}\n```\n\
+  \nDON'T:\n```typescript\n// ❌ Redux for everything — 과도한 보일러플레이트\n// action type\
+  \ 정의 → action creator → reducer → selector → dispatch\n// 단순한 UI 토글에 4개 파일 필요\n\n\
+  // ❌ useEffect로 데이터 페칭 — 캐싱/로딩/에러 수동 관리\nconst [users, setUsers] = useState<User[]>([]);\n\
+  const [loading, setLoading] = useState(true);\nuseEffect(() => {\n  fetch(\"/api/users\"\
+  ).then(r => r.json()).then(setUsers).finally(() => setLoading(false));\n}, []);\
+  \ // 캐싱 없음, 경쟁 조건, 메모리 누수 위험\n\n// ❌ 로컬 상태를 글로벌로 올림 — 불필요한 리렌더 전파\n// 모달 열림 상태를\
+  \ Zustand에 저장? → useState로 충분\n```\n"
+domain: development.frontend
+id: dev.frontend.component.state-management
+tags:
+- frontend
+- state-management
+- zustand
+- react-query
+- tanstack
+- context
+- url-state
+theory: '#21 Miller''s Law — 정보 청킹 (Miller, 1956)'
+token_estimate: 803
+type: pattern
+version: 1

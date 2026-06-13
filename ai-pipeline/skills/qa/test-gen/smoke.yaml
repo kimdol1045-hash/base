@@ -1,0 +1,25 @@
+content: "스모크 테스트 (배포 후 핵심 기능의 정상 동작을 빠르게 확인한다):\n\n### 목적\n- 배포 직후 \"시스템이 살아있는가?\"\
+  \ 검증\n- 전체 테스트 실행 전 기본 기능 확인\n- 1~5분 내 완료\n\n### 스모크 테스트 체크리스트\n```\n1. 서버 응답: GET\
+  \ /health → 200 OK\n2. 인증: POST /auth/login → 토큰 반환\n3. 핵심 CRUD: POST /api/items\
+  \ → 201 Created\n4. DB 연결: SELECT 1 → 성공\n5. 외부 서비스: 결제 API ping → 응답\n```\n\n###\
+  \ 구현 예시\n```typescript\ndescribe('Smoke Tests', () => {\n  it('서버 헬스체크', async ()\
+  \ => {\n    const res = await fetch(`${BASE_URL}/health`);\n    expect(res.status).toBe(200);\n\
+  \  });\n\n  it('로그인 가능', async () => {\n    const res = await fetch(`${BASE_URL}/auth/login`,\
+  \ {\n      method: 'POST',\n      body: JSON.stringify({ email: 'test@test.com',\
+  \ password: 'test' }),\n    });\n    expect(res.status).toBe(200);\n    expect(await\
+  \ res.json()).toHaveProperty('token');\n  });\n});\n```\n\n### CI/CD 통합\n```yaml\n\
+  deploy:\n  steps:\n    - deploy_to_staging\n    - run_smoke_tests    # 실패 시 자동 롤백\n\
+  \    - deploy_to_production\n    - run_smoke_tests    # 실패 시 자동 롤백\n```\n\n### vs\
+  \ 다른 테스트\n| 스모크 | 회귀 | E2E |\n|--------|------|-----|\n| 핵심만 | 전체 기능 | 사용자 시나리오\
+  \ |\n| 1~5분 | 10~30분 | 10~60분 |\n| 배포마다 | PR마다 | 릴리즈 전 |\n"
+domain: qa
+id: qa.test-gen.smoke
+tags:
+- qa
+- smoke-test
+- deployment
+- ci-cd
+theory: '#185 Smoke Testing / Sanity Testing'
+token_estimate: 533
+type: pattern
+version: 1

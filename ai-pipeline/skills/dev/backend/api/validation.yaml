@@ -1,0 +1,42 @@
+content: "입력 검증 패턴 (모든 외부 입력은 신뢰하지 않는다 -- 클라이언트는 항상 거짓말할 수 있다):\n\n### Zod 스키마 우선\
+  \ 원칙\n모든 API 엔드포인트의 request body, query params, path params를 Zod로 검증한다.\n\nDO:\n\
+  ```typescript\n// schemas/user.ts\nexport const CreateUserSchema = z.object({\n\
+  \  email: z.string().email().max(255),\n  name: z.string().min(1).max(100).trim(),\n\
+  \  age: z.number().int().min(0).max(150).optional(),\n  role: z.enum([\"user\",\
+  \ \"admin\"]).default(\"user\"),\n});\nexport type CreateUserInput = z.infer<typeof\
+  \ CreateUserSchema>;\n\n// routes/users.ts\napp.post(\"/users\", async (c) => {\n\
+  \  const body = CreateUserSchema.parse(await c.req.json());\n  // body는 이제 타입 안전\n\
+  });\n```\n\nDON'T:\n```typescript\n// ❌ 수동 검증 -- 누락 가능성 높음\napp.post(\"/users\"\
+  , async (c) => {\n  const body = await c.req.json();\n  if (!body.email || !body.email.includes(\"\
+  @\")) {\n    return c.json({ error: \"Invalid email\" }, 400);\n  }\n  // name 검증\
+  \ 깜빡함... 보안 구멍\n});\n\n// ❌ any 타입으로 DB에 직접 전달\nconst data = req.body as any;\n\
+  await db.insert(users).values(data);\n```\n\n### Query Params 검증\n```typescript\n\
+  const ListQuerySchema = z.object({\n  cursor: z.string().uuid().optional(),\n  limit:\
+  \ z.coerce.number().int().min(1).max(100).default(20),\n  sort: z.enum([\"created_at\"\
+  , \"updated_at\"]).default(\"created_at\"),\n  order: z.enum([\"asc\", \"desc\"\
+  ]).default(\"desc\"),\n});\n\napp.get(\"/users\", async (c) => {\n  const query\
+  \ = ListQuerySchema.parse(c.req.query());\n});\n```\n\n### Path Params 검증\n```typescript\n\
+  const IdParamSchema = z.object({\n  id: z.string().uuid(\"유효한 UUID 형식이 아닙니다\"),\n\
+  });\n\napp.get(\"/users/:id\", async (c) => {\n  const { id } = IdParamSchema.parse(c.req.param());\n\
+  });\n```\n\n### 검증 실패 응답 표준\n```typescript\n// Zod 에러를 일관된 형식으로 변환\nfunction formatZodError(error:\
+  \ ZodError) {\n  return {\n    error: {\n      code: \"VALIDATION_ERROR\",\n   \
+  \   message: \"입력값 검증에 실패했습니다\",\n      details: error.issues.map((i) => ({\n  \
+  \      field: i.path.join(\".\"),\n        message: i.message,\n      })),\n   \
+  \ },\n  };\n}\n```\n\n### 검증 위치\n- Controller 진입 직후 (미들웨어 또는 핸들러 첫 줄)\n- DB 저장 직전\
+  \ 이중 검증은 불필요 (Zod 통과 = 타입 안전)\n- 단, 비즈니스 규칙 검증(중복 체크 등)은 서비스 레이어에서 수행\n\n### 흔한\
+  \ 실수\n- `.optional()`과 `.nullable()` 혼동: optional은 필드 생략 가능, nullable은 null 값 허용\n\
+  - 배열 입력 시 `.array().max(100)`으로 크기 제한 누락 -> DoS 가능\n- `.coerce.number()`를 안 쓰고 query\
+  \ param이 string으로 들어와서 타입 에러\n- 파일 업로드 시 mimetype/크기 검증 누락\n- `.transform()`으로 데이터\
+  \ 변환 시 원본 타입과 변환 타입 혼동\n"
+domain: development.backend
+id: dev.backend.api.validation
+tags:
+- backend
+- api
+- validation
+- zod
+- security
+theory: '#72 SOLID.D -- 방어적 프로그래밍'
+token_estimate: 1138
+type: pattern
+version: 1

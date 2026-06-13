@@ -1,0 +1,45 @@
+content: "반응형 설계 — 모바일 퍼스트로 설계하고, 더 큰 화면으로 점진적 확장한다.\n\n### 1. 브레이크포인트 전략 (Tailwind\
+  \ CSS)\n| 접두사 | 최소 너비 | 대상 디바이스 |\n|--------|----------|-------------|\n| (기본) |\
+  \ 0px | 모바일 (320px~) |\n| sm: | 640px | 큰 모바일 / 작은 태블릿 |\n| md: | 768px | 태블릿 |\n\
+  | lg: | 1024px | 작은 데스크톱 |\n| xl: | 1280px | 데스크톱 |\n| 2xl: | 1536px | 큰 데스크톱 |\n\
+  \n핵심 원칙: 모바일 스타일을 기본으로 작성하고, 큰 화면에서만 접두사 추가.\n\nDO:\n```tsx\n{/* 모바일: 1열, 태블릿: 2열,\
+  \ 데스크톱: 3열 */}\n<div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3\
+  \ gap-4 md:gap-6\">\n  <Card />\n  <Card />\n  <Card />\n</div>\n```\n\nDON'T:\n\
+  ```tsx\n{/* 데스크톱 먼저 -> 모바일에서 깨짐 */}\n<div className=\"grid grid-cols-3 sm:grid-cols-1\"\
+  >\n  <Card />\n</div>\n```\n\n### 2. 컨테이너 너비 제한\n- 최대 너비: max-w-7xl (1280px) — 일반\
+  \ 콘텐츠\n- 좁은 콘텐츠: max-w-2xl (672px) — 블로그, 폼\n- 전폭 레이아웃: max-w-full + 좌우 패딩 px-4\
+  \ sm:px-6 lg:px-8\n- 항상 mx-auto로 중앙 정렬\n\n```tsx\n<div className=\"mx-auto max-w-7xl\
+  \ px-4 sm:px-6 lg:px-8\">\n  {/* 콘텐츠 */}\n</div>\n```\n\n### 3. 텍스트 반응형\n- 제목: text-2xl\
+  \ sm:text-3xl lg:text-4xl (단계적 확대)\n- 본문: text-sm sm:text-base (기본은 14px, 태블릿 이상\
+  \ 16px)\n- 최대 줄 길이: max-w-prose (65ch) — 가독성 한계\n- clamp() 대안: text-[clamp(1.25rem,3vw,2rem)]\n\
+  \nDO:\n```tsx\n<h1 className=\"text-2xl font-bold sm:text-3xl lg:text-4xl\">\n \
+  \ 반응형 제목\n</h1>\n<p className=\"text-sm sm:text-base max-w-prose text-muted-foreground\"\
+  >\n  본문 텍스트는 최대 65자 너비로 제한하여 가독성을 확보합니다.\n</p>\n```\n\n### 4. 레이아웃 패턴 전환\n- 네비게이션:\
+  \ 모바일=햄버거 메뉴, md+=수평 네비게이션\n- 사이드바: 모바일=시트(Sheet), lg+=고정 사이드바\n- 테이블: 모바일=카드 리스트,\
+  \ md+=테이블\n- 그리드: 모바일=1열 스택, 점진적으로 열 추가\n\n```tsx\n{/* 네비게이션 반응형 전환 */}\n<nav className=\"\
+  flex items-center justify-between\">\n  <Logo />\n  {/* 모바일: 햄버거 */}\n  <Sheet>\n\
+  \    <SheetTrigger asChild className=\"md:hidden\">\n      <Button variant=\"ghost\"\
+  \ size=\"icon\">\n        <Menu className=\"h-5 w-5\" />\n      </Button>\n    </SheetTrigger>\n\
+  \    <SheetContent>\n      <NavLinks className=\"flex flex-col gap-4\" />\n    </SheetContent>\n\
+  \  </Sheet>\n  {/* 데스크톱: 수평 네비 */}\n  <NavLinks className=\"hidden md:flex md:gap-6\"\
+  \ />\n</nav>\n```\n\n### 5. 이미지 반응형\n- next/image 사용, sizes 속성 필수\n- 모바일: 100vw,\
+  \ 태블릿: 50vw, 데스크톱: 33vw\n- aspect-ratio로 비율 유지 (CLS 방지)\n- 장식 이미지: hidden sm:block으로\
+  \ 모바일에서 숨기기\n\n```tsx\n<Image\n  src=\"/hero.jpg\"\n  alt=\"히어로 이미지\"\n  width={1200}\n\
+  \  height={600}\n  className=\"w-full h-auto rounded-lg object-cover aspect-[2/1]\"\
+  \n  sizes=\"(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw\"\n  priority\n\
+  />\n```\n\n### 6. 숨기기 vs 재배치\n- 콘텐츠를 숨기지 말고 레이아웃을 변경한다\n- 부가 정보만 hidden sm:block\
+  \ 허용 (핵심 콘텐츠 숨김 금지)\n- order 클래스로 시각 순서 조정: order-first sm:order-none\n"
+domain: design
+id: design.ui-component.responsive
+tags:
+- design
+- ui
+- responsive
+- mobile-first
+- breakpoints
+- tailwind
+- layout
+theory: '#47 Responsive Web Design (Marcotte, 2010)'
+token_estimate: 1209
+type: rule
+version: 1

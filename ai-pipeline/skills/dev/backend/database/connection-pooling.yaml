@@ -1,0 +1,44 @@
+content: "DB 커넥션 풀링 규칙 (제한된 커넥션을 효율적으로 관리한다):\n\n### 왜 커넥션 풀링이 중요한가?\nDB 커넥션 생성 비용:\
+  \ TCP 핸드셰이크 + TLS + 인증 = ~50-100ms.\nLittle's Law: L = λ × W (동시 커넥션 = 요청률 × 평균\
+  \ 처리시간).\n풀링 없이 요청당 커넥션 생성 시 Postgres 기본 max_connections(100) 즉시 소진.\n\n### 풀 사이즈\
+  \ 공식\n최적 커넥션 수 = (CPU 코어 수 × 2) + 디스크 스핀들 수\n예: 4코어 서버 + SSD(1) = (4 × 2) + 1 =\
+  \ **9개**\n\n### 풀 설정 기준표\n\n| 설정 | 값 | 설명 |\n|------|------|------|\n| min | 2 |\
+  \ 유휴 시에도 유지할 최소 커넥션 |\n| max | 20 | CPU 코어 기반 최대값 (Postgres max의 80%) |\n| idleTimeoutMs\
+  \ | 10000 | 10초 유휴 시 커넥션 반환 |\n| connectionTimeoutMs | 5000 | 5초 내 획득 실패 시 에러 |\n\
+  | maxLifetimeMs | 1800000 | 30분 후 커넥션 재생성 (stale 방지) |\n\nDO:\n```typescript\n//\
+  \ ✅ Prisma — 풀 사이즈 명시 (connection_limit)\n// DATABASE_URL=\"postgresql://user:pass@host:5432/db?connection_limit=10&pool_timeout=5\"\
+  \n\n// ✅ Node.js pg 라이브러리 — 풀 설정\nimport { Pool } from \"pg\";\nconst pool = new\
+  \ Pool({\n  max: 10,                   // 최대 커넥션 수\n  idleTimeoutMillis: 10000,\
+  \  // 10초 유휴 시 해제\n  connectionTimeoutMillis: 5000, // 5초 내 획득 실패 시 에러\n  maxLifetimeMillis:\
+  \ 1800000,    // 30분 후 커넥션 재생성\n});\n\n// ✅ 커넥션 사용 후 반드시 반환\nconst client = await\
+  \ pool.connect();\ntry {\n  const result = await client.query(\"SELECT * FROM users\
+  \ WHERE id = $1\", [id]);\n  return result.rows[0];\n} finally {\n  client.release();\
+  \ // 반드시 반환\n}\n```\n\n### Serverless 환경 패턴 (Lambda, Vercel)\n콜드 스타트마다 커넥션 생성 →\
+  \ 수백 개 커넥션 폭발 위험.\n\nDO:\n```typescript\n// ✅ PgBouncer / Supabase Pooler — Transaction\
+  \ Mode\n// connection string에 pooler 엔드포인트 사용\n// DATABASE_URL=\"postgresql://user:pass@pooler.supabase.com:6543/db?pgbouncer=true\"\
+  \n\n// ✅ Prisma + Serverless: connection pooler 사용\n// schema.prisma\n// datasource\
+  \ db {\n//   provider  = \"postgresql\"\n//   url       = env(\"DATABASE_URL\")\
+  \        // pooler 엔드포인트\n//   directUrl = env(\"DIRECT_URL\")           // 마이그레이션용\
+  \ 직접 연결\n// }\n\n// ✅ Neon Serverless Driver — HTTP 기반 (커넥션 불필요)\nimport { neon\
+  \ } from \"@neondatabase/serverless\";\nconst sql = neon(process.env.DATABASE_URL!);\n\
+  const users = await sql`SELECT * FROM users WHERE active = true`;\n```\n\nDON'T:\n\
+  ```typescript\n// ❌ 요청마다 새 풀 생성 — 커넥션 폭발\nexport async function handler(req: Request)\
+  \ {\n  const pool = new Pool({ max: 10 }); // 매 요청마다 새 풀!\n  const result = await\
+  \ pool.query(\"SELECT 1\");\n  return Response.json(result.rows);\n  // pool.end()\
+  \ 호출 안 함 → 커넥션 누수\n}\n\n// ❌ 커넥션 리밋 미설정 — Postgres max_connections 초과\nconst pool\
+  \ = new Pool(); // max 기본값: 10이지만 인스턴스별 누적\n```\n\n### 모니터링 지표\n- `pool.totalCount`:\
+  \ 전체 커넥션 수\n- `pool.idleCount`: 유휴 커넥션 수\n- `pool.waitingCount`: 대기 중인 요청 수 (> 0이면\
+  \ 풀 확장 검토)\n- Postgres: `SELECT count(*) FROM pg_stat_activity;` — 현재 연결 수 확인\n"
+domain: development.database
+id: dev.backend.database.connection-pooling
+tags:
+- database
+- connection-pool
+- pgbouncer
+- serverless
+- prisma
+- postgres
+theory: '#110 Little''s Law (Little, 1961)'
+token_estimate: 1253
+type: rule
+version: 1

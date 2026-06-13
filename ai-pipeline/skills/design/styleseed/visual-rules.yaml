@@ -1,0 +1,143 @@
+bloom_level: APPLY
+content: '# StyleSeed Visual Design Language (69 Rules)
+
+  Source: bitjaru/styleseed DESIGN-LANGUAGE.md
+
+
+  ## Part 1: Color & Hierarchy
+
+  - `single-accent`: 앱 전체에 단일 강조색. 나머지는 그레이스케일. 절제가 우아함
+
+  - `no-pure-black`: 가장 세련된 블랙은 #000이 아니라 #2A2A2A
+
+  - `5-level-grayscale`: 5단계 그레이스케일로 위계 표현
+
+  - `key-color-sparingly`: 페이지당 강조색 1-2곳만. 배경에 사용 금지
+
+  - `accent-distribution`: 강조색은 active/selected 상태에만 예약
+
+
+  ## Part 2: Typography & Numbers
+
+  - `number-ratio`: 큰 숫자 + 작은 단위 = 2:1 비율 (48px 숫자, 24px 단위)
+
+  - `5-level-type`: Display, Headline, Title, Body, Label, Caption, Micro
+
+  - `cjk-keep-all`: 한글 word-break: keep-all, 긴 어절 metric 보정
+
+  - `large-number-abbreviation`: 큰 수는 K/M/B 약어. 긴 이름은 truncate
+
+  - `tabular-figures`: 데이터 컬럼에 등폭 숫자 사용
+
+
+  ## Part 3: Shadow & Depth
+
+  - `subtle-shadow`: 그림자 4-8% opacity. 보이면 이미 과한 것
+
+  - `card-structure`: 3부분 (Header → Content → Footer), 일관된 간격
+
+  - `card-divider`: 카드 내부에서만 border-top 구분선 (섹션 사이 금지)
+
+  - `no-nested-cards`: 카드 안의 카드 금지. 기존 패턴 조합으로 해결
+
+  - `content-in-cards`: 모든 콘텐츠는 카드 안에 존재 (TopBar/BottomNav/캐러셀 제목 제외)
+
+
+  ## Part 4: Layout & Composition
+
+  - `page-max-width`: 430px max-width, space-y-6 간격, pb-24 하단 여백
+
+  - `4-section-types`: Type A(mx-6 전폭), B(px-6 그리드), C(캐러셀), D(히어로)
+
+  - `information-pyramid`: 상단에 최우선 정보(히어로), 아래로 중요도 감소
+
+  - `data-density-max-4`: 카드당 최대 4개 항목으로 명확성 유지
+
+  - `progressive-density`: 상단 48px → 하단 14px, 정보 밀도가 위에서 아래로 증가
+
+
+  ## Part 5: Visual Rhythm (핵심 차별화)
+
+  - `no-repeat-section`: 같은 섹션 유형을 연속 반복하지 않는다. 스카이라인 리듬 형성
+
+  - `card-height-variation`: 카드 높이를 교대로 변화시켜 시각적 리듬 생성
+
+  - `kpi-card-variation`: 4개 KPI 카드의 보조 요소를 각각 다르게 (트렌드/진행/텍스트/스파크라인)
+
+  - `element-diversity`: 차트, 리스트, 진행바, 도넛 등 콘텐츠 유형 혼합
+
+  - `min-4-max-7-sections`: 최소 4개 섹션, 최대 7개. 데이터 없으면 EmptyState
+
+
+  ## Part 6: Chart & Data
+
+  - `chart-type-match`: 트렌드→area, 비교→bar, 비율→donut
+
+  - `chart-context-pairing`: 차트에 항상 통계 컨텍스트 동반 (푸터 또는 토글)
+
+  - `donut-highlight`: 선택 항목만 강조색, 나머지 그레이스케일
+
+  - `trend-indicator`: 증감 화살표 + 색상 (상승 #6B9B7A, 하락 #D4183D) + 퍼센트
+
+  - `gauge-types`: 연속 데이터→linear(h-4), 단계 데이터→segmented(h-6)
+
+
+  ## Part 7: Interaction & State
+
+  - `selection-pill-only`: 선택 UI는 pill 토글만. 카드 내 드롭다운 금지
+
+  - `no-cta-in-data-card`: 데이터 카드 내 CTA 버튼 금지
+
+  - `button-7-variants-4-sizes`: 7가지 변형, 4가지 크기. pressed=darker shade (scale 아님)
+
+  - `loading-skeleton`: 레이아웃 형태와 일치, 300ms 지연 후 animate-pulse
+
+  - `empty-state-action`: 빈 상태에서 다음 액션 제안. 섹션 제거 대신 EmptyState 표시
+
+  - `toast-bottom`: 토스트는 하단, 3-5초, 한 번에 하나만
+
+  - `dark-mode-cards`: 다크모드 카드(#1E1E1E)는 배경(#121212)보다 밝아야 함
+
+
+  ## Part 8: Form & Input
+
+  - `input-16px`: 모바일 입력 최소 16px (iOS 자동 줌 방지)
+
+  - `validate-on-blur`: blur 시 검증, 타이핑 중 검증 금지
+
+  - `modal-sheet-rules`: 필터→bottom sheet, 상세→full page
+
+
+  ## Part 9: Animation
+
+  - `stagger-50ms`: 카드 진입 50ms 간격 순차 등장
+
+  - `number-counting-600ms`: 숫자 카운팅 애니메이션 600ms
+
+  - `max-duration-500ms`: 애니메이션 최대 0.5초
+
+  - `no-decorative-animation`: 인과관계 표현 애니메이션만 허용
+
+
+  ## 적용 방법
+
+  이 규칙들은 브랜드 색상만 바꾸면 어떤 도메인에도 적용 가능한 시스템이다.
+
+  Engine(브랜드 무관) + Skin(theme.css 브랜드 색상)으로 분리한다.
+
+  '
+domain: design
+id: design.styleseed.visual-rules
+tags:
+- design
+- styleseed
+- visual-design
+- mobile-dashboard
+- card-design
+- visual-rhythm
+- data-visualization
+- color-system
+theory: 'StyleSeed Design Language (69 Visual Rules: 색상 절제 + 시각적 리듬 + 카드 시스템 + 데이터 밀도 피라미드)'
+token_estimate: 950
+type: rule
+version: 1

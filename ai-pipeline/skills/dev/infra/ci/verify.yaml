@@ -1,0 +1,42 @@
+content: 'CI/CD 자기 검증 체크리스트:
+
+
+  ## 필수 확인
+
+  - [ ] 시크릿이 YAML에 하드코딩되지 않았는가? (GitHub Secrets 사용)
+
+  - [ ] 테스트 실패 시 배포가 차단되는가? (needs 의존성 확인)
+
+  - [ ] 캐싱이 적용되었는가? (node_modules, .next, Docker 레이어)
+
+  - [ ] main 브랜치 직접 push가 차단되는가? (branch protection)
+
+  - [ ] 워크플로우 트리거 조건이 정확한가? (on.push, on.pull_request)
+
+  - [ ] 타임아웃이 설정되었는가? (timeout-minutes로 무한 실행 방지)
+
+  - [ ] 환경별 배포 대상이 올바른가? (dev/staging/prod 분리)
+
+
+  ## 권장 확인
+
+  - [ ] 병렬 실행 가능한 job이 분리되었는가? (빌드 시간 단축)
+
+  - [ ] 실패 시 알림이 발송되는가? (Slack/Discord 연동)
+
+  - [ ] Reusable workflow나 composite action으로 중복이 제거되었는가?
+
+  - [ ] concurrency 설정으로 동시 배포가 방지되는가?
+
+  - [ ] artifact 업로드/다운로드가 적절히 사용되었는가?
+
+  '
+domain: development.infra
+id: dev.infra.ci.verify
+tags:
+- infra
+- ci
+- verification
+token_estimate: 294
+type: verify
+version: 1

@@ -1,0 +1,53 @@
+---
+id: "planning.project-mgmt.estimation-techniques"
+domain: "planning"
+type: "pattern"
+bloom_level: "추정(Estimation)은 태스크의 규모, 복잡도, 소요 시간을 예측하는 기법이다. 포인트 추정보다 범위 추정이 정확하며, Planning Poker, T-셔츠 사이징, Three-point Estimation이 대표적 방법이다."
+tags: ["estimation", "planning-poker", "story-points"]
+brain_region: "PREFRONTAL"
+token_estimate: 400
+---
+
+# planning.project-mgmt.estimation-techniques
+
+> 추정(Estimation)은 태스크의 규모, 복잡도, 소요 시간을 예측하는 기법이다. 포인트 추정보다 범위 추정이 정확하며, Planning Poker, T-셔츠 사이징, Three-point Estimation이 대표적 방법이다.
+
+# 추정 기법 가이드
+
+## 핵심 원칙
+- 추정은 약속이 아니다 (범위와 불확실성 포함)
+- 시간보다 상대적 크기(Story Points) 추정이 정확
+- 팀 전체 참여로 편향 감소
+- 추정 정확도를 추적하여 지속 개선
+
+## 추정 기법 비교
+| 기법 | 단위 | 적합 | 소요 |
+|------|------|------|------|
+| Planning Poker | Story Points | 스프린트 태스크 | 중간 |
+| T-셔츠 사이징 | XS/S/M/L/XL | 로드맵 수준 | 빠름 |
+| Three-point | 시간/일 | 일정 계획 | 중간 |
+| 버킷 분류 | 1/2/3/5/8/13 | 대량 항목 | 빠름 |
+
+## Planning Poker 프로세스
+1. PO가 사용자 스토리 설명
+2. 질문 및 명확화
+3. 각자 독립적으로 카드 선택
+4. 동시에 카드 공개
+5. 최고/최저 점수자 근거 설명
+6. 재투표 (합의까지)
+
+## Three-point Estimation
+- O(Optimistic): 모든 것이 순조로울 때
+- M(Most Likely): 가장 현실적 추정
+- P(Pessimistic): 예상치 못한 문제 발생 시
+- 기대값 = (O + 4M + P) / 6
+
+## DO
+- 추정 전 기준 스토리(Reference Story) 합의
+- 추정값과 실제 소요 비교 데이터 축적
+- 큰 태스크(13pt 이상)는 분해 후 재추정
+
+## DON'T
+- 한 사람이 대표로 추정하지 않기
+- 추정값을 커밋(약속)으로 취급하지 않기
+- "그냥 빨리 하면 되지"로 추정 건너뛰지 않기

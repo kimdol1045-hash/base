@@ -1,0 +1,32 @@
+bloom_level: APPLY
+content: "# ISR (Incremental Static Regeneration) 가이드\n\n## 핵심 원칙\n- SSG의 성능 이점을 유지하면서\
+  \ 데이터를 주기적으로 갱신한다\n- `revalidate` 시간을 설정하여 캐시된 페이지를 백그라운드에서 재생성한다\n- On-demand Revalidation으로\
+  \ CMS 업데이트를 즉시 반영할 수 있다\n- 정적 생성과 동적 데이터의 균형점을 제공한다\n\n## DO\n- 상품 목록, 뉴스 피드 등 주기적\
+  \ 갱신이 필요한 페이지에 사용한다\n- `revalidate` 값을 데이터 특성에 맞게 설정한다 (60초~3600초)\n- CMS Webhook과\
+  \ On-demand Revalidation을 연결한다\n- `revalidateTag`로 관련 페이지를 태그 기반 갱신한다\n\n## DON'T\n\
+  - 실시간 데이터가 필요한 페이지에 ISR을 사용하지 않는다\n- revalidate 값을 너무 짧게 설정하지 않는다 (SSR과 동일해짐)\n\
+  - 빌드 시 모든 페이지를 생성하지 않는다 (첫 요청 시 생성)\n- On-demand Revalidation API를 인증 없이 노출하지 않는다\n\
+  \n## 코드 예시\n```tsx\n// app/products/[id]/page.tsx (ISR - 60초마다 재생성)\nexport const\
+  \ revalidate = 60;\n\nexport default async function ProductPage({ params }: Props)\
+  \ {\n  const product = await fetch(`${API_URL}/products/${params.id}`, {\n    next:\
+  \ { revalidate: 60, tags: [`product-${params.id}`] },\n  }).then(r => r.json());\n\
+  \n  return <ProductDetail product={product} />;\n}\n\n// On-demand Revalidation\
+  \ API (CMS Webhook에서 호출)\n// app/api/revalidate/route.ts\nimport { revalidateTag\
+  \ } from \"next/cache\";\nimport { NextRequest, NextResponse } from \"next/server\"\
+  ;\n\nexport async function POST(req: NextRequest) {\n  const secret = req.headers.get(\"\
+  x-revalidation-secret\");\n  if (secret !== process.env.REVALIDATION_SECRET) {\n\
+  \    return NextResponse.json({ error: \"Unauthorized\" }, { status: 401 });\n \
+  \ }\n\n  const { tag } = await req.json();\n  revalidateTag(tag);\n  return NextResponse.json({\
+  \ revalidated: true });\n}\n\n// CMS에서 상품 업데이트 시:\n// POST /api/revalidate { \"\
+  tag\": \"product-123\" }\n```\n"
+domain: development.frontend
+id: dev.frontend.page.isr
+tags:
+- frontend
+- isr
+- nextjs
+- caching
+theory: '#243 Incremental Static Regeneration (Vercel, Next.js 9.5 2020)'
+token_estimate: 761
+type: pattern
+version: 1

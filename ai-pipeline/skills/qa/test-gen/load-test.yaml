@@ -1,0 +1,44 @@
+content: "부하 테스트 (시스템의 성능 한계와 SLO 충족 여부를 검증한다):\n\n### 이론 배경\n- **Amdahl's Law**:\
+  \ 병렬화 불가능한 부분이 전체 성능 상한을 결정한다\n- **Little's Law**: L = λ × W (동시 사용자 = 도착률 × 평균\
+  \ 응답시간)\n  → p95 응답시간 200ms, 목표 100 RPS라면 동시 연결 ≈ 100 × 0.2 = 20\n\n### 테스트 유형\n\
+  | 유형 | VUs | 기간 | 목적 |\n|------|-----|------|------|\n| Smoke | 1-5 | 1분 | 기본 동작\
+  \ 확인 |\n| Load | 50-100 | 10분 | 기준선(baseline) 측정 |\n| Stress | 200+ | 5분 | 한계점 파악\
+  \ |\n| Spike | 0→500→0 | 2분 | 급증 복구 능력 |\n| Soak | 50 | 2시간 | 메모리 누수/장기 안정성 |\n\n\
+  ### k6 스크립트\n```typescript\nimport http from 'k6/http';\nimport { check, sleep }\
+  \ from 'k6';\n\n// DO: SLO 기반 threshold 설정\nexport const options = {\n  stages:\
+  \ [\n    { duration: '2m', target: 50 },   // ramp-up\n    { duration: '5m', target:\
+  \ 50 },   // steady state\n    { duration: '2m', target: 100 },  // stress\n   \
+  \ { duration: '1m', target: 0 },    // ramp-down\n  ],\n  thresholds: {\n    http_req_duration:\
+  \ ['p(95)<200', 'p(99)<500'],  // ms\n    http_req_failed: ['rate<0.001'],     \
+  \             // 0.1% 미만\n    http_reqs: ['rate>100'],                         \
+  \ // 100 RPS 이상\n  },\n};\n\n// DO: 현실적 시나리오 + think time\nexport default function\
+  \ () {\n  const loginRes = http.post('https://api.example.com/auth/login', JSON.stringify({\n\
+  \    email: `user${__VU}@test.com`,\n    password: 'loadtest123',\n  }), { headers:\
+  \ { 'Content-Type': 'application/json' } });\n\n  check(loginRes, {\n    'login\
+  \ 200': (r) => r.status === 200,\n    'token exists': (r) => !!r.json('token'),\n\
+  \  });\n\n  const token = loginRes.json('token');\n\n  // 실제 사용자처럼 think time 추가\n\
+  \  sleep(Math.random() * 3 + 1); // 1-4초\n\n  const listRes = http.get('https://api.example.com/products',\
+  \ {\n    headers: { Authorization: `Bearer ${token}` },\n  });\n\n  check(listRes,\
+  \ {\n    'list 200': (r) => r.status === 200,\n    'has items': (r) => r.json('items').length\
+  \ > 0,\n  });\n\n  sleep(Math.random() * 2 + 1);\n}\n```\n\n### SLO 기준값 (서비스 수준\
+  \ 목표)\n- **응답 시간**: p95 < 200ms, p99 < 500ms\n- **에러율**: < 0.1% (1,000 요청 중 1건 미만)\n\
+  - **처리량**: 목표 RPS의 2배까지 안정적\n\nDON'T:\n```typescript\n// ❌ warm-up 없이 즉시 최대 부하\n\
+  export const options = {\n  vus: 500,           // 갑자기 500명 → 서버 초기화 실패\n  duration:\
+  \ '5m',\n};\n\n// ❌ think time 없음 → 비현실적 부하\nexport default function () {\n  http.get('https://api.example.com/products');\n\
+  \  // sleep 없이 연속 호출 → 실제 사용 패턴과 다름\n}\n```\n\n### 실행 및 분석\n```bash\n# 실행\nk6 run\
+  \ --out json=results.json load-test.js\n\n# CI 통합: threshold 실패 시 exit code 99\n\
+  k6 run --ci load-test.js\n```\n\n### 주의사항\n- 프로덕션 테스트는 반드시 사전 승인 후 실행\n- 최소 2개 리전에서\
+  \ 테스트 (단일 리전 결과는 편향)\n- ramp-up은 전체 시간의 20% 이상 할당\n"
+domain: qa
+id: qa.test-gen.load-test
+tags:
+- qa
+- test
+- load-test
+- k6
+- performance
+- slo
+theory: '#135 Amdahl''s Law, #137 Little''s Law'
+token_estimate: 1224
+type: pattern
+version: 1

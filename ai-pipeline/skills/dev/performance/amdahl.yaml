@@ -1,0 +1,20 @@
+content: "암달의 법칙 (병렬화해도 직렬 구간이 전체 성능 한계를 결정한다):\n\n### 공식\nSpeedup = 1 / (S + P/N)\n\
+  - S = 직렬 비율, P = 병렬화 가능 비율 (S + P = 1), N = 코어/워커 수\n\n### 실무 적용: 직렬 병목을 먼저 찾아라\n\
+  ```typescript\n// ❌ BAD: 순차 실행 (직렬 100%)\nconst user = await getUser(userId);\n\
+  const orders = await getOrders(userId);\nconst reviews = await getReviews(userId);\n\
+  // 총 시간: 100ms + 200ms + 150ms = 450ms\n\n// ✅ GOOD: 독립적 작업 병렬 실행\nconst [user,\
+  \ orders, reviews] = await Promise.all([\n  getUser(userId),\n  getOrders(userId),\n\
+  \  getReviews(userId),\n]);\n// 총 시간: max(100, 200, 150) = 200ms\n```\n\n### 병렬화\
+  \ 판단 기준\n- ✅ 병렬 가능: 서로 의존 없는 API 호출, 독립 DB 쿼리, 파일 처리\n- ❌ 병렬 불가: A의 결과가 B의 입력인 경우,\
+  \ 트랜잭션 내 순차 작업\n\n### 주의사항\n- Promise.all: 하나 실패 시 전부 실패 → Promise.allSettled 고려\n\
+  - DB 커넥션 풀: 병렬 쿼리 수 > 풀 크기면 오히려 느려짐\n- 외부 API Rate Limit: 병렬 요청이 limit에 걸릴 수 있음\n"
+domain: development.performance
+id: dev.performance.amdahl
+tags:
+- performance
+- parallel
+- optimization
+theory: '#135 Amdahl''s Law (Amdahl, 1967)'
+token_estimate: 400
+type: rule
+version: 1

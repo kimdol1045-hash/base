@@ -1,0 +1,33 @@
+bloom_level: APPLY
+content: "# 반응형 디자인 패턴 가이드\n\n## 핵심 원칙\n- Mobile-First로 설계하고, 큰 화면으로 확장한다\n- Tailwind\
+  \ CSS의 반응형 접두사(sm, md, lg, xl)를 활용한다\n- 콘텐츠 기반 브레이크포인트를 우선 고려한다\n- 유연한 레이아웃(flex,\
+  \ grid)으로 다양한 화면 크기에 대응한다\n\n## DO\n- Mobile-First로 기본 스타일을 작성하고 미디어 쿼리로 확장한다\n\
+  - `clamp()` 함수로 유연한 타이포그래피를 구현한다\n- 이미지에 `srcset`과 `sizes`를 활용한다\n- 터치 대상 크기를 최소\
+  \ 44x44px로 유지한다\n\n## DON'T\n- 데스크탑 디자인을 축소하여 모바일에 적용하지 않는다\n- 픽셀 단위로 고정 레이아웃을 만들지\
+  \ 않는다\n- 모바일에서 호버(hover) 상태에만 의존하지 않는다\n- `display: none`으로 모바일에서 콘텐츠를 숨기기만 하지 않는다\n\
+  \n## 코드 예시\n```tsx\n// Tailwind CSS Mobile-First 반응형\nexport function ProductGrid({\
+  \ products }: { products: Product[] }) {\n  return (\n    <div className=\"\n  \
+  \    grid gap-4 p-4\n      grid-cols-1        /* 모바일: 1열 */\n      sm:grid-cols-2\
+  \     /* 640px+: 2열 */\n      md:grid-cols-3     /* 768px+: 3열 */\n      lg:grid-cols-4\
+  \     /* 1024px+: 4열 */\n    \">\n      {products.map(product => (\n        <ProductCard\
+  \ key={product.id} product={product} />\n      ))}\n    </div>\n  );\n}\n\n// 반응형\
+  \ 네비게이션\nexport function Navigation() {\n  return (\n    <nav className=\"flex items-center\
+  \ justify-between p-4\">\n      <Logo />\n      {/* 모바일: 햄버거 메뉴 */}\n      <MobileMenu\
+  \ className=\"md:hidden\" />\n      {/* 데스크탑: 전체 메뉴 */}\n      <DesktopMenu className=\"\
+  hidden md:flex gap-6\" />\n    </nav>\n  );\n}\n\n// useMediaQuery 훅\nfunction useMediaQuery(query:\
+  \ string): boolean {\n  const [matches, setMatches] = useState(false);\n  useEffect(()\
+  \ => {\n    const media = window.matchMedia(query);\n    setMatches(media.matches);\n\
+  \    const listener = (e: MediaQueryListEvent) => setMatches(e.matches);\n    media.addEventListener(\"\
+  change\", listener);\n    return () => media.removeEventListener(\"change\", listener);\n\
+  \  }, [query]);\n  return matches;\n}\n```\n"
+domain: development.frontend
+id: dev.frontend.mobile.responsive-patterns
+tags:
+- frontend
+- mobile
+- responsive
+- tailwind
+theory: '#247 Responsive Design (Ethan Marcotte, A List Apart 2010)'
+token_estimate: 828
+type: pattern
+version: 1

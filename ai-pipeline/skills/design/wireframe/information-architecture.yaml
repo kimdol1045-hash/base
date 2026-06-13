@@ -1,0 +1,58 @@
+content: '정보 구조 (사용자가 원하는 정보를 쉽게 찾게 한다):
+
+
+  ### 4가지 체계
+
+  | 체계 | 설명 | 예시 |
+
+  |------|------|------|
+
+  | 조직 | 콘텐츠 분류/그룹핑 | 카테고리, 태그 |
+
+  | 라벨링 | 명칭/용어 일관성 | 네비게이션 메뉴 이름 |
+
+  | 네비게이션 | 이동 경로 설계 | GNB, 사이드바, 브레드크럼 |
+
+  | 검색 | 검색 기능 설계 | 필터, 자동완성, 정렬 |
+
+
+  ### 카드 소팅
+
+  사용자가 직접 콘텐츠를 분류하게 하여 멘탈 모델 파악:
+
+  - Open Sort: 사용자가 자유롭게 그룹핑 + 이름 지정
+
+  - Closed Sort: 미리 정한 카테고리에 배치
+
+  - 최소 15명 참여 권장
+
+
+  ### 네비게이션 패턴
+
+  - **GNB**: 5~7개 이내 주요 메뉴
+
+  - **사이드바**: 세부 카테고리 (대시보드, 관리자)
+
+  - **브레드크럼**: 현재 위치 표시 (깊은 계층)
+
+  - **탭**: 같은 레벨의 관련 콘텐츠 전환
+
+
+  ### 3클릭 규칙의 진실
+
+  "3클릭 이내 도달" 규칙은 근거 없음 (연구 반박됨)
+
+  → 중요한 건 클릭 수가 아니라 각 클릭의 **정보 향기**(information scent)
+
+  '
+domain: design
+id: design.wireframe.information-architecture
+tags:
+- design
+- information-architecture
+- navigation
+- ux
+theory: '#187 Information Architecture (Rosenfeld & Morville, Polar Bear Book)'
+token_estimate: 284
+type: pattern
+version: 1

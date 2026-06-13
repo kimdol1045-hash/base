@@ -1,0 +1,34 @@
+bloom_level: APPLY
+content: "# 계약 테스트(Contract Testing) 가이드\n\n## 핵심 원칙\n- 서비스 간 API 계약을 소비자(Consumer)\
+  \ 관점에서 검증한다\n- 통합 테스트 없이도 서비스 간 호환성을 보장한다\n- 소비자가 기대하는 요청/응답 형식을 계약으로 정의한다\n- Provider가\
+  \ 계약을 만족하는지 독립적으로 검증한다\n\n## DO\n- Consumer-Driven 방식으로 소비자가 먼저 계약을 정의한다\n- Pact\
+  \ 또는 Spring Cloud Contract를 활용한다\n- CI/CD 파이프라인에 계약 검증을 포함한다\n- 계약 변경 시 모든 소비자에게\
+  \ 알린다\n\n## DON'T\n- E2E 테스트를 계약 테스트 대신 사용하지 않는다 (느리고 불안정)\n- 내부 구현 세부사항을 계약에 포함하지\
+  \ 않는다\n- 계약 브로커(Pact Broker) 없이 파일로만 공유하지 않는다\n- 모든 API 호출을 계약 테스트하지 않는다 (핵심 인터페이스만)\n\
+  \n## 코드 예시\n```typescript\n// Consumer 측 계약 정의 (Pact)\nimport { PactV3, MatchersV3\
+  \ } from \"@pact-foundation/pact\";\nconst { like, eachLike, string } = MatchersV3;\n\
+  \nconst provider = new PactV3({\n  consumer: \"OrderService\",\n  provider: \"UserService\"\
+  ,\n});\n\ndescribe(\"UserService 계약\", () => {\n  it(\"사용자 조회 API\", async () =>\
+  \ {\n    await provider\n      .given(\"사용자 ID=123이 존재함\")\n      .uponReceiving(\"\
+  GET /users/123 요청\")\n      .withRequest({ method: \"GET\", path: \"/users/123\"\
+  \ })\n      .willRespondWith({\n        status: 200,\n        body: {\n        \
+  \  data: {\n            id: like(\"123\"),\n            email: string(\"user@example.com\"\
+  ),\n            displayName: string(\"홍길동\"),\n          },\n        },\n      })\n\
+  \      .executeTest(async (mockServer) => {\n        const client = new UserClient(mockServer.url);\n\
+  \        const user = await client.getById(\"123\");\n        expect(user.email).toBeDefined();\n\
+  \      });\n  });\n});\n\n// Provider 측 검증\nconst { Verifier } = require(\"@pact-foundation/pact\"\
+  );\nawait new Verifier({\n  providerBaseUrl: \"http://localhost:3000\",\n  pactBrokerUrl:\
+  \ PACT_BROKER_URL,\n  providerVersionBranch: \"main\",\n  stateHandlers: {\n   \
+  \ \"사용자 ID=123이 존재함\": async () => {\n      await seedUser({ id: \"123\", email:\
+  \ \"user@example.com\" });\n    },\n  },\n}).verifyProvider();\n```\n"
+domain: development.backend
+id: dev.backend.testing.contract-testing
+tags:
+- testing
+- contract
+- pact
+- microservices
+theory: '#228 Consumer-Driven Contract Testing (Pact Foundation, 2013)'
+token_estimate: 866
+type: pattern
+version: 1

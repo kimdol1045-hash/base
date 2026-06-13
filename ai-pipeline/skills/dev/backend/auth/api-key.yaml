@@ -1,0 +1,33 @@
+bloom_level: APPLY
+content: "# API Key 인증 가이드\n\n## 핵심 원칙\n- API Key는 서비스 간 통신(M2M) 인증에 적합하다\n- 키 값은\
+  \ 해시하여 저장하고, 평문으로 보관하지 않는다\n- 키별 권한 범위(Scope)를 제한한다\n- 키 순환(Rotation) 메커니즘을 구현한다\n\
+  \n## DO\n- API Key를 `Authorization` 헤더 또는 `X-API-Key` 헤더로 전달한다\n- 키 생성 시 충분한 엔트로피를\
+  \ 확보한다 (최소 32바이트)\n- 키에 접두사를 붙여 식별 가능하게 한다 (예: `secret_live_`, `public_test_`)\n- 키별 Rate\
+  \ Limit과 사용량 추적을 구현한다\n- 만료 일자를 설정하고 주기적으로 순환한다\n\n## DON'T\n- API Key를 URL 쿼리 파라미터로\
+  \ 전달하지 않는다 (로그에 기록됨)\n- API Key를 평문으로 데이터베이스에 저장하지 않는다\n- 하나의 키에 모든 권한을 부여하지 않는다\n\
+  - 사용자 인증(로그인)에 API Key를 사용하지 않는다 (JWT/세션 사용)\n\n## 코드 예시\n```typescript\nimport\
+  \ { randomBytes, createHash } from \"crypto\";\n\n// API Key 생성\nfunction generateApiKey(prefix:\
+  \ string): { key: string; hash: string } {\n  const raw = randomBytes(32).toString(\"\
+  base64url\");\n  const key = `${prefix}_${raw}`;\n  const hash = createHash(\"sha256\"\
+  ).update(key).digest(\"hex\");\n  return { key, hash }; // key는 사용자에게 한 번만 보여주고,\
+  \ hash만 DB에 저장\n}\n\n// API Key 검증 미들웨어\nasync function apiKeyAuth(req: Request,\
+  \ res: Response, next: NextFunction) {\n  const apiKey = req.headers[\"x-api-key\"\
+  ] as string;\n  if (!apiKey) {\n    return res.status(401).json({ error: { code:\
+  \ \"API_KEY_REQUIRED\" } });\n  }\n\n  const hash = createHash(\"sha256\").update(apiKey).digest(\"\
+  hex\");\n  const keyRecord = await db.apiKeys.findOne({\n    where: { hash, revokedAt:\
+  \ null },\n  });\n\n  if (!keyRecord) {\n    return res.status(401).json({ error:\
+  \ { code: \"INVALID_API_KEY\" } });\n  }\n\n  if (keyRecord.expiresAt && keyRecord.expiresAt\
+  \ < new Date()) {\n    return res.status(401).json({ error: { code: \"API_KEY_EXPIRED\"\
+  \ } });\n  }\n\n  // 사용량 기록\n  await db.apiKeyUsage.increment(keyRecord.id);\n\n\
+  \  req.apiKey = keyRecord;\n  next();\n}\n```\n"
+domain: development.backend
+id: dev.backend.auth.api-key
+tags:
+- auth
+- api-key
+- security
+- backend
+theory: '#225 API Key Authentication (OWASP API Security Top 10, 2023)'
+token_estimate: 813
+type: pattern
+version: 1

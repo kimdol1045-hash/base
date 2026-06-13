@@ -1,0 +1,66 @@
+content: "파일 업로드 패턴 (서버를 경유하지 않고 Presigned URL로 직접 업로드한다 -- 서버 리소스와 보안을 동시에 확보):\n\
+  \n### Presigned URL 업로드 흐름\n클라이언트 → 서버(URL 요청) → S3/R2(Presigned URL 발급) → 클라이언트(직접\
+  \ 업로드) → 서버(후처리 트리거)\n\nDO:\n```typescript\n// 1단계: Presigned URL 발급\nimport { S3Client,\
+  \ PutObjectCommand } from \"@aws-sdk/client-s3\";\nimport { getSignedUrl } from\
+  \ \"@aws-sdk/s3-request-presigner\";\nimport { randomUUID } from \"crypto\";\n\n\
+  const ALLOWED_TYPES = [\"image/jpeg\", \"image/png\", \"image/webp\", \"application/pdf\"\
+  ] as const;\nconst MAX_SIZE: Record<string, number> = {\n  \"image/jpeg\": 5 * 1024\
+  \ * 1024,   // 5MB\n  \"image/png\": 5 * 1024 * 1024,     // 5MB\n  \"image/webp\"\
+  : 5 * 1024 * 1024,    // 5MB\n  \"application/pdf\": 20 * 1024 * 1024, // 20MB\n\
+  };\n\napp.post(\"/api/v1/uploads/presigned\", authMiddleware, async (c) => {\n \
+  \ const { contentType, fileName } = UploadRequestSchema.parse(await c.req.json());\n\
+  \n  if (!ALLOWED_TYPES.includes(contentType)) {\n    throw Errors.badRequest(\"\
+  허용되지 않는 파일 형식입니다\");\n  }\n\n  const key = `uploads/${c.get(\"userId\")}/${randomUUID()}.${getExtension(contentType)}`;\n\
+  \  const command = new PutObjectCommand({\n    Bucket: env.S3_BUCKET,\n    Key:\
+  \ key,\n    ContentType: contentType,\n    ContentLength: MAX_SIZE[contentType],\
+  \ // 최대 크기 제한\n  });\n\n  const url = await getSignedUrl(s3Client, command, { expiresIn:\
+  \ 300 }); // 5분\n  return c.json({ data: { uploadUrl: url, key, expiresIn: 300 }\
+  \ });\n});\n\n// 2단계: 업로드 완료 후 검증 & 비동기 처리\napp.post(\"/api/v1/uploads/complete\"\
+  , authMiddleware, async (c) => {\n  const { key } = CompleteUploadSchema.parse(await\
+  \ c.req.json());\n\n  // S3에서 파일 메타데이터 확인\n  const head = await s3Client.send(new\
+  \ HeadObjectCommand({\n    Bucket: env.S3_BUCKET, Key: key,\n  }));\n\n  // magic\
+  \ bytes 기반 실제 파일 타입 검증\n  const stream = await s3Client.send(new GetObjectCommand({\n\
+  \    Bucket: env.S3_BUCKET, Key: key, Range: \"bytes=0-11\",\n  }));\n  const magicBytes\
+  \ = Buffer.from(await stream.Body!.transformToByteArray());\n  const detectedType\
+  \ = detectFileType(magicBytes);\n\n  if (!ALLOWED_TYPES.includes(detectedType))\
+  \ {\n    await s3Client.send(new DeleteObjectCommand({ Bucket: env.S3_BUCKET, Key:\
+  \ key }));\n    throw Errors.badRequest(\"파일 내용이 허용된 형식과 일치하지 않습니다\");\n  }\n\n\
+  \  // 비동기 이미지 처리 큐에 등록\n  await uploadQueue.add(\"process-upload\", { key, userId:\
+  \ c.get(\"userId\") });\n  return c.json({ data: { status: \"processing\", key }\
+  \ });\n});\n```\n\n### Magic Bytes 검증\n```typescript\n// 파일 확장자가 아닌 실제 바이너리 시그니처로\
+  \ 검증\nfunction detectFileType(buffer: Buffer): string {\n  const hex = buffer.toString(\"\
+  hex\").slice(0, 16);\n  if (hex.startsWith(\"ffd8ff\")) return \"image/jpeg\";\n\
+  \  if (hex.startsWith(\"89504e47\")) return \"image/png\";\n  if (hex.startsWith(\"\
+  52494646\") && hex.slice(16).startsWith(\"57454250\")) return \"image/webp\";\n\
+  \  if (hex.startsWith(\"25504446\")) return \"application/pdf\";\n  return \"unknown\"\
+  ;\n}\n```\n\n### 이미지 리사이즈 파이프라인\n```typescript\n// Worker: 업로드 후 비동기 리사이징\nimport\
+  \ sharp from \"sharp\";\n\nconst SIZES = { thumbnail: 150, medium: 600, large: 1200\
+  \ };\n\nasync function processImage(key: string): Promise<void> {\n  const original\
+  \ = await downloadFromS3(key);\n\n  for (const [name, width] of Object.entries(SIZES))\
+  \ {\n    const resized = await sharp(original)\n      .resize(width, null, { withoutEnlargement:\
+  \ true })\n      .webp({ quality: 80 })\n      .toBuffer();\n\n    await uploadToS3(`${key.replace(/\\\
+  .[^.]+$/, '')}_${name}.webp`, resized);\n  }\n}\n```\n\nDON'T:\n```typescript\n\
+  // ❌ 서버 메모리로 직접 업로드 -- 대용량 파일 시 OOM\napp.post(\"/uploads\", async (c) => {\n  const\
+  \ file = await c.req.file(\"upload\"); // 서버 메모리에 전체 로드\n  await s3.upload({ Body:\
+  \ file.stream() });\n});\n\n// ❌ 확장자만 신뢰 -- .jpg로 위장한 실행파일 가능\nif (fileName.endsWith(\"\
+  .jpg\")) { /* OK */ }\n\n// ❌ 크기 제한 없음 -- 10GB 파일 업로드 가능\nconst command = new PutObjectCommand({\
+  \ Bucket, Key, ContentType });\n```\n\n### 파일 크기 제한 기준\n| 파일 유형 | 최대 크기 | 비고 |\n\
+  |-----------|-----------|------|\n| 이미지 (JPEG/PNG/WebP) | 5MB | 리사이즈 파이프라인 적용 |\n\
+  | 문서 (PDF) | 20MB | 바이러스 스캔 권장 |\n| 동영상 | 100MB | Multipart Upload 필수 |\n| 프로필 아바타\
+  \ | 2MB | 정사각형 크롭 강제 |\n\n### 흔한 실수\n- Presigned URL 만료 시간을 너무 길게 설정 (5분 이내 권장,\
+  \ 최대 15분)\n- Content-Length 조건 미설정으로 Presigned URL을 이용한 대용량 업로드 허용\n- 원본 파일명을 그대로\
+  \ 저장 -> path traversal 공격 가능 (UUID로 재명명 필수)\n- multipart upload 시 파트 완료 확인 없이 complete\
+  \ 호출\n- 업로드 실패 시 S3에 고아 객체(orphan) 방치 -> lifecycle 정책으로 자동 삭제 설정\n"
+domain: development.backend
+id: dev.backend.api.file-upload
+tags:
+- backend
+- api
+- file-upload
+- s3
+- presigned-url
+- security
+theory: '#116 OWASP A04 Insecure Design'
+token_estimate: 2091
+type: pattern
+version: 1

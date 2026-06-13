@@ -1,0 +1,57 @@
+bloom_level: ANALYZE
+content: '# 코드 스멜 리뷰 가이드
+
+
+  ## 적용 상황
+
+  - 코드 리뷰 시 유지보수성/가독성 문제를 체계적으로 점검할 때
+
+  - 레거시 코드 리팩터링 대상을 식별할 때
+
+  - 기술 부채를 정량적으로 측정하고 우선순위를 매길 때
+
+  - 새로운 팀원의 코드 품질 기준을 수립할 때
+
+
+  ## 구현 방법
+
+  - Long Method: 함수 길이 20줄 초과 시 Extract Method 적용
+
+  - God Class: 클래스 200줄 초과 또는 책임 3개 이상 시 분리
+
+  - Feature Envy: 다른 클래스 데이터를 과도하게 참조하면 해당 클래스로 이동
+
+  - 순환 복잡도(Cyclomatic Complexity): 10 초과 시 조건문 분리 또는 전략 패턴
+
+  - 인지 복잡도(Cognitive Complexity): SonarQube 기준 15 이하 유지
+
+  - 중복 코드: 3회 이상 반복 시 공통 함수/모듈로 추출
+
+  - Primitive Obsession: 관련 필드 3개 이상이면 Value Object로 묶기
+
+  - 스멜 감지 후 리팩터링 패턴을 구체적으로 제안 (패턴명 + 적용 방법)
+
+
+  ## 주의사항
+
+  - 모든 스멜을 즉시 수정 요구하지 말 것. 비즈니스 우선순위와 균형
+
+  - 컨텍스트 없이 기계적 규칙 적용 금지. 프로젝트 규모/성격 고려
+
+  - 성능 핫패스(hot path)를 가독성만으로 리팩터링하면 성능 저하 위험
+
+  - 리팩터링 전 반드시 테스트 커버리지 확보. 테스트 없이 리팩터링 금지
+
+  - 스멜 심각도를 분류: Critical(즉시) > Major(이번 스프린트) > Minor(백로그)
+
+  '
+domain: qa.testing
+id: qa.code-review.code-smell
+tags:
+- code-smell
+- refactoring
+- maintainability
+theory: 코드 스멜 감지 — Martin Fowler의 리팩터링 카탈로그
+token_estimate: 378
+type: pattern
+version: 1

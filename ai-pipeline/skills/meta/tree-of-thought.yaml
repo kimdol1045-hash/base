@@ -1,0 +1,56 @@
+bloom_level: ANALYZE
+content: '# Tree of Thoughts 프롬프팅
+
+
+  ## 적용 상황
+
+  - 복잡한 계획 수립, 퍼즐, 전략적 의사결정 문제에 적합
+
+  - 단일 추론 경로로는 최적 해를 찾기 어려운 경우
+
+  - 중간 단계의 평가가 가능한 구조화된 문제 해결 시
+
+  - 게임 이론, 최적화, 다단계 의사결정 트리가 필요한 경우
+
+
+  ## 구현 방법
+
+  - 문제를 중간 사고 단계(intermediate thoughts)로 분해
+
+  - 각 단계에서 여러 후보 사고를 생성 (branching factor 2-3)
+
+  - 자체 평가 메커니즘으로 각 후보의 유망성 점수화 (예: "이 경로가 해결에 가까운 정도: 1-10")
+
+  - BFS: 모든 후보를 균등하게 확장 후 평가. 넓은 탐색에 적합
+
+  - DFS: 유망한 경로를 깊이 탐색 후 막히면 백트래킹. 깊은 추론에 적합
+
+  - 막다른 경로 감지 시 즉시 백트래킹하여 다른 분기 탐색
+
+  - 최종 답변은 가장 높은 평가 점수의 완전 경로에서 도출
+
+
+  ## 주의사항
+
+  - 단순 문제(사실 확인, 번역 등)에 ToT 적용은 비용 대비 효과 낮음
+
+  - 평가 기준 없이 무작위로 확장하면 토큰만 소모하고 품질 향상 없음
+
+  - 깊이 제한(max depth 3-5) 설정 필수. 무한 확장은 비용 폭증
+
+  - API 호출 횟수가 기하급수적으로 증가할 수 있음. 실시간 응답에는 부적합
+
+  - CoT나 Self-Consistency로 충분한 문제에는 ToT 대신 더 가벼운 방법 선택
+
+  '
+domain: meta
+id: meta.tree-of-thought
+tags:
+- tree-of-thought
+- reasoning
+- search
+- deliberation
+theory: Tree of Thoughts (Yao et al., 2023) — 탐색 기반 추론 프레임워크
+token_estimate: 346
+type: pattern
+version: 1

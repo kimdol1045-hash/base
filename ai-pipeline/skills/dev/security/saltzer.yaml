@@ -1,0 +1,49 @@
+content: "보안 설계의 근본 원칙 (Saltzer & Schroeder, 1975):\n\n50년이 지난 지금도 유효한 보안 설계의 8대 원칙.\
+  \ 모든 보안 아키텍처 결정은 이 원칙으로 검증한다.\n\n### 1. 최소 권한 (Least Privilege)\n모든 주체는 작업 수행에 필요한\
+  \ 최소한의 권한만 가진다.\n```typescript\n// DO: 역할별 최소 권한 정의\nconst PERMISSIONS = {\n  viewer:\
+  \ [\"read:posts\"],\n  editor: [\"read:posts\", \"write:posts\"],\n  admin:  [\"\
+  read:posts\", \"write:posts\", \"delete:posts\", \"manage:users\"],\n} as const;\n\
+  \nfunction authorize(user: User, required: Permission) {\n  const userPerms = PERMISSIONS[user.role];\n\
+  \  if (!userPerms.includes(required)) throw Errors.forbidden();\n}\n\n// DON'T:\
+  \ 모든 사용자에게 admin 권한\nif (user.isLoggedIn) { /* 전체 기능 허용 */ }\n```\n\n### 2. 실패 안전\
+  \ 기본값 (Fail-Safe Defaults)\n기본 상태는 \"거부\"이며, 명시적으로 허용된 경우만 접근을 승인한다.\n```typescript\n\
+  // DO: 기본 거부, 명시적 허용\nfunction hasAccess(user: User, resource: Resource): boolean\
+  \ {\n  if (!user.permissions) return false; // 기본: 거부\n  return user.permissions.includes(resource.requiredPermission);\n\
+  }\n\n// DON'T: 기본 허용, 명시적 거부\nfunction hasAccess(user: User): boolean {\n  if (user.isBanned)\
+  \ return false;\n  return true; // 기본: 허용 = 위험\n}\n```\n\n### 3. 완전 중재 (Complete\
+  \ Mediation)\n모든 접근 요청은 매번 권한을 검증한다. 캐시된 인가 결과를 신뢰하지 않는다.\n```typescript\n// DO:\
+  \ 매 요청마다 권한 확인\napp.use(\"*\", async (c, next) => {\n  const token = c.req.header(\"\
+  Authorization\")?.replace(\"Bearer \", \"\");\n  if (!token) throw Errors.authRequired();\n\
+  \  const payload = await verifyJWT(token); // 매번 서명 검증 + 만료 확인\n  const user = await\
+  \ userService.findById(payload.sub); // 최신 권한 조회\n  if (user.status === \"suspended\"\
+  ) throw Errors.forbidden(\"계정 정지됨\");\n  c.set(\"user\", user);\n  await next();\n\
+  });\n```\n\n### 4. 개방 설계 (Open Design)\n보안은 알고리즘의 비밀이 아닌 키의 비밀에 의존한다 (Kerckhoffs'\
+  \ Principle).\n```typescript\n// DO: 표준 알고리즘 + 안전한 키\nimport bcrypt from \"bcrypt\"\
+  ;\nconst hash = await bcrypt.hash(password, 12); // 검증된 알고리즘, cost=12\n\n// DON'T:\
+  \ 자작 암호화\nfunction myEncrypt(text: string): string {\n  return text.split(\"\").reverse().join(\"\
+  \"); // 보안 아님\n}\n```\n\n### 5. 권한 분리 (Separation of Privilege)\n중요 작업은 단일 조건이 아닌\
+  \ 복수 조건으로 승인한다.\n```typescript\n// DO: 관리자 작업에 2단계 인증 필수\napp.delete(\"/users/:id\"\
+  , authMiddleware, async (c) => {\n  const admin = c.get(\"user\");\n  if (admin.role\
+  \ !== \"admin\") throw Errors.forbidden();\n  const mfaCode = c.req.header(\"X-MFA-Code\"\
+  );\n  if (!mfaCode || !(await verifyMFA(admin.id, mfaCode))) {\n    throw Errors.authRequired(\"\
+  MFA 인증이 필요합니다\");\n  }\n  await userService.delete(c.req.param(\"id\"));\n  return\
+  \ c.json({ success: true });\n});\n```\n\n### 6. 최소 공통 메커니즘 (Least Common Mechanism)\n\
+  사용자 간 공유 자원을 최소화하여 한 사용자의 침해가 다른 사용자에게 전파되지 않도록 한다.\n- 테넌트별 DB 스키마 분리 또는 Row-Level\
+  \ Security 적용\n- 공유 캐시에 테넌트 ID prefix 적용: `cache:${tenantId}:${key}`\n\n### 7. 심리적\
+  \ 수용성 (Psychological Acceptability)\n보안 메커니즘은 사용자 경험을 심각하게 방해하지 않아야 한다.\n- 비밀번호\
+  \ 규칙: 최소 12자 + 강도 미터(실시간 피드백)\n- MFA: TOTP 앱 기반 (SMS보다 안전하고 편리)\n- 세션: 7일 유지 + sliding\
+  \ window refresh\n\n### 8. 경제적 메커니즘 (Economy of Mechanism)\n보안 코드는 가능한 단순하게 유지한다.\
+  \ 복잡한 코드는 감사가 어렵고 취약점이 숨기 쉽다.\n- 인증 로직은 하나의 미들웨어로 통일\n- 인가 로직은 하나의 정책 엔진으로 중앙화\n\
+  - 커스텀 보안 코드보다 검증된 라이브러리 우선 사용\n"
+domain: development.security
+id: dev.security.saltzer
+tags:
+- security
+- saltzer-schroeder
+- design-principles
+- least-privilege
+- pattern
+theory: '#115 Saltzer-Schroeder 8원칙 (1975)'
+token_estimate: 1463
+type: pattern
+version: 1

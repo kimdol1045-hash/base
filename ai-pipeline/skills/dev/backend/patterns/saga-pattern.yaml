@@ -1,0 +1,59 @@
+content: "Saga 패턴 (분산 시스템에서 2PC 없이 트랜잭션 일관성을 보장한다):\n\n### Choreography vs Orchestration\n\
+  | 방식 | 조정자 | 장점 | 단점 |\n|------|--------|------|------|\n| Choreography | 없음 (이벤트\
+  \ 기반) | 느슨한 결합, 단순 | 흐름 추적 어려움 |\n| Orchestration | Saga Coordinator | 흐름 명확, 디버깅\
+  \ 용이 | 중앙 집중, 단일 장애점 |\n\n### 주문 Saga: Orchestrator 구현\n```typescript\n// DO: 각\
+  \ 단계에 보상 트랜잭션 정의, Saga 상태 머신\ninterface SagaStep<T> {\n  name: string;\n  execute:\
+  \ (context: T) => Promise<void>;\n  compensate: (context: T) => Promise<void>;\n\
+  }\n\nclass SagaOrchestrator<T> {\n  private steps: SagaStep<T>[] = [];\n  private\
+  \ completedSteps: SagaStep<T>[] = [];\n\n  addStep(step: SagaStep<T>) {\n    this.steps.push(step);\n\
+  \    return this;\n  }\n\n  async execute(context: T & { sagaId: string }): Promise<void>\
+  \ {\n    // Saga 로그 시작\n    await sagaLog.create({ sagaId: context.sagaId, status:\
+  \ 'started', steps: [] });\n\n    for (const step of this.steps) {\n      try {\n\
+  \        await step.execute(context);\n        this.completedSteps.push(step);\n\
+  \        await sagaLog.addStep(context.sagaId, { name: step.name, status: 'completed'\
+  \ });\n      } catch (error) {\n        await sagaLog.addStep(context.sagaId, {\
+  \ name: step.name, status: 'failed', error });\n        // 보상 트랜잭션: 역순으로 실행\n  \
+  \      await this.compensate(context);\n        throw new SagaFailedError(step.name,\
+  \ error);\n      }\n    }\n    await sagaLog.update(context.sagaId, { status: 'completed'\
+  \ });\n  }\n\n  private async compensate(context: T & { sagaId: string }) {\n  \
+  \  for (const step of [...this.completedSteps].reverse()) {\n      try {\n     \
+  \   await step.compensate(context);\n        await sagaLog.addStep(context.sagaId,\
+  \ { name: `${step.name}_compensate`, status: 'completed' });\n      } catch (compError)\
+  \ {\n        // 보상 실패: 수동 개입 필요 — 알림 발송\n        await sagaLog.addStep(context.sagaId,\
+  \ { name: `${step.name}_compensate`, status: 'failed' });\n        await alerting.critical(`Saga\
+  \ compensation failed: ${context.sagaId}/${step.name}`);\n      }\n    }\n    await\
+  \ sagaLog.update(context.sagaId, { status: 'compensated' });\n  }\n}\n\n// 주문 생성\
+  \ Saga 정의\ninterface OrderContext {\n  sagaId: string;\n  orderId: string;\n  userId:\
+  \ string;\n  items: { productId: string; quantity: number }[];\n  totalAmount: number;\n\
+  }\n\nconst createOrderSaga = new SagaOrchestrator<OrderContext>()\n  .addStep({\n\
+  \    name: 'reserve_inventory',\n    execute: async (ctx) => { await inventoryService.reserve(ctx.orderId,\
+  \ ctx.items); },\n    compensate: async (ctx) => { await inventoryService.release(ctx.orderId,\
+  \ ctx.items); },\n  })\n  .addStep({\n    name: 'process_payment',\n    execute:\
+  \ async (ctx) => { await paymentService.charge(ctx.orderId, ctx.totalAmount); },\n\
+  \    compensate: async (ctx) => { await paymentService.refund(ctx.orderId, ctx.totalAmount);\
+  \ },\n  })\n  .addStep({\n    name: 'confirm_order',\n    execute: async (ctx) =>\
+  \ { await orderService.confirm(ctx.orderId); },\n    compensate: async (ctx) =>\
+  \ { await orderService.cancel(ctx.orderId); },\n  });\n\n// 실행\nawait createOrderSaga.execute({\n\
+  \  sagaId: crypto.randomUUID(),\n  orderId, userId, items, totalAmount,\n});\n```\n\
+  \nDON'T:\n```typescript\n// ❌ 마이크로서비스 간 2PC (분산 락) — 가용성 저하, 확장 불가\nawait db.beginTransaction();\
+  \ // 서비스 A의 DB\nawait remoteDb.beginTransaction(); // 서비스 B의 DB → 네트워크 파티션 시 교착!\n\
+  \n// ❌ 보상 트랜잭션 없음 — 결제 성공 후 재고 부족 시 환불 불가\nawait paymentService.charge(orderId,\
+  \ amount);\nawait inventoryService.reserve(orderId, items); // 실패해도 결제 유지!\n\n//\
+  \ ❌ Saga 로그 미기록 — 실패 원인 추적 불가, 수동 복구 불가능\n```\n\n### Saga 상태 머신\n```\nSTARTED →\
+  \ INVENTORY_RESERVED → PAYMENT_CHARGED → ORDER_CONFIRMED → COMPLETED\n         \
+  \    ↓ (실패)              ↓ (실패)\n        INVENTORY_RELEASED    PAYMENT_REFUNDED\
+  \ → INVENTORY_RELEASED → COMPENSATED\n```\n\n### 흔한 실수\n- 보상 트랜잭션의 멱등성 미보장 (중복 환불\
+  \ 발생)\n- 보상 실패 시 처리 방안 없음 (수동 개입 큐 필요)\n- 타임아웃으로 인한 불확실 상태 (pending) 미처리\n- Saga\
+  \ 로그가 비즈니스 DB와 다른 트랜잭션에 기록 (비정합)\n"
+domain: development.backend
+id: dev.backend.patterns.saga-pattern
+tags:
+- backend
+- patterns
+- saga
+- distributed-transaction
+- microservice
+theory: '#107 CQRS, #109 Event-Driven'
+token_estimate: 935
+type: pattern
+version: 1

@@ -1,0 +1,59 @@
+content: "AI 출력 검증 패턴 (구조, 완전성, 정합성, 환각을 체계적으로 검증한다):\n\n### 왜 출력 검증이 필요한가?\nLLM은\
+  \ 확증 편향(자신의 답이 맞다고 확신)과 환각(그럴듯하지만 사실이 아닌 정보 생성)\n경향이 있다. 체계적 검증 없이 출력을 그대로 전달하면\
+  \ 오류가 전파된다.\n\n### 출력 품질 검증 체크리스트 (10항목)\n\n```\n┌────┬──────────────────────────────────────────────┬───────────┐\n\
+  │ #  │ 검증 항목                                     │ 유형      │\n├────┼──────────────────────────────────────────────┼───────────┤\n\
+  │ 1  │ 필수 섹션이 모두 존재하는가?                   │ 구조      │\n│ 2  │ 요구사항이 빠짐없이 반영되었는가?\
+  \              │ 완전성    │\n│ 3  │ 앞뒤 문맥에 모순이 없는가?                    │ 정합성    │\n\
+  │ 4  │ 검증 불가능한 주장이 포함되어 있지 않은가?      │ 환각      │\n│ 5  │ 코드가 실제로 컴파일/실행 가능한가?  \
+  \          │ 실행 가능 │\n│ 6  │ 네이밍/포맷이 프로젝트 컨벤션과 일치하는가?     │ 일관성    │\n│ 7  │ 엣지\
+  \ 케이스가 고려되었는가?                    │ 견고성    │\n│ 8  │ 보안 취약점이 포함되어 있지 않은가?      \
+  \      │ 보안      │\n│ 9  │ 성능에 문제가 될 수 있는 패턴이 없는가?        │ 성능      │\n│ 10 │ 사용자\
+  \ 요구의 의도를 정확히 반영했는가?         │ 의도      │\n└────┴──────────────────────────────────────────────┴───────────┘\n\
+  ```\n\n### 1. 구조 검증 (Structural Validation)\n\nDO:\n```typescript\n// ✅ 출력 구조가 요구\
+  \ 형식과 일치하는지 검증\ninterface OutputValidation {\n  requiredSections: string[];\n  actualSections:\
+  \ string[];\n  missingSections: string[];\n  isValid: boolean;\n}\n\nfunction validateStructure(output:\
+  \ string, template: string[]): OutputValidation {\n  const actualSections = extractSections(output);\
+  \ // 헤딩, 키 등 추출\n  const missingSections = template.filter(\n    (section) => !actualSections.includes(section)\n\
+  \  );\n  return {\n    requiredSections: template,\n    actualSections,\n    missingSections,\n\
+  \    isValid: missingSections.length === 0,\n  };\n}\n\n// 예: PRD 출력 시 필수 섹션 체크\n\
+  const prdTemplate = [\n  \"문제 정의\", \"타겟 사용자\", \"핵심 기능\",\n  \"성공 지표\", \"기술 요구사항\"\
+  , \"타임라인\"\n];\n```\n\n### 2. 완전성 검증 (Completeness Check)\n\n```typescript\n// ✅\
+  \ 요구사항 추적 매트릭스\ninterface RequirementTrace {\n  requirement: string;\n  addressed:\
+  \ boolean;\n  location: string; // 출력 내 위치\n}\n\nfunction checkCompleteness(\n \
+  \ requirements: string[],\n  output: string\n): RequirementTrace[] {\n  return requirements.map((req)\
+  \ => ({\n    requirement: req,\n    addressed: output.toLowerCase().includes(req.toLowerCase()),\n\
+  \    location: findLocation(output, req),\n  }));\n  // 미반영 요구사항이 있으면 경고\n}\n```\n\
+  \n### 3. 정합성 검증 (Consistency Check)\n\n```typescript\n// ✅ 내부 모순 탐지 패턴\n// 예: \"\
+  서버리스 아키텍처를 사용한다\" vs \"항상 실행 중인 서버에 배포한다\"\n// 예: API 스펙에서 필드명이 camelCase와 snake_case\
+  \ 혼재\n\nfunction checkConsistency(output: string): ConsistencyIssue[] {\n  const\
+  \ issues: ConsistencyIssue[] = [];\n\n  // 네이밍 일관성 체크\n  const camelCaseCount =\
+  \ (output.match(/[a-z][A-Z]/g) || []).length;\n  const snakeCaseCount = (output.match(/[a-z]_[a-z]/g)\
+  \ || []).length;\n  if (camelCaseCount > 0 && snakeCaseCount > 0) {\n    issues.push({\n\
+  \      type: \"naming_inconsistency\",\n      message: `camelCase(${camelCaseCount}회)와\
+  \ snake_case(${snakeCaseCount}회) 혼재`,\n    });\n  }\n\n  return issues;\n}\n```\n\
+  \n### 4. 환각 탐지 (Hallucination Detection)\n\n```\n환각 위험 신호:\n- 구체적인 수치가 출처 없이 등장:\
+  \ \"이 방법은 성능이 340% 향상된다\"\n- 존재하지 않는 API/라이브러리 참조: \"react-super-hooks 패키지를 설치한다\"\
+  \n- 과도하게 자신만만한 어조: \"이것이 유일한 정답이다\"\n- 최신 정보 주장: \"2025년 발표된 React 22의 새 기능\"\n\n\
+  대응:\n- [UNVERIFIED] 태그 부착: 출처 확인이 필요한 주장 표시\n- 코드 예시: 실제 import 경로와 API가 존재하는지 확인\n\
+  - 수치: 출처(논문, 공식 문서)를 반드시 명시\n```\n\n### 5. 코드 실행 가능성 검증\n\n```typescript\n// ✅ 최소\
+  \ 검증: 타입 체크 + 임포트 확인\n// - import한 패키지가 package.json에 존재하는가?\n// - 함수 시그니처와 호출부의\
+  \ 인자가 일치하는가?\n// - async 함수에 await가 빠져있지 않은가?\n// - 존재하지 않는 메서드를 호출하고 있지 않은가?\n\n\
+  // DON'T 예시 — 검증 없이 출력\n// import { useServerAction } from \"next/server\"; ← 존재하지\
+  \ 않는 API\n// const data = fetchUsers();  ← await 누락\n```\n\nDON'T:\n```\n❌ 자기 출력을\
+  \ 무비판적으로 신뢰\n→ \"내가 생성한 코드니까 맞겠지\" — 반드시 검증 단계 수행\n\n❌ 검증 없이 구체적 수치 제시\n→ \"응답 시간이\
+  \ 87% 개선된다\" — 출처 없으면 [UNVERIFIED] 태그\n\n❌ 에러 처리 누락 확인 생략\n→ try-catch 없는 async\
+  \ 코드, null 체크 없는 접근 등\n\n❌ 보안 검증 스킵\n→ SQL injection, XSS, 인증 우회 가능성 미확인\n```\n"
+domain: meta
+id: meta.output-validator
+tags:
+- meta
+- validation
+- hallucination
+- consistency
+- completeness
+- quality-assurance
+- output-check
+theory: '#72 확증 편향 방지 (Wason, 1960) — 자신의 출력을 의심하고 검증한다'
+token_estimate: 1848
+type: verify
+version: 1

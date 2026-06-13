@@ -1,0 +1,187 @@
+bloom_level: APPLY
+content: '# 입력 새니타이징 가이드
+
+
+  ## 핵심 원칙
+
+  - 모든 사용자 입력은 신뢰할 수 없다 (Zero Trust Input)
+
+  - 검증(Validation)과 새니타이징(Sanitization)은 다른 단계이다
+
+  - 검증: 형식/타입/범위 확인 (Zod) → 새니타이징: 위험 요소 제거/무력화
+
+  - 허용 목록(Allowlist) 접근이 차단 목록(Blocklist)보다 안전하다
+
+
+  ## 단계별 방어
+
+
+  ### 1단계: Zod 검증 (형식 검증)
+
+  ```typescript
+
+  import { z } from "zod";
+
+
+  const PetNameSchema = z.string()
+    .min(1, "이름은 필수입니다")
+    .max(50, "이름은 50자 이내")
+    .regex(/^[가-힣a-zA-Z0-9\s]+$/, "특수문자 사용 불가")
+    .transform((val) => val.trim());
+
+  ```
+
+
+  ### 2단계: HTML 태그 제거 (새니타이징)
+
+  ```typescript
+
+  // Zod transform에서 HTML 태그 자동 제거
+
+  const SafeStringSchema = z.string()
+    .max(200)
+    .transform((val) => {
+      // HTML 태그 제거
+      return val.replace(/<[^>]*>/g, "").trim();
+    });
+
+
+  // 더 엄격한 버전: 허용된 문자만 남기기
+
+  const StrictNameSchema = z.string()
+    .max(50)
+    .transform((val) => {
+      // HTML 태그 제거
+      const noTags = val.replace(/<[^>]*>/g, "");
+      // HTML 엔티티 디코딩 후 재제거 (이중 인코딩 공격 방어)
+      const decoded = noTags
+        .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+        .replace(/<[^>]*>/g, "");
+      return decoded.trim();
+    });
+
+  ```
+
+
+  ### 3단계: 컨텍스트별 인코딩
+
+  ```typescript
+
+  // HTML 컨텍스트 — 엔티티 인코딩
+
+  function escapeHtml(str: string): string {
+    const map: Record<string, string> = {
+      "&": "&amp;", "<": "&lt;", ">": "&gt;",
+      "\"": "&quot;", "''": "&#039;",
+    };
+    return str.replace(/[&<>"'']/g, (c) => map[c] ?? c);
+  }
+
+
+  // URL 파라미터 — encodeURIComponent
+
+  const safeParam = encodeURIComponent(userInput);
+
+
+  // SQL — Parameterized Query (새니타이징 대신 바인딩)
+
+  const result = await db.query(
+    "SELECT * FROM users WHERE name = $1",
+    [userInput],  // 절대 문자열 연결하지 않음
+  );
+
+  ```
+
+
+  ## 위험한 패턴 (DON''T)
+
+  ```typescript
+
+  // ❌ 블랙리스트 기반 필터링 (우회 가능)
+
+  function badSanitize(input: string) {
+    return input.replace("<script>", "");  // <scr<script>ipt> 우회 가능
+  }
+
+
+  // ❌ 정규식만으로 이메일 검증
+
+  if (input.match(/@/)) { /* 불충분 */ }
+
+
+  // ❌ 새니타이징 없이 DB에 저장 후 출력 시에만 이스케이핑
+
+  await db.insert({ name: rawInput });  // Stored XSS 가능
+
+  ```
+
+
+  ## 안전한 패턴 (DO)
+
+  ```typescript
+
+  // ✅ 입력 시점에 검증+새니타이징, 출력 시점에 인코딩 (양쪽 다)
+
+  const CreatePetSchema = z.object({
+    name: z.string()
+      .min(1).max(50)
+      .transform((v) => v.replace(/<[^>]*>/g, "").trim()),
+    species: z.enum(["dog", "cat", "bird", "rabbit"]),
+    age: z.number().int().min(0).max(30),
+    bio: z.string()
+      .max(500)
+      .transform((v) => v.replace(/<[^>]*>/g, "").trim())
+      .optional(),
+  });
+
+
+  // 핸들러에서 사용
+
+  app.post("/api/pets", async (c) => {
+    const body = CreatePetSchema.parse(await c.req.json());
+    // body는 이미 검증+새니타이징 완료
+    const pet = await petService.create(body);
+    return c.json({ data: pet }, 201);
+  });
+
+  ```
+
+
+  ## 특수 케이스
+
+  - **리치 텍스트**: DOMPurify로 허용 태그만 남기기
+
+  - **파일명**: 경로 순회 문자(../) 제거, 허용 확장자 화이트리스트
+
+  - **JSON 입력**: Zod로 스키마 강제, 중첩 깊이 제한
+
+  - **URL 입력**: URL 파싱 후 프로토콜/호스트 화이트리스트
+
+
+  ## 체크리스트
+
+  - [ ] 모든 API 엔드포인트에 Zod 스키마가 적용되었는가?
+
+  - [ ] 문자열 필드에 HTML 태그 제거 transform이 있는가?
+
+  - [ ] SQL은 parameterized query만 사용하는가?
+
+  - [ ] 파일명에 경로 순회 방어가 있는가?
+
+  - [ ] URL 입력에 프로토콜 화이트리스트가 있는가?
+
+  '
+domain: development.backend
+id: dev.backend.security.input-sanitization
+tags:
+- backend
+- security
+- sanitization
+- xss
+- validation
+- zod
+- html-injection
+theory: '#OWASP A03:2021 Injection + CWE-79 XSS'
+token_estimate: 720
+type: pattern
+version: 1

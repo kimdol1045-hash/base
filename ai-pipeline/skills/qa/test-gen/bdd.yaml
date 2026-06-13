@@ -1,0 +1,24 @@
+content: "BDD (비즈니스 요구사항을 실행 가능한 테스트로 전환한다):\n\n### Given-When-Then 패턴\n```gherkin\n\
+  Feature: 장바구니\n\nScenario: 상품 추가\n  Given 빈 장바구니가 있다\n  When \"맥북 프로\" 상품을 추가한다\n\
+  \  Then 장바구니에 1개 상품이 있어야 한다\n  And 총 금액이 2,490,000원이어야 한다\n\nScenario: 재고 부족 시 추가\
+  \ 실패\n  Given \"한정판 키보드\"의 재고가 0개이다\n  When \"한정판 키보드\"를 장바구니에 추가한다\n  Then \"재고가\
+  \ 부족합니다\" 에러가 표시되어야 한다\n```\n\n### 코드 구현 (Vitest)\n```typescript\ndescribe('장바구니',\
+  \ () => {\n  describe('상품 추가', () => {\n    it('빈 장바구니에 상품 추가 시 수량 1, 총액 반영', ()\
+  \ => {\n      // Given\n      const cart = new Cart();\n      const product = {\
+  \ id: '1', name: '맥북 프로', price: 2490000 };\n\n      // When\n      cart.addItem(product);\n\
+  \n      // Then\n      expect(cart.items).toHaveLength(1);\n      expect(cart.totalAmount).toBe(2490000);\n\
+  \    });\n  });\n});\n```\n\n### 좋은 시나리오 작성법\n- 비즈니스 언어 사용 (구현 디테일 X)\n- 시나리오 하나에\
+  \ 검증 포인트 하나\n- Edge case도 시나리오로 작성\n- \"~해야 한다\" 형식으로 기대 결과 명시\n\n### BDD vs TDD\n\
+  | 구분 | TDD | BDD |\n|------|-----|-----|\n| 관점 | 개발자 | 사용자/비즈니스 |\n| 단위 | 함수/모듈\
+  \ | 기능/시나리오 |\n| 언어 | 코드 | 자연어 + 코드 |\n"
+domain: qa
+id: qa.test-gen.bdd
+tags:
+- qa
+- bdd
+- test
+- given-when-then
+theory: '#153 Behavior-Driven Development (Dan North, 2006)'
+token_estimate: 430
+type: pattern
+version: 1

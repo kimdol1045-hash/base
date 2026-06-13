@@ -1,0 +1,46 @@
+content: "컴포넌트 테스트 (사용자 관점에서 UI 컴포넌트의 동작을 검증한다):\n\n### Testing Library 철학\n\"테스트가\
+  \ 소프트웨어 사용 방식과 닮을수록, 더 큰 신뢰를 준다.\"\n— 구현이 아닌 **행동(behavior)**을 테스트한다.\n\n### 접근\
+  \ 가능한 쿼리 우선순위\n1. `getByRole` — 가장 권장 (접근성 트리 기반)\n2. `getByLabelText` — 폼 요소\n\
+  3. `getByPlaceholderText` — 라벨 없을 때\n4. `getByText` — 비상호작용 요소\n5. `getByTestId`\
+  \ — 최후 수단\n\n### DO: 행동 기반 테스트\n```typescript\nimport { render, screen, waitFor\
+  \ } from '@testing-library/react';\nimport userEvent from '@testing-library/user-event';\n\
+  import { SearchForm } from './SearchForm';\n\ndescribe('SearchForm', () => {\n \
+  \ it('검색어 입력 후 결과를 표시한다', async () => {\n    const user = userEvent.setup();\n \
+  \   render(<SearchForm />);\n\n    // 사용자처럼 상호작용\n    const input = screen.getByRole('searchbox',\
+  \ { name: '상품 검색' });\n    await user.type(input, '노트북');\n    await user.click(screen.getByRole('button',\
+  \ { name: '검색' }));\n\n    // 결과 확인\n    await waitFor(() => {\n      expect(screen.getByRole('list')).toBeInTheDocument();\n\
+  \      expect(screen.getAllByRole('listitem')).toHaveLength(5);\n    });\n  });\n\
+  \n  it('빈 검색어 시 에러 메시지 표시', async () => {\n    const user = userEvent.setup();\n\
+  \    render(<SearchForm />);\n\n    await user.click(screen.getByRole('button',\
+  \ { name: '검색' }));\n\n    expect(screen.getByRole('alert')).toHaveTextContent(\n\
+  \      '검색어를 입력해주세요'\n    );\n  });\n});\n```\n\n### MSW로 API Mocking\n```typescript\n\
+  import { http, HttpResponse } from 'msw';\nimport { setupServer } from 'msw/node';\n\
+  \nconst server = setupServer(\n  http.get('/api/products', ({ request }) => {\n\
+  \    const url = new URL(request.url);\n    const q = url.searchParams.get('q');\n\
+  \    return HttpResponse.json({\n      items: [{ id: 1, name: `${q} Pro` }],\n \
+  \   });\n  })\n);\n\nbeforeAll(() => server.listen());\nafterEach(() => server.resetHandlers());\n\
+  afterAll(() => server.close());\n```\n\nDON'T:\n```typescript\n// ❌ 구현 상세 테스트 (내부\
+  \ 상태 직접 접근)\nconst { result } = renderHook(() => useSearch());\nexpect(result.current.internalState).toBe('loading');\n\
+  \n// ❌ fireEvent 대신 userEvent 사용 (실제 사용자 동작 시뮬레이션)\nfireEvent.change(input, { target:\
+  \ { value: '노트북' } });\n\n// ❌ 스냅샷 테스트로 로직 검증 (변경 시마다 깨짐)\nexpect(container).toMatchSnapshot();\n\
+  \n// ❌ getByTestId를 첫 번째 선택지로\nscreen.getByTestId('search-btn'); // role이나 text가\
+  \ 있으면 그걸 사용\n```\n\n### Storybook Interaction Test\n```typescript\n// *.stories.tsx\
+  \ 안에서 play 함수로 상호작용 테스트\nexport const WithSearch: Story = {\n  play: async ({ canvasElement\
+  \ }) => {\n    const canvas = within(canvasElement);\n    await userEvent.type(canvas.getByRole('searchbox'),\
+  \ '노트북');\n    await userEvent.click(canvas.getByRole('button', { name: '검색' }));\n\
+  \    await expect(canvas.getByRole('list')).toBeInTheDocument();\n  },\n};\n```\n\
+  \n### 비동기 패턴\n- `waitFor`: 상태 변경 대기 (폴링 방식, 기본 1000ms 타임아웃)\n- `findByRole`: `waitFor`\
+  \ + `getByRole` 조합 (가장 간결)\n- `act()` 직접 사용 금지 — Testing Library가 내부적으로 처리\n"
+domain: qa
+id: qa.test-gen.component-test
+tags:
+- qa
+- test
+- component-test
+- testing-library
+- storybook
+- msw
+theory: '#126 Testing Trophy (Dodds, 2019)'
+token_estimate: 1368
+type: pattern
+version: 1

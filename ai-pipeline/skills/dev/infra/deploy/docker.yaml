@@ -1,0 +1,53 @@
+content: 'Docker 컨테이너화 패턴:
+
+
+  ## 적용 상황
+
+  - 애플리케이션을 환경에 독립적으로 배포해야 할 때
+
+  - 로컬/스테이징/프로덕션 환경 일관성이 필요할 때
+
+  - 마이크로서비스 또는 모놀리스를 컨테이너로 운영할 때
+
+
+  ## 구현 방법
+
+  - 멀티스테이지 빌드: build → production 단계 분리로 이미지 크기 최소화
+
+  - .dockerignore: node_modules, .git, .env, .next, *.log 제외
+
+  - non-root 유저로 실행 (USER node). 보안 필수 사항
+
+  - HEALTHCHECK 명시: curl 또는 wget으로 헬스 엔드포인트 확인
+
+  - 환경변수는 빌드 타임(ARG)과 런타임(ENV) 명확히 구분
+
+  - 레이어 캐싱 활용: package.json 먼저 COPY → npm install → 소스 COPY
+
+  - 베이스 이미지: node:20-alpine 같은 경량 이미지 사용
+
+  - COPY --from=build로 빌드 산출물만 프로덕션 이미지에 포함
+
+
+  ## 주의사항
+
+  - latest 태그 사용 금지. 반드시 버전 고정 (node:20.11-alpine)
+
+  - 시크릿을 ARG/ENV로 전달하지 말 것. Docker Secrets 또는 런타임 주입
+
+  - npm ci 사용 (npm install 아님). lock 파일 기반 정확한 의존성
+
+  - 불필요한 패키지 설치 금지 (devDependencies 제외: --omit=dev)
+
+  - 단일 프로세스 원칙: 컨테이너당 하나의 프로세스만 실행
+
+  '
+domain: development.infra
+id: dev.infra.deploy.docker
+tags:
+- infra
+- docker
+- container
+token_estimate: 367
+type: pattern
+version: 1

@@ -1,0 +1,31 @@
+bloom_level: ANALYZE
+content: "# AWS Well-Architected 가이드\n\n## 핵심 원칙\n- 6개 기둥(Pillar)에 따라 아키텍처를 설계하고 검증한다\n\
+  - 운영 우수성, 보안, 안정성, 성능 효율성, 비용 최적화, 지속 가능성\n- 정기적으로 Well-Architected Review를 수행한다\n\
+  - 트레이드오프를 인식하고 비즈니스 요구사항에 맞게 결정한다\n\n## 6대 기둥 핵심 체크리스트\n| 기둥 | 핵심 질문 |\n|------|-----------|\n\
+  | 운영 우수성 | IaC로 관리되는가? 자동화된 배포인가? |\n| 보안 | 최소 권한 원칙을 따르는가? 암호화가 적용되는가? |\n| 안정성\
+  \ | 장애 시 자동 복구되는가? 다중 AZ인가? |\n| 성능 효율성 | 워크로드에 적합한 리소스 타입인가? |\n| 비용 최적화 | 미사용\
+  \ 리소스가 있는가? 예약 인스턴스를 활용하는가? |\n| 지속 가능성 | 리소스 사용을 최소화하고 있는가? |\n\n## DO\n- 모든 인프라를\
+  \ IaC(Terraform/CDK)로 관리한다\n- 다중 AZ(Availability Zone) 배포를 기본으로 한다\n- IAM 정책에 최소\
+  \ 권한 원칙을 적용한다\n- 비용 알림과 예산을 설정한다\n- 정기적으로 AWS Trusted Advisor를 확인한다\n\n## DON'T\n\
+  - AWS Console에서 수동으로 리소스를 생성하지 않는다\n- Root 계정을 일상 작업에 사용하지 않는다\n- 단일 AZ에 모든 리소스를\
+  \ 배치하지 않는다\n- 액세스 키를 코드에 하드코딩하지 않는다\n- 비용 모니터링 없이 리소스를 무한정 생성하지 않는다\n\n## 코드 예시\n\
+  ```hcl\n# Terraform - Well-Architected 기본 패턴\n# 다중 AZ VPC\nmodule \"vpc\" {\n  source\
+  \  = \"terraform-aws-modules/vpc/aws\"\n  azs     = [\"ap-northeast-2a\", \"ap-northeast-2b\"\
+  , \"ap-northeast-2c\"]\n  private_subnets = [\"10.0.1.0/24\", \"10.0.2.0/24\", \"\
+  10.0.3.0/24\"]\n  public_subnets  = [\"10.0.101.0/24\", \"10.0.102.0/24\", \"10.0.103.0/24\"\
+  ]\n  enable_nat_gateway = true\n}\n\n# 최소 권한 IAM\nresource \"aws_iam_policy\" \"\
+  app_policy\" {\n  policy = jsonencode({\n    Version = \"2012-10-17\"\n    Statement\
+  \ = [{\n      Effect   = \"Allow\"\n      Action   = [\"s3:GetObject\", \"s3:PutObject\"\
+  ]\n      Resource = \"${aws_s3_bucket.app.arn}/*\"\n    }]\n  })\n}\n```\n"
+domain: development.infra
+id: dev.infra.cloud.aws-well-architected
+tags:
+- infra
+- cloud
+- aws
+- architecture
+- well-architected
+theory: '#264 AWS Well-Architected Framework (AWS, 2015)'
+token_estimate: 696
+type: pattern
+version: 1

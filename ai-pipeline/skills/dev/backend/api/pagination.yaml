@@ -1,0 +1,65 @@
+content: "페이지네이션 패턴 (대량 데이터를 한번에 반환하면 서버/클라이언트 모두 죽는다):\n\n### Cursor vs Offset 비교\n\
+  | 항목 | Cursor (커서) | Offset (오프셋) |\n|------|--------------|-----------------|\n\
+  | 성능 | O(1) -- 인덱스 탐색 | O(N) -- offset 증가 시 느려짐 |\n| 일관성 | 중간 삽입/삭제에 안전 | 행이 추가되면\
+  \ 중복/누락 발생 |\n| \"N페이지로 이동\" | 불가능 | 가능 |\n| 사용 시점 | **무한 스크롤, 피드, 대용량** | 관리자 페이지,\
+  \ 소규모 데이터 |\n| 구현 난이도 | 약간 복잡 | 단순 |\n\n### Cursor 기반 페이지네이션 (권장)\n```typescript\n\
+  // schemas/pagination.ts\nconst CursorQuerySchema = z.object({\n  cursor: z.string().optional(),\
+  \  // 마지막 아이템의 ID 또는 인코딩 값\n  limit: z.coerce.number().int().min(1).max(100).default(20),\n\
+  });\n\n// routes/posts.ts\napp.get(\"/api/v1/posts\", async (c) => {\n  const {\
+  \ cursor, limit } = CursorQuerySchema.parse(c.req.query());\n\n  const posts = await\
+  \ db.query.posts.findMany({\n    where: cursor ? lt(posts.id, cursor) : undefined,\
+  \  // id 기준 역순\n    orderBy: [desc(posts.id)],\n    limit: limit + 1,  // +1로 다음\
+  \ 페이지 존재 여부 확인\n  });\n\n  const hasMore = posts.length > limit;\n  const items\
+  \ = hasMore ? posts.slice(0, -1) : posts;  // +1 항목 제거\n  const nextCursor = hasMore\
+  \ ? items[items.length - 1].id : undefined;\n\n  return c.json({\n    data: items,\n\
+  \    meta: {\n      hasMore,\n      nextCursor,\n    },\n  });\n});\n```\n\n클라이언트\
+  \ 사용:\n```\nGET /api/v1/posts?limit=20\n→ { data: [...20개], meta: { hasMore: true,\
+  \ nextCursor: \"abc123\" } }\n\nGET /api/v1/posts?limit=20&cursor=abc123\n→ { data:\
+  \ [...20개], meta: { hasMore: true, nextCursor: \"def456\" } }\n\nGET /api/v1/posts?limit=20&cursor=def456\n\
+  → { data: [...5개], meta: { hasMore: false } }\n```\n\n### 복합 커서 (정렬 기준이 unique하지\
+  \ 않을 때)\n```typescript\n// created_at이 같은 행이 여러 개일 수 있으므로 id를 보조 키로 사용\nfunction\
+  \ encodeCursor(createdAt: Date, id: string): string {\n  return Buffer.from(JSON.stringify({\
+  \ createdAt, id })).toString(\"base64url\");\n}\n\nfunction decodeCursor(cursor:\
+  \ string): { createdAt: Date; id: string } {\n  return JSON.parse(Buffer.from(cursor,\
+  \ \"base64url\").toString());\n}\n\napp.get(\"/api/v1/posts\", async (c) => {\n\
+  \  const { cursor, limit } = CursorQuerySchema.parse(c.req.query());\n\n  let whereClause;\n\
+  \  if (cursor) {\n    const { createdAt, id } = decodeCursor(cursor);\n    whereClause\
+  \ = or(\n      lt(posts.createdAt, createdAt),\n      and(eq(posts.createdAt, createdAt),\
+  \ lt(posts.id, id)),\n    );\n  }\n\n  const items = await db.query.posts.findMany({\n\
+  \    where: whereClause,\n    orderBy: [desc(posts.createdAt), desc(posts.id)],\n\
+  \    limit: limit + 1,\n  });\n\n  const hasMore = items.length > limit;\n  const\
+  \ result = hasMore ? items.slice(0, -1) : items;\n  const nextCursor = hasMore\n\
+  \    ? encodeCursor(result.at(-1)!.createdAt, result.at(-1)!.id)\n    : undefined;\n\
+  \n  return c.json({ data: result, meta: { hasMore, nextCursor } });\n});\n```\n\n\
+  ### Offset 기반 페이지네이션 (관리자/소규모용)\n```typescript\nconst OffsetQuerySchema = z.object({\n\
+  \  page: z.coerce.number().int().min(1).default(1),\n  limit: z.coerce.number().int().min(1).max(100).default(20),\n\
+  });\n\napp.get(\"/api/v1/admin/users\", authMiddleware, requireRole(\"admin\"),\
+  \ async (c) => {\n  const { page, limit } = OffsetQuerySchema.parse(c.req.query());\n\
+  \  const offset = (page - 1) * limit;\n\n  const [items, countResult] = await Promise.all([\n\
+  \    db.query.users.findMany({ limit, offset, orderBy: [desc(users.createdAt)] }),\n\
+  \    db.select({ count: count() }).from(users),\n  ]);\n\n  const total = countResult[0].count;\n\
+  \n  return c.json({\n    data: items,\n    meta: {\n      page,\n      limit,\n\
+  \      total,\n      totalPages: Math.ceil(total / limit),\n    },\n  });\n});\n\
+  ```\n\nDON'T:\n```typescript\n// ❌ limit 없이 전체 조회\nconst allPosts = await db.query.posts.findMany();\
+  \ // 100만 행이면?\n\n// ❌ offset이 커지면 성능 급락\n// OFFSET 100000 → DB가 100000행을 읽고 버림\n\
+  const posts = await db.query.posts.findMany({ offset: 100000, limit: 20 });\n\n\
+  // ❌ cursor를 id가 아닌 변경 가능한 값으로 사용\nconst cursor = post.title; // 제목이 바뀌면 페이지네이션\
+  \ 깨짐\n```\n\n### 선택 가이드\n- 피드/타임라인/채팅: **Cursor** (무한 스크롤, 실시간 데이터 추가)\n- 검색 결과:\
+  \ **Cursor** (결과가 많을 수 있음)\n- 관리자 대시보드: **Offset** (페이지 번호 필요, 데이터 수만 건 이하)\n- 내보내기/일괄처리:\
+  \ **Cursor** (대량 데이터 순회)\n\n### 흔한 실수\n- limit에 최대값 미설정 -> `?limit=999999`로 전체 데이터\
+  \ 노출\n- `hasMore` 판단을 위해 `COUNT(*)` 별도 쿼리 -> cursor에서는 `limit+1`로 판단\n- cursor 값을\
+  \ 클라이언트가 조작 가능하다고 가정하지 않음 -> base64 디코딩 후 검증 필요\n- 정렬 기준 컬럼에 인덱스 없음 -> 대용량에서 full\
+  \ table scan 발생\n"
+domain: development.backend
+id: dev.backend.api.pagination
+tags:
+- backend
+- api
+- pagination
+- cursor
+- performance
+- database
+theory: '#105 Cursor Pagination (Bickle, 2019)'
+token_estimate: 2065
+type: pattern
+version: 1

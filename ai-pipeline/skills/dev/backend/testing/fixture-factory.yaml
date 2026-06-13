@@ -1,0 +1,35 @@
+bloom_level: APPLY
+content: "# 테스트 픽스처 팩토리 가이드\n\n## 핵심 원칙\n- 테스트 데이터 생성을 중앙화된 팩토리로 관리한다\n- 기본값을 제공하되,\
+  \ 테스트별로 필요한 속성만 오버라이드한다\n- 연관 관계가 있는 엔티티를 함께 생성하는 메서드를 제공한다\n- 테스트의 의도를 명확히 드러내는\
+  \ 팩토리 메서드명을 사용한다\n\n## DO\n- Builder 패턴으로 유연한 데이터 생성을 지원한다\n- 시퀀스 카운터로 고유 값(이메일,\
+  \ 이름)을 자동 생성한다\n- DB 저장과 인메모리 생성을 분리한다 (build vs create)\n- 시나리오별 프리셋을 제공한다 (관리자,\
+  \ 비활성 사용자 등)\n\n## DON'T\n- 테스트마다 리터럴 객체를 반복 작성하지 않는다\n- 공유 테스트 데이터에 의존하지 않는다 (각\
+  \ 테스트가 자체 데이터 생성)\n- 불필요한 필드를 테스트에서 지정하지 않는다 (기본값 활용)\n- 팩토리 함수에서 부작용(이메일 발송 등)을\
+  \ 일으키지 않는다\n\n## 코드 예시\n```typescript\nlet seq = 0;\nfunction nextSeq() { return\
+  \ ++seq; }\n\n// 기본 팩토리\nfunction buildUser(overrides: Partial<User> = {}): User\
+  \ {\n  const n = nextSeq();\n  return {\n    id: `user-${n}`,\n    email: `user${n}@test.com`,\n\
+  \    displayName: `테스트유저${n}`,\n    role: \"member\",\n    status: \"active\",\n\
+  \    createdAt: new Date(),\n    ...overrides,\n  };\n}\n\n// DB에 저장하는 버전\nasync\
+  \ function createUser(overrides: Partial<User> = {}): Promise<User> {\n  const data\
+  \ = buildUser(overrides);\n  return db.users.create({ data });\n}\n\n// 시나리오별 프리셋\n\
+  function buildAdmin(overrides: Partial<User> = {}) {\n  return buildUser({ role:\
+  \ \"admin\", ...overrides });\n}\n\nfunction buildInactiveUser(overrides: Partial<User>\
+  \ = {}) {\n  return buildUser({ status: \"inactive\", ...overrides });\n}\n\n//\
+  \ 연관 엔티티 함께 생성\nasync function createUserWithPosts(postCount = 3) {\n  const user\
+  \ = await createUser();\n  const posts = await Promise.all(\n    Array.from({ length:\
+  \ postCount }, () =>\n      createPost({ authorId: user.id })\n    ),\n  );\n  return\
+  \ { user, posts };\n}\n\n// 테스트에서 사용\nit(\"관리자만 삭제할 수 있다\", async () => {\n  const\
+  \ admin = await createUser({ role: \"admin\" });\n  const target = await createUser();\n\
+  \  const result = await deleteUser(admin.id, target.id);\n  expect(result.success).toBe(true);\n\
+  });\n```\n"
+domain: development.backend
+id: dev.backend.testing.fixture-factory
+tags:
+- testing
+- fixture
+- factory
+- test-data
+theory: '#231 Object Mother / Test Data Builder (Fowler, xUnit Test Patterns 2007)'
+token_estimate: 861
+type: pattern
+version: 1

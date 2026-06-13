@@ -1,0 +1,42 @@
+content: "세션 기반 인증 (서버 측 상태 관리로 즉시 무효화가 가능한 인증 방식):\n\n### Session vs JWT 비교\n| 항목\
+  \ | Session | JWT |\n|------|---------|-----|\n| 상태 관리 | 서버 (Redis/DB) | 클라이언트 (stateless)\
+  \ |\n| 즉시 무효화 | ✅ 세션 삭제 | ❌ 만료까지 대기 (블랙리스트 필요) |\n| 확장성 | Redis 클러스터 필요 | ✅ 서버 무상태\
+  \ |\n| 저장 크기 | 쿠키: session ID만 (~32B) | 쿠키/헤더: 전체 payload (~500B+) |\n| CSRF | ⚠️\
+  \ 쿠키 기반이므로 방어 필요 | ✅ Authorization 헤더 시 불필요 |\n| 적합 사례 | SSR, 관리자 패널, 은행 | SPA,\
+  \ 모바일 API, MSA |\n\n### Redis 세션 스토어 구현\n```typescript\n// DO: Redis 세션 스토어 + 안전한\
+  \ 쿠키 설정\nimport session from 'express-session';\nimport RedisStore from 'connect-redis';\n\
+  import Redis from 'ioredis';\n\nconst redis = new Redis({ host: 'localhost', port:\
+  \ 6379 });\n\napp.use(session({\n  store: new RedisStore({ client: redis, prefix:\
+  \ 'sess:' }),\n  secret: process.env.SESSION_SECRET!,       // 최소 32자 랜덤\n  name:\
+  \ '__Host-sid',                         // __Host- 접두사: secure + path=/ 강제\n  resave:\
+  \ false,\n  saveUninitialized: false,\n  rolling: true,                        \
+  \      // 활동 시 만료 갱신\n  cookie: {\n    httpOnly: true,\n    secure: true,      \
+  \                       // HTTPS만\n    sameSite: 'strict',\n    maxAge: 30 * 60\
+  \ * 1000,                   // 30분 (비활동 시 만료)\n  },\n}));\n\n// 로그인 시 세션 재생성 (session\
+  \ fixation 방지)\nasync function login(req: Request, res: Response) {\n  const user\
+  \ = await authenticate(req.body.email, req.body.password);\n  req.session.regenerate((err)\
+  \ => {           // 새 session ID 발급!\n    req.session.userId = user.id;\n    req.session.role\
+  \ = user.role;\n    req.session.createdAt = Date.now();\n    req.session.save(()\
+  \ => res.json({ success: true }));\n  });\n}\n\n// 로그아웃: 세션 즉시 파괴\nasync function\
+  \ logout(req: Request, res: Response) {\n  req.session.destroy((err) => {\n    res.clearCookie('__Host-sid');\n\
+  \    res.json({ success: true });\n  });\n}\n```\n\nDON'T:\n```typescript\n// ❌\
+  \ 메모리 세션 스토어 (프로덕션) — 서버 재시작 시 전체 로그아웃, 메모리 누수\napp.use(session({ secret: 'keyboard\
+  \ cat' })); // MemoryStore가 기본값!\n\n// ❌ 로그인 후 세션 재생성 없음 — session fixation 공격 가능\n\
+  async function login(req: Request, res: Response) {\n  req.session.userId = user.id;\
+  \ // 기존 session ID 유지 → 위험\n}\n\n// ❌ cookie 이름이 기본값 'connect.sid' — 프레임워크 식별 가능\n\
+  // ❌ sameSite 미설정 — CSRF 공격에 노출\n```\n\n### 세션 보안 강화\n- 절대 만료: 로그인 후 24시간이면 활동 여부와\
+  \ 무관하게 재인증\n- 동시 세션 제한: 사용자당 최대 5개 세션 허용\n- 의심 활동 시 전체 세션 무효화: `redis.del('sess:*:userId')`\n\
+  \n### 흔한 실수\n- 세션 데이터에 민감 정보(비밀번호) 저장\n- Redis 연결 실패 시 fallback으로 MemoryStore 사용\n\
+  - 세션 만료 후에도 쿠키가 남아있어 혼란 유발\n"
+domain: development.backend
+id: dev.backend.auth.session-auth
+tags:
+- backend
+- auth
+- session
+- cookie
+- redis
+theory: '#115 Saltzer Least Privilege'
+token_estimate: 1177
+type: pattern
+version: 1

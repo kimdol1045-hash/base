@@ -1,0 +1,26 @@
+content: "Repository 패턴 (데이터 접근을 비즈니스 로직에서 분리한다):\n\n### 인터페이스 정의\n```typescript\n\
+  interface UserRepository {\n  findById(id: string): Promise<User | null>;\n  findByEmail(email:\
+  \ string): Promise<User | null>;\n  save(user: User): Promise<void>;\n  delete(id:\
+  \ string): Promise<void>;\n  findActive(page: number, limit: number): Promise<User[]>;\n\
+  }\n```\n\n### 구현체\n```typescript\nclass PrismaUserRepository implements UserRepository\
+  \ {\n  constructor(private prisma: PrismaClient) {}\n\n  async findById(id: string)\
+  \ {\n    const data = await this.prisma.user.findUnique({ where: { id } });\n  \
+  \  return data ? UserMapper.toDomain(data) : null;\n  }\n\n  async save(user: User)\
+  \ {\n    await this.prisma.user.upsert({\n      where: { id: user.id },\n      create:\
+  \ UserMapper.toPersistence(user),\n      update: UserMapper.toPersistence(user),\n\
+  \    });\n  }\n}\n```\n\n### 핵심 규칙\n- Repository는 Aggregate Root 단위 (User, 하위 Entity\
+  \ 포함)\n- 비즈니스 의미 있는 메서드만 (`findAll` 지양, `findActiveByRole` 등)\n- Mapper로 도메인 모델\
+  \ ↔ 영속성 모델 변환\n- 테스트 시 InMemoryRepository로 교체 가능\n\n### vs DAO\n| Repository | DAO\
+  \ |\n|-----------|-----|\n| 도메인 중심 | 데이터 중심 |\n| Aggregate 단위 | 테이블 단위 |\n| 비즈니스\
+  \ 메서드 | CRUD 메서드 |\n"
+domain: development.backend
+id: dev.backend.patterns.repository
+tags:
+- backend
+- repository
+- data-access
+- clean-architecture
+theory: '#173 Repository Pattern (Martin Fowler, PoEAA)'
+token_estimate: 280
+type: pattern
+version: 1

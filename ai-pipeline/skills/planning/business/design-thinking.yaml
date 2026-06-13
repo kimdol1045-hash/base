@@ -1,0 +1,21 @@
+content: "디자인 사고 (사용자 중심의 혁신적 문제 해결):\n\n### 5단계 프로세스\n\n1. **Empathize (공감)**\n \
+  \  - 사용자 인터뷰: 개방형 질문 \"~할 때 어떤 느낌이셨어요?\"\n   - 관찰: 사용자가 말하는 것 ≠ 실제 행동\n   - 공감 지도:\
+  \ Says/Thinks/Does/Feels 4사분면\n\n2. **Define (정의)**\n   - Point of View: [사용자]는\
+  \ [니즈]가 필요하다, 왜냐하면 [인사이트]\n   - 예: \"맞벌이 부부는 평일 저녁을 15분 내 준비하고 싶다, 왜냐하면 아이와 보내는\
+  \ 시간이 더 가치 있으므로\"\n\n3. **Ideate (발상)**\n   - 양 > 질. 최소 30개 아이디어 먼저 발산.\n   - \"\
+  Yes, and...\" 방식 (부정 금지)\n   - 2×2 매트릭스로 우선순위: Impact × Feasibility\n\n4. **Prototype\
+  \ (프로토타입)**\n   - 낮은 충실도(Low-fi): 종이, Figma 와이어프레임\n   - 목표: 핵심 가설 테스트할 수 있는 최소\
+  \ 수준\n   - 1~3일 내 제작 가능한 범위\n\n5. **Test (테스트)**\n   - 5명 테스트로 문제의 85% 발견 (Nielsen)\n\
+  \   - 관찰 > 질문. \"이것 좋아요?\" ❌ → \"이걸로 [작업]을 해보세요\" ✅\n   - 테스트 결과 → Empathize로 돌아가기\
+  \ (반복)\n"
+domain: planning
+id: planning.business.design-thinking
+tags:
+- planning
+- business
+- design-thinking
+- innovation
+theory: '#B3 Design Thinking (Brown, 2008)'
+token_estimate: 342
+type: pattern
+version: 1

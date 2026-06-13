@@ -1,0 +1,47 @@
+content: "피츠 법칙 — 타겟까지 이동 시간 = f(거리/크기).\nMT = a + b * log2(D/W + 1) — 거리 D ↓, 크기\
+  \ W ↑ → 더 빠른 접근.\n\n### 핵심 수치 기준\n- CTA 버튼 최소: **44x44px** (WCAG 터치 타겟)\n- 주요 버튼\
+  \ 권장: **48px** 높이, 좌우 패딩 **px-6** (24px)\n- 터치 타겟 간 최소 간격: **8px** (오탭 방지)\n- 모바일\
+  \ 핵심 액션: **thumb zone** (화면 하단 1/3) 배치\n- 화면 모서리/가장자리: 무한 타겟 효과 활용\n\n### 1. 모바일\
+  \ CTA — Thumb Zone 배치\n\nDO:\n```tsx\n{/* 핵심 CTA를 하단 고정 → thumb zone 최적 위치 */}\n\
+  <div className=\"fixed bottom-0 inset-x-0 p-4 bg-background/80 backdrop-blur-sm\
+  \ border-t\">\n  <Button className=\"w-full h-12 text-base font-semibold\">\n  \
+  \  구매하기\n  </Button>\n</div>\n{/* 본문 콘텐츠에 하단 패딩 추가 */}\n<main className=\"pb-24\"\
+  >\n  {/* ... */}\n</main>\n```\n\nDON'T:\n```tsx\n{/* CTA가 스크롤 중간에 작은 크기로 배치 → 찾기\
+  \ 어렵고 탭 어려움 */}\n<Button className=\"h-8 px-3 text-xs mt-2\">구매하기</Button>\n```\n\
+  \n### 2. 터치 타겟 간격\n\n```tsx\n{/* 아이콘 버튼 그룹: 44px 타겟 + 8px 간격 */}\n<div className=\"\
+  flex items-center gap-2\">\n  <Button variant=\"ghost\" size=\"icon\" className=\"\
+  h-11 w-11\">\n    <Heart className=\"h-5 w-5\" />\n    <span className=\"sr-only\"\
+  >좋아요</span>\n  </Button>\n  <Button variant=\"ghost\" size=\"icon\" className=\"\
+  h-11 w-11\">\n    <Share className=\"h-5 w-5\" />\n    <span className=\"sr-only\"\
+  >공유</span>\n  </Button>\n  <Button variant=\"ghost\" size=\"icon\" className=\"\
+  h-11 w-11\">\n    <Bookmark className=\"h-5 w-5\" />\n    <span className=\"sr-only\"\
+  >저장</span>\n  </Button>\n</div>\n```\n\n### 3. 모바일 Bottom Navigation — 가장자리 활용\n\
+  \n```tsx\n{/* 하단 네비: 화면 가장자리 → 무한 타겟 효과 */}\n<nav className=\"fixed bottom-0 inset-x-0\
+  \ bg-background border-t\n                flex justify-around items-center h-16\
+  \ pb-safe\">\n  {[\n    { icon: Home, label: \"홈\", href: \"/\" },\n    { icon:\
+  \ Search, label: \"검색\", href: \"/search\" },\n    { icon: PlusCircle, label: \"\
+  작성\", href: \"/new\" },\n    { icon: Bell, label: \"알림\", href: \"/notifications\"\
+  \ },\n    { icon: User, label: \"내 정보\", href: \"/profile\" },\n  ].map(({ icon:\
+  \ Icon, label, href }) => (\n    <Link key={href} href={href}\n      className=\"\
+  flex flex-col items-center gap-1 min-w-[48px] min-h-[48px]\n                 justify-center\
+  \ text-muted-foreground hover:text-primary\">\n      <Icon className=\"h-5 w-5\"\
+  \ />\n      <span className=\"text-[10px]\">{label}</span>\n    </Link>\n  ))}\n\
+  </nav>\n```\n\n### 4. 데스크톱 — 주요 액션 크기 차별화\n\n```tsx\n{/* 주요 CTA > 보조 액션 크기로 계층 표현\
+  \ */}\n<div className=\"flex items-center gap-3\">\n  <Button size=\"lg\" className=\"\
+  h-12 px-8 text-base\">프로젝트 생성</Button>\n  <Button variant=\"outline\" size=\"sm\"\
+  \ className=\"h-9\">가져오기</Button>\n</div>\n```\n\n### 측정 기준\n- 터치 성공률: 44px → 95%+,\
+  \ 32px → 85%, 24px → 70%\n- 모바일 CTA 클릭률: 하단 고정 vs 스크롤 내 → 약 30% 향상\n"
+domain: design
+id: design.ux-psychology.fitts-law
+tags:
+- design
+- ux
+- fitts-law
+- touch-target
+- mobile
+- thumb-zone
+- cta
+theory: '#42 피츠 법칙 (Fitts, 1954)'
+token_estimate: 1238
+type: rule
+version: 1

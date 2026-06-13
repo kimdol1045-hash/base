@@ -1,0 +1,54 @@
+content: "보안 관점 리뷰 체크포인트 (하나의 취약점이 전체 시스템을 무너뜨린다):\n\n### 1. 입력 검증 (Injection Prevention)\n\
+  모든 외부 입력은 신뢰하지 않는다. 반드시 검증 후 사용한다.\n\nDO:\n```typescript\nimport { z } from 'zod';\n\
+  \n// ✅ Zod 스키마로 입력 검증\nconst CreateUserSchema = z.object({\n  email: z.string().email().max(255),\n\
+  \  name: z.string().min(1).max(100).trim(),\n  age: z.number().int().min(0).max(150),\n\
+  });\n\napp.post('/api/users', async (req, res) => {\n  const parsed = CreateUserSchema.safeParse(req.body);\n\
+  \  if (!parsed.success) {\n    return res.status(400).json({ errors: parsed.error.flatten()\
+  \ });\n  }\n  // parsed.data는 안전하게 타입 검증됨\n  await createUser(parsed.data);\n});\n\
+  ```\n\nDON'T:\n```typescript\n// ❌ 입력 검증 없이 직접 사용\napp.post('/api/users', async\
+  \ (req, res) => {\n  await db.query('INSERT INTO users (email, name) VALUES ($1,\
+  \ $2)', [\n    req.body.email, // 검증 안 됨 → 빈 문자열, 초장문, 악성 코드 가능\n    req.body.name,\n\
+  \  ]);\n});\n```\n\n### 2. SQL Injection\n문자열 연결로 쿼리를 만들지 않는다.\n\n```typescript\n\
+  // ❌ 문자열 연결 → Injection\nconst query = `SELECT * FROM users WHERE name = '${name}'`;\n\
+  \n// ✅ Parameterized query\nconst query = 'SELECT * FROM users WHERE name = $1';\n\
+  await db.query(query, [name]);\n\n// ✅ ORM 사용 (Prisma)\nconst user = await prisma.user.findFirst({\
+  \ where: { name } });\n```\n\n### 3. XSS (Cross-Site Scripting)\n사용자 입력을 렌더링할 때\
+  \ 반드시 이스케이핑한다.\n\n```typescript\n// ❌ dangerouslySetInnerHTML → XSS 취약\n<div dangerouslySetInnerHTML={{\
+  \ __html: userComment }} />\n\n// ✅ React는 기본적으로 이스케이핑 (JSX 사용 시 안전)\n<div>{userComment}</div>\n\
+  \n// ✅ HTML이 필요하면 sanitizer 적용\nimport DOMPurify from 'dompurify';\n<div dangerouslySetInnerHTML={{\
+  \ __html: DOMPurify.sanitize(userComment) }} />\n```\n\n### 4. 인증/인가 (Authentication/Authorization)\n\
+  모든 비공개 엔드포인트에 인증 미들웨어를 적용한다.\n\n```typescript\n// ❌ 인증 없는 API → 누구나 접근 가능\napp.get('/api/admin/users',\
+  \ async (req, res) => { ... });\n\n// ✅ 인증 + 인가 미들웨어\napp.get('/api/admin/users',\n\
+  \  requireAuth,          // 로그인 확인\n  requireRole('admin'), // 관리자 권한 확인\n  async\
+  \ (req, res) => { ... }\n);\n```\n\n### 5. IDOR (Insecure Direct Object Reference)\n\
+  다른 사용자의 데이터에 접근할 수 없도록 소유자 검증을 한다.\n\n```typescript\n// ❌ IDOR: URL의 id만으로 조회 →\
+  \ 다른 사용자 데이터 접근 가능\napp.get('/api/orders/:id', async (req, res) => {\n  const order\
+  \ = await db.query('SELECT * FROM orders WHERE id = $1', [req.params.id]);\n  res.json(order);\n\
+  });\n\n// ✅ 소유자 검증 추가\napp.get('/api/orders/:id', requireAuth, async (req, res)\
+  \ => {\n  const order = await db.query(\n    'SELECT * FROM orders WHERE id = $1\
+  \ AND user_id = $2',\n    [req.params.id, req.user.id]\n  );\n  if (!order) return\
+  \ res.status(404).json({ error: 'Not found' });\n  res.json(order);\n});\n```\n\n\
+  ### 6. 민감 정보 노출\n```typescript\n// ❌ 로그에 비밀번호/토큰 노출\nconsole.log('Login attempt:',\
+  \ { email, password });\nconsole.log('API response:', { token: user.accessToken\
+  \ });\n\n// ✅ 민감 정보 마스킹\nconsole.log('Login attempt:', { email, password: '***'\
+  \ });\n\n// ❌ API 응답에 불필요한 내부 정보\nres.json({ user, passwordHash: user.password_hash,\
+  \ internalId: user._id });\n\n// ✅ 필요한 필드만 응답\nconst { id, email, name } = user;\n\
+  res.json({ id, email, name });\n```\n\n### 7. 의존성 보안\n```bash\n# 정기적으로 취약점 검사\n\
+  npm audit\nnpx audit-ci --critical\n\n# GitHub Dependabot 활성화 필수\n```\n\n### 흔한\
+  \ 실수\n- \"내부 API니까 인증 필요 없다\" → 내부 네트워크도 침해 가능\n- JWT를 localStorage에 저장 → XSS 시\
+  \ 토큰 탈취 (httpOnly 쿠키 사용)\n- CORS에 `origin: '*'` → 모든 도메인에서 API 호출 가능\n- 에러 메시지에\
+  \ 스택 트레이스 노출 → 프로덕션에서는 일반적 메시지만\n"
+domain: qa
+id: qa.code-review.security
+tags:
+- qa
+- code-review
+- security
+- owasp
+- xss
+- injection
+- idor
+theory: '#116 OWASP Top 10 (OWASP Foundation, 2021)'
+token_estimate: 1612
+type: rule
+version: 1

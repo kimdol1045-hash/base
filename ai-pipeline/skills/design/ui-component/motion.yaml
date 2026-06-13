@@ -1,0 +1,24 @@
+content: "모션 디자인 (애니메이션으로 사용성과 피드백을 향상한다):\n\n### 목적별 애니메이션\n| 목적 | 예시 | 시간 |\n|------|------|------|\n\
+  | 피드백 | 버튼 클릭 반응 | 100~200ms |\n| 전환 | 페이지/모달 전환 | 200~300ms |\n| 주목 유도 | 배지, 알림\
+  \ | 300~500ms |\n| 설명 | 온보딩 가이드 | 500ms~1s |\n\n### 핵심 원칙\n- **Easing**: linear\
+  \ 금지. ease-out(진입), ease-in(퇴장) 사용\n- **Duration**: 200~500ms 권장. 300ms 초과 시 느림\
+  \ 인지\n- **의미**: 모든 애니메이션은 목적이 있어야 함 (장식 ≠ 애니메이션)\n- **성능**: transform/opacity만 사용\
+  \ (layout 트리거 속성 금지)\n\n### CSS 구현\n```css\n/* 좋은 예: GPU 가속 속성만 */\n.modal-enter\
+  \ {\n  opacity: 0;\n  transform: translateY(20px);\n}\n.modal-enter-active {\n \
+  \ opacity: 1;\n  transform: translateY(0);\n  transition: opacity 200ms ease-out,\
+  \ transform 200ms ease-out;\n}\n```\n\n### prefers-reduced-motion\n```css\n@media\
+  \ (prefers-reduced-motion: reduce) {\n  *, *::before, *::after {\n    animation-duration:\
+  \ 0.01ms !important;\n    transition-duration: 0.01ms !important;\n  }\n}\n```\n\
+  접근성 필수 — 움직임 민감한 사용자 배려\n\n### 하지 말 것\n- 자동 재생 애니메이션 (집중 방해)\n- 3초 이상 로딩 애니메이션 (스켈레톤으로\
+  \ 대체)\n- layout shift 유발하는 애니메이션\n"
+domain: design
+id: design.ui-component.motion
+tags:
+- design
+- motion
+- animation
+- ux
+theory: '#188 Motion Design (Disney 12 Principles + Material Motion)'
+token_estimate: 390
+type: rule
+version: 1

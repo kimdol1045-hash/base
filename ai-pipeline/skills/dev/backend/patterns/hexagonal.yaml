@@ -1,0 +1,28 @@
+content: "헥사고날 아키텍처 (외부 의존성과 비즈니스 로직을 완전히 분리한다):\n\n### 핵심 구조\n```\n[Driving Adapter]\
+  \  →  [Port]  →  [Application Core]  →  [Port]  →  [Driven Adapter]\n(Controller)\
+  \       (Input)    (Use Case + Domain)     (Output)    (DB, API, MQ)\n```\n\n###\
+  \ Port (인터페이스)\n```typescript\n// Input Port (Driving) — 애플리케이션이 외부에 제공\ninterface\
+  \ CreateOrderUseCase {\n  execute(command: CreateOrderCommand): Promise<OrderId>;\n\
+  }\n\n// Output Port (Driven) — 애플리케이션이 외부에 요청\ninterface OrderRepository {\n  save(order:\
+  \ Order): Promise<void>;\n  findById(id: OrderId): Promise<Order | null>;\n}\n```\n\
+  \n### Adapter (구현체)\n```typescript\n// Driving Adapter — HTTP Controller\nclass\
+  \ OrderController {\n  constructor(private createOrder: CreateOrderUseCase) {}\n\
+  \  async handlePost(req: Request) {\n    const orderId = await this.createOrder.execute(req.body);\n\
+  \    return { status: 201, body: { orderId } };\n  }\n}\n\n// Driven Adapter — Prisma\
+  \ Repository\nclass PrismaOrderRepository implements OrderRepository {\n  async\
+  \ save(order: Order) { /* Prisma 호출 */ }\n  async findById(id: OrderId) { /* Prisma\
+  \ 호출 */ }\n}\n```\n\n### vs Clean Architecture\n- 동일 원칙 (의존성 역전), 표현 방식이 다름\n- Hexagonal:\
+  \ Port/Adapter 중심 사고\n- Clean Architecture: 동심원 계층 중심 사고\n- 실무에서는 혼용이 일반적\n\n###\
+  \ 적용 판단\n- ✅: 외부 시스템 교체 가능성, 비즈니스 로직 복잡, 테스트 격리 필요\n- ❌: 단순 CRUD, 프로토타입, 학습 비용 대비\
+  \ 이점 없을 때\n"
+domain: development.backend
+id: dev.backend.patterns.hexagonal
+tags:
+- backend
+- hexagonal
+- ports-adapters
+- architecture
+theory: '#162 Hexagonal Architecture / Ports & Adapters (Alistair Cockburn, 2005)'
+token_estimate: 638
+type: pattern
+version: 1

@@ -1,0 +1,36 @@
+content: "다층 방어 설계 (각 레이어는 구멍이 있는 치즈 슬라이스 -- 겹치면 구멍을 막는다):\n\nJames Reason의 스위스 치즈\
+  \ 모델은 단일 방어 레이어는 반드시 구멍(취약점)이 있으며,\n여러 레이어를 겹쳐야 공격이 모든 구멍을 동시에 통과하는 확률을 극소화할 수 있다는\
+  \ 원리이다.\n\n### 5-Layer 방어 체인\n\n| Layer | 역할 | 실패 시 결과 |\n|-------|------|------------|\n\
+  | L1. 입력 검증 | 악성 데이터 차단 | SQL Injection, XSS 가능 |\n| L2. 인증 (Authentication) | 신원\
+  \ 확인 | 비인가 접근 |\n| L3. 인가 (Authorization) | 권한 확인 | 권한 상승(Privilege Escalation)\
+  \ |\n| L4. 비즈니스 로직 검증 | 도메인 규칙 적용 | 잔고 부족 이체, 재고 초과 주문 |\n| L5. 출력 필터링 | 민감 정보 제거\
+  \ | 내부 구조/개인정보 노출 |\n\n### DO: 모든 레이어 적용\n```typescript\n// L1: 입력 검증 (Zod)\nconst\
+  \ TransferSchema = z.object({\n  fromAccountId: z.string().uuid(),\n  toAccountId:\
+  \ z.string().uuid(),\n  amount: z.number().positive().max(10_000_000),\n});\n\n\
+  // L2~L3: 인증 + 인가 미들웨어\napp.post(\"/transfers\", authMiddleware, async (c) => {\n\
+  \  const body = TransferSchema.parse(await c.req.json());     // L1\n  const user\
+  \ = c.get(\"user\");                                 // L2\n  if (body.fromAccountId\
+  \ !== user.accountId) {                // L3\n    throw Errors.forbidden(\"본인 계좌만\
+  \ 출금 가능합니다\");\n  }\n\n  // L4: 비즈니스 로직 검증\n  const account = await accountService.findById(body.fromAccountId);\n\
+  \  if (account.balance < body.amount) {\n    throw Errors.validation({ amount: \"\
+  잔고 부족\" });\n  }\n\n  const result = await transferService.execute(body);\n\n  //\
+  \ L5: 출력 필터링 -- 내부 필드 제거\n  return c.json({ data: { id: result.id, status: result.status,\
+  \ amount: result.amount } });\n});\n```\n\n### DON'T: 단일 레이어에 의존\n```typescript\n\
+  // L1만 존재, L2~L5 전부 누락\napp.post(\"/transfers\", async (c) => {\n  const body =\
+  \ TransferSchema.parse(await c.req.json());\n  // 인증 없음 -- 누구나 이체 가능\n  // 인가 없음\
+  \ -- 타인 계좌에서 출금 가능\n  // 비즈니스 검증 없음 -- 잔고 마이너스 가능\n  const result = await db.executeTransfer(body);\n\
+  \  return c.json(result); // 출력 필터링 없음 -- 내부 DB 컬럼 전체 노출\n});\n```\n\n### 적용 규칙\n\
+  - 최소 3개 레이어가 동시에 적용되어야 한다 (L1 + L2/L3 + L5는 필수)\n- 레이어 간 의존성 금지: 각 레이어는 이전 레이어가\
+  \ 실패했다고 가정하고 독립 검증한다\n- 레이어 통과/실패 이벤트를 감사 로그에 기록한다\n"
+domain: development.security
+id: dev.security.swiss-cheese
+tags:
+- security
+- defense-in-depth
+- layered-security
+- pattern
+- swiss-cheese
+theory: '#113 스위스 치즈 모델 (Reason, 1990)'
+token_estimate: 940
+type: pattern
+version: 1

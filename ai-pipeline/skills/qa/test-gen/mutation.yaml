@@ -1,0 +1,23 @@
+content: "뮤테이션 테스트 (테스트의 품질 자체를 검증한다):\n\n### 핵심 개념\n코드에 의도적 버그(mutant)를 주입 → 테스트가\
+  \ 이를 잡는지 확인\n- Killed: 테스트가 mutant를 감지 ✅\n- Survived: 테스트가 mutant를 놓침 ❌ (테스트 보강\
+  \ 필요)\n\n### 뮤테이션 유형\n| 유형 | 원본 | 뮤턴트 |\n|------|------|--------|\n| 조건 반전 | `if\
+  \ (a > b)` | `if (a <= b)` |\n| 산술 변경 | `a + b` | `a - b` |\n| 반환값 변경 | `return\
+  \ true` | `return false` |\n| 삭제 | `validateInput()` | (삭제) |\n| 경계값 | `i < n` |\
+  \ `i <= n` |\n\n### Stryker (JavaScript/TypeScript)\n```bash\nnpx stryker run\n\
+  ```\n```\nMutation score: 85% (170 killed / 200 total)\nSurvived mutants:\n  - src/pricing.ts:23\
+  \  a > b → a >= b  (boundary mutant)\n  - src/auth.ts:45     return true → return\
+  \ false\n```\n\n### 뮤테이션 스코어\n```\nScore = (Killed + Timeout) / Total Mutants ×\
+  \ 100%\n```\n- 목표: 80%+ (100%는 비현실적)\n- 낮은 스코어 = 테스트가 있지만 실질적 검증이 부족\n\n### 적용 가이드\n\
+  - ✅ 적용: 비즈니스 크리티컬 로직, 금융/의료 코드\n- ❌ 부적합: UI 코드, 외부 API 호출 코드 (느리고 비결정적)\n- 전체 코드가\
+  \ 아닌 핵심 모듈에만 적용 (비용 대비 효과)\n"
+domain: qa
+id: qa.test-gen.mutation
+tags:
+- qa
+- mutation-testing
+- test-quality
+- stryker
+theory: '#171 Mutation Testing (Richard Lipton, 1971 / Stryker Mutator)'
+token_estimate: 420
+type: pattern
+version: 1

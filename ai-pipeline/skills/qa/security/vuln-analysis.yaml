@@ -1,0 +1,125 @@
+bloom_level: ANALYZE
+content: '# LLM 기반 취약점 분석 자동화
+
+  Source: Toss Tech (표상영) — vulnerability-analysis-automation
+
+
+  ## Purpose
+
+  LLM을 활용하여 서비스 코드의 보안 취약점을 자동으로 분석한다.
+
+  Google Project Naptime에서 영감을 받은 접근법.
+
+
+  ## 핵심 도전과 해결
+
+
+  ### Challenge 1: 대규모 코드베이스 처리
+
+  문제: 토큰 제한으로 전체 소스를 한 번에 분석 불가 → 환각, 취약점 누락
+
+  해결: SourceCode Browse MCP 구현
+
+  - tree-sitter: 구문 분석 (AST)
+
+  - ctags: 함수/변수 인덱싱
+
+  - ripgrep: 빠른 텍스트 검색
+
+  LLM이 전체 코드를 처리하는 대신 관련 코드 섹션을 동적으로 쿼리한다.
+
+
+  ### Challenge 2: 일관성 없는 결과
+
+  문제: 동일 분석을 반복해도 매번 다른 취약점 수 → 신뢰성 부족
+
+  해결: SAST 도구(Semgrep) 통합
+
+  - 모든 source-to-sink 코드 경로를 체계적으로 수집
+
+  - LLM 일관성 변동에 관계없이 포괄적 커버리지 보장
+
+  - 규칙 기반(SAST) + LLM 분석 하이브리드 접근
+
+
+  ### Challenge 3: 비용 지속 가능성
+
+  문제: 클라우드 LLM 비용 과다 (300개 프로젝트 월 8.1억원 추산)
+
+  해결: 오픈소스 모델 전환
+
+  - Qwen3:30B — 정확도 ~100% + 계산 효율 최적 균형
+
+  - gpt-oss:20B, llama3.1:8B도 테스트
+
+  - 로컬 GPU 인프라로 비용 대폭 절감
+
+
+  ### Challenge 4: 운영 효율
+
+  해결: Multi-Agent 시스템
+
+  - Supervisor: 워크플로우 조율
+
+  - Discovery Agent: 고위험 코드 경로 필터링
+
+  - Analysis Agent: 상세 취약점 평가
+
+  유망한 경로에만 분석을 집중하여 불필요한 토큰 소모 방지.
+
+
+  ## Source-to-Sink 분석 방법
+
+  ```
+
+  1. SAST(Semgrep)로 전체 source-to-sink 경로 열거
+
+  2. Discovery Agent가 고위험 경로 필터링
+
+  3. Analysis Agent가 필터링된 경로만 상세 분석
+
+  4. 프로젝트 빌드 없이 의미론적 코드 분석 수행
+
+  ```
+
+
+  ## 실무 적용 체크리스트
+
+  - [ ] tree-sitter + ctags + ripgrep으로 코드 탐색 MCP 구축
+
+  - [ ] Semgrep 규칙으로 source-to-sink 경로 수집
+
+  - [ ] Multi-Agent로 Discovery → Analysis 파이프라인 구성
+
+  - [ ] 오픈소스 모델로 비용 최적화 (Qwen3:30B 권장)
+
+  - [ ] False positive 줄이기 위한 다단계 필터링 적용
+
+  - [ ] 정기적 스캔 자동화 (CI/CD 통합)
+
+
+  ## 핵심 교훈
+
+  - 이론적 완벽함보다 운영 가능한 실용적 해결이 중요
+
+  - 규칙 기반(SAST) + LLM 하이브리드가 단독 사용보다 효과적
+
+  - 비용과 정확도의 균형점을 찾아야 지속 가능
+
+  '
+domain: qa
+id: qa.security.vuln-analysis
+tags:
+- qa
+- security
+- vulnerability
+- llm-analysis
+- sast
+- semgrep
+- multi-agent
+- code-analysis
+- automation
+theory: 'LLM 취약점 분석 자동화 (Toss Tech: SourceCode Browse MCP + SAST + Multi-Agent)'
+token_estimate: 720
+type: rule
+version: 1

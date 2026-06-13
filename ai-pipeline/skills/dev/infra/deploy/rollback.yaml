@@ -1,0 +1,48 @@
+content: "롤백 전략 — 모든 배포에는 되돌리기 계획이 필수. 롤백 못하는 배포는 배포가 아니라 도박이다:\n\n### 롤백 유형별 시간/위험도\
+  \ 매트릭스\n| 롤백 유형 | 소요 시간 | 위험도 | 자동화 가능 |\n|-----------|----------|--------|------------|\n\
+  | 배포 롤백 (이미지 태그) | < 1분 | 낮음 | O |\n| 피처 플래그 Kill Switch | < 10초 | 낮음 | O |\n| DB\
+  \ 마이그레이션 롤백 | 5~15분 | 중간 | 부분적 |\n| 데이터 복원 (백업) | 30분~2시간 | 높음 | X |\n| 전체 인프라 복원\
+  \ | 1~4시간 | 매우 높음 | X |\n\n### 1. 배포 롤백 — 이전 이미지로 즉시 복귀\n```bash\n# DO: N-1 이미지\
+  \ 태그를 항상 보관, 즉시 롤백 가능\n# Kubernetes\nkubectl rollout undo deployment/app --to-revision=3\n\
+  \n# Docker Compose\ndocker compose pull app:v1.2.3  # 이전 태그\ndocker compose up -d\
+  \ app\n\n# CI/CD에서 자동 롤백 (GitHub Actions 예시)\n# deploy.yml\n- name: Deploy\n  run:\
+  \ kubectl set image deployment/app app=${{ env.IMAGE_TAG }}\n- name: Verify\n  run:\
+  \ |\n    sleep 30\n    ERROR_RATE=$(curl -s prometheus:9090/api/v1/query?query=rate(http_errors[5m]))\n\
+  \    if (( $(echo \"$ERROR_RATE > 0.01\" | bc -l) )); then\n      echo \"Error rate\
+  \ too high, rolling back\"\n      kubectl rollout undo deployment/app\n      exit\
+  \ 1\n    fi\n```\n\n### 2. DB 마이그레이션 롤백 — 역방향 마이그레이션 필수\n```typescript\n// DO: 모든\
+  \ 마이그레이션에 reversible down() 작성\nexport async function up(db: Kysely<any>) {\n  await\
+  \ db.schema\n    .alterTable(\"users\")\n    .addColumn(\"phone\", \"varchar(20)\"\
+  )\n    .execute();\n}\n\nexport async function down(db: Kysely<any>) {\n  await\
+  \ db.schema\n    .alterTable(\"users\")\n    .dropColumn(\"phone\")\n    .execute();\n\
+  }\n```\n\nDON'T:\n```typescript\n// ❌ 되돌릴 수 없는 파괴적 마이그레이션\nexport async function\
+  \ up(db: Kysely<any>) {\n  // 컬럼 삭제 — 데이터 영구 손실\n  await db.schema.alterTable(\"\
+  users\").dropColumn(\"legacy_name\").execute();\n  // 테이블 DROP — 복구 불가\n  await\
+  \ db.schema.dropTable(\"old_orders\").execute();\n}\n\nexport async function down()\
+  \ {\n  // down이 비어 있음 = 롤백 불가능\n  throw new Error(\"irreversible migration\");\n\
+  }\n\n// ❌ 롤백 테스트를 안 한 마이그레이션\n// up → down → up 사이클 테스트 필수\n```\n\n### 3. 피처 롤백\
+  \ — Feature Flag Kill Switch\n```typescript\n// DO: 위험도 높은 기능은 반드시 플래그 뒤에 배치\nconst\
+  \ newPaymentEnabled = await featureFlag.isEnabled(\"new-payment\", {\n  userId,\n\
+  \  default: false,\n});\n// 장애 감지 시: 대시보드에서 플래그 OFF → 즉시 이전 로직 복귀\n// 코드 배포 없이 10초\
+  \ 내 롤백 가능\n```\n\n### 4. 데이터 롤백 — 백업 복원\n```bash\n# DO: 자동 백업 + 복원 절차 문서화\n# PostgreSQL\
+  \ 포인트-인-타임 복구\npg_restore --dbname=app_production --clean backup_2024_01_15.dump\n\
+  \n# 배포 전 체크리스트:\n# - [ ] 최근 백업 확인 (< 1시간)\n# - [ ] 복원 테스트 최근 실행일 확인 (< 1주)\n# -\
+  \ [ ] 예상 복원 시간 확인\n```\n\n### 롤백 의사결정 플로우\n```\n장애 감지 → 피처 플래그 ON? → Kill Switch\
+  \ OFF (10초)\n                  ↓ No\n          배포 변경 원인? → 이전 이미지 롤백 (1분)\n    \
+  \              ↓ No\n          DB 변경 원인? → down 마이그레이션 실행 (5~15분)\n            \
+  \      ↓ No\n          데이터 오염? → 백업 복원 (30분+, 경영진 승인 필요)\n```\n\n### 핵심 규칙\n- 모든\
+  \ 배포 파이프라인에 롤백 단계 포함 필수\n- 매 분기 1회 롤백 드릴 실시 (실제 프로덕션 환경에서)\n- N-1 이미지 보관 기간: 최소\
+  \ 7일\n- DB 마이그레이션 up/down/up 사이클 테스트를 CI에 포함\n"
+domain: development.infra
+id: dev.infra.deploy.rollback
+tags:
+- infra
+- deploy
+- rollback
+- migration
+- disaster-recovery
+- resilience
+theory: '#133 Zero-Downtime Deployment, #125 Release It! (Nygard, 2018)'
+token_estimate: 1337
+type: rule
+version: 1

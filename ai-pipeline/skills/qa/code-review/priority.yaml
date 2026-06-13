@@ -1,0 +1,41 @@
+content: "리뷰 우선순위 기준 (가장 위험한 이슈부터 잡아야 한다):\n\n### 심각도 분류\n\n**[Critical] 보안 취약점 —\
+  \ 즉시 수정, 배포 차단**\nOWASP Top 10 기준. 데이터 유출/파괴 가능성 있는 이슈.\n\nDO (발견 시 반드시 지적):\n```typescript\n\
+  // ❌ Critical: SQL Injection\nconst user = await db.query(`SELECT * FROM users WHERE\
+  \ email = '${email}'`);\n\n// ❌ Critical: 하드코딩된 시크릿\nconst API_KEY = '<hardcoded-api-key>';\n\
+  \n// ❌ Critical: 인증 없는 관리자 API\napp.delete('/api/admin/users/:id', async (req, res)\
+  \ => {\n  await db.query('DELETE FROM users WHERE id = $1', [req.params.id]);\n\
+  });\n```\n\n**[High] 버그/논리 오류 — 반드시 수정**\n런타임 크래시, 데이터 손실, 잘못된 비즈니스 로직.\n\n```typescript\n\
+  // ❌ High: null 체크 누락 → TypeError 크래시\nconst userName = user.profile.name.toUpperCase();\n\
+  // ✅ 수정\nconst userName = user?.profile?.name?.toUpperCase() ?? 'Unknown';\n\n//\
+  \ ❌ High: 비동기 에러 미처리 → 서버 크래시\napp.get('/api/users', async (req, res) => {\n  const\
+  \ users = await getUsers(); // throw 시 unhandled rejection\n  res.json(users);\n\
+  });\n// ✅ 수정: try-catch 또는 에러 핸들링 미들웨어\napp.get('/api/users', async (req, res, next)\
+  \ => {\n  try {\n    const users = await getUsers();\n    res.json(users);\n  }\
+  \ catch (error) {\n    next(error);\n  }\n});\n```\n\n**[Medium] 성능 이슈 — 수정 권장**\n\
+  N+1 쿼리, 불필요한 리렌더링, 메모리 누수, O(n^2) 알고리즘.\n\n```typescript\n// ❌ Medium: 컴포넌트 내 매\
+  \ 렌더마다 새 배열 생성\nfunction UserList({ users }: { users: User[] }) {\n  const sorted\
+  \ = users.sort((a, b) => a.name.localeCompare(b.name)); // 원본 mutate + 매번 정렬\n \
+  \ return sorted.map(u => <UserCard key={u.id} user={u} />);\n}\n// ✅ useMemo로 메모이제이션\n\
+  function UserList({ users }: { users: User[] }) {\n  const sorted = useMemo(\n \
+  \   () => [...users].sort((a, b) => a.name.localeCompare(b.name)),\n    [users]\n\
+  \  );\n  return sorted.map(u => <UserCard key={u.id} user={u} />);\n}\n```\n\n**[Low]\
+  \ 코드 스타일/가독성 — 선택적 수정**\n네이밍 개선, 불필요한 코드, 더 나은 패턴 존재.\n\n```typescript\n// ❌ Low:\
+  \ 의미 불명확한 변수명\nconst d = new Date();\nconst x = users.filter(u => u.a);\n// ✅ 명확한\
+  \ 이름\nconst currentDate = new Date();\nconst activeUsers = users.filter(user =>\
+  \ user.isActive);\n```\n\n**[Info] 개선 제안 — 참고 사항**\n리팩토링 기회, 새로운 API/패턴 안내, 문서화\
+  \ 제안.\n\n### 심각도별 행동 기준\n| 심각도 | 행동 | PR 머지 |\n|--------|------|---------|\n| Critical\
+  \ | 즉시 수정 필수 | 차단 |\n| High | 반드시 수정 | 차단 |\n| Medium | 수정 권장 (이번 또는 다음 PR) | 허용\
+  \ (조건부) |\n| Low | 선택적 수정 | 허용 |\n| Info | 참고만 | 허용 |\n\n### 흔한 실수\n- 스타일 이슈를 Critical로\
+  \ 분류 → 리뷰어 신뢰 하락\n- 보안 이슈를 Low로 분류 → 심각한 사고 위험\n- 모든 이슈를 Medium으로 분류 → 우선순위 무의미화\n"
+domain: qa
+id: qa.code-review.priority
+tags:
+- qa
+- code-review
+- priority
+- severity
+- triage
+theory: '#121 테스트 피라미드 (Cohn, 2009)'
+token_estimate: 1141
+type: rule
+version: 1

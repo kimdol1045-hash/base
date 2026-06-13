@@ -1,0 +1,46 @@
+content: '배포 자기 검증 체크리스트:
+
+
+  ## 필수 확인
+
+  - [ ] 환경변수가 하드코딩되지 않았는가? (모두 환경변수/시크릿 매니저 사용)
+
+  - [ ] .env 파일이 .gitignore에 포함되었는가?
+
+  - [ ] .env.example이 모든 필요 키를 포함하는가? (값은 비워둠)
+
+  - [ ] 프로덕션 빌드가 정상 동작하는가? (npm run build && npm start)
+
+  - [ ] HTTPS가 강제되는가? (HTTP → HTTPS 리다이렉트)
+
+  - [ ] 헬스체크 엔드포인트가 있는가? (/health 또는 /api/health)
+
+  - [ ] 데이터베이스 마이그레이션이 배포 전에 실행되는가?
+
+  - [ ] 롤백 절차가 문서화되어 있는가?
+
+
+  ## 권장 확인
+
+  - [ ] 에러 추적 서비스가 연동되었는가? (Sentry 등)
+
+  - [ ] 로깅이 구조화되어 있는가? (JSON 형식, 레벨 분류)
+
+  - [ ] 배포 알림이 설정되었는가? (Slack/Discord)
+
+  - [ ] CDN 캐시 무효화 전략이 있는가?
+
+  - [ ] 리소스 제한이 설정되었는가? (메모리, CPU 제한)
+
+  - [ ] 자동 스케일링 조건이 정의되었는가?
+
+  '
+domain: development.infra
+id: dev.infra.deploy.verify
+tags:
+- infra
+- deploy
+- verification
+token_estimate: 280
+type: verify
+version: 1

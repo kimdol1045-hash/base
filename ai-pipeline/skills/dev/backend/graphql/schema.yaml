@@ -1,0 +1,26 @@
+bloom_level: APPLY
+content: "# GraphQL 스키마 설계 가이드\n\n## 핵심 원칙\n- 스키마는 클라이언트 관점에서 설계한다 (Demand-Driven\
+  \ Design)\n- 타입 이름은 비즈니스 도메인 용어를 사용한다\n- Nullable 필드를 기본으로 하되, 반드시 존재하는 필드만 Non-Null로\
+  \ 선언한다\n- Relay Connection 스펙을 따라 페이지네이션을 구현한다\n\n## DO\n- 모든 Mutation의 반환 타입에 `userErrors`\
+  \ 필드를 포함한다\n- Input 타입은 `[MutationName]Input` 네이밍을 따른다\n- Enum 값은 SCREAMING_SNAKE_CASE로\
+  \ 작성한다\n- `ID` 스칼라 타입은 외부 노출용, 내부 키는 별도 처리한다\n\n## DON'T\n- REST 엔드포인트를 그대로 GraphQL로\
+  \ 매핑하지 않는다\n- 하나의 Query에 너무 많은 인자를 넣지 않는다 (filter Input 타입 분리)\n- `Any`나 `JSON`\
+  \ 스칼라를 남용하지 않는다\n- 중첩 깊이 제한 없이 순환 참조를 허용하지 않는다\n\n## 코드 예시\n```graphql\ntype Query\
+  \ {\n  user(id: ID!): User\n  users(first: Int!, after: String, filter: UserFilter):\
+  \ UserConnection!\n}\n\ntype User implements Node {\n  id: ID!\n  email: String!\n\
+  \  displayName: String\n  posts(first: Int!, after: String): PostConnection!\n}\n\
+  \ninput UserFilter {\n  role: UserRole\n  createdAfter: DateTime\n}\n\ntype UserConnection\
+  \ {\n  edges: [UserEdge!]!\n  pageInfo: PageInfo!\n  totalCount: Int!\n}\n\ntype\
+  \ Mutation {\n  createUser(input: CreateUserInput!): CreateUserPayload!\n}\n\ntype\
+  \ CreateUserPayload {\n  user: User\n  userErrors: [UserError!]!\n}\n```\n"
+domain: development.backend
+id: dev.backend.graphql.schema
+tags:
+- graphql
+- schema
+- api
+- backend
+theory: '#201 GraphQL Schema Design (Principled GraphQL, Apollo 2019)'
+token_estimate: 450
+type: pattern
+version: 1

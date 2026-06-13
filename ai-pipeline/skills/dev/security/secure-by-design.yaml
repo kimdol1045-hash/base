@@ -1,0 +1,58 @@
+content: "Security by Design + Privacy by Design 7원칙 (Ann Cavoukian, 2009 / GDPR Art.25):\n\
+  \n보안과 개인정보 보호는 사후 패치가 아니라 설계 단계부터 시스템에 내장한다.\n\"보안을 나중에 추가하는 것은 집을 짓고 나서 기초를 보강하는\
+  \ 것과 같다.\"\n\n### 원칙 1: 사후 대응이 아닌 사전 예방 (Proactive not Reactive)\n위협이 발생하기 전에 예방\
+  \ 조치를 설계에 포함한다.\n```typescript\n// DO: 설계 단계에서 위협 모델링 수행\n// 신규 API 설계 시 STRIDE\
+  \ 분석을 먼저 수행하고 코드 작성\ninterface ThreatModel {\n  feature: string;\n  threats: Array<{\n\
+  \    type: \"S\" | \"T\" | \"R\" | \"I\" | \"D\" | \"E\";\n    scenario: string;\n\
+  \    mitigation: string;\n    priority: \"high\" | \"medium\" | \"low\";\n  }>;\n\
+  \  reviewedBy: string;\n  reviewedAt: string;\n}\n```\n\n### 원칙 2: 기본값으로 보안 (Privacy\
+  \ as Default)\n사용자가 아무 설정도 하지 않아도 최대 보안 상태여야 한다.\n```typescript\n// DO: 기본값이 가장\
+  \ 안전한 옵션\nconst DEFAULT_USER_SETTINGS = {\n  profileVisibility: \"private\",   \
+  \  // 기본: 비공개\n  dataSharing: false,               // 기본: 공유 안 함\n  twoFactorEnabled:\
+  \ true,           // 기본: 2FA 활성화\n  sessionTimeout: 15 * 60 * 1000,   // 기본: 15분\n\
+  \  emailNotifications: true,         // 보안 알림: 켜짐\n} as const;\n\n// DON'T: 기본값이\
+  \ 열린 상태\nconst DEFAULT_USER_SETTINGS = {\n  profileVisibility: \"public\",     \
+  \ // 기본: 공개 = 위험\n  dataSharing: true,                // 기본: 공유 = 위험\n  twoFactorEnabled:\
+  \ false,          // 기본: 2FA 꺼짐 = 위험\n};\n```\n\n### 원칙 3: 설계에 내장 (Embedded into\
+  \ Design)\n보안은 부가 기능이 아니라 핵심 아키텍처의 일부이다.\n```typescript\n// DO: 엔티티 레벨에서 PII 보호가\
+  \ 내장된 설계\nclass UserEntity {\n  private readonly _email: string;\n  private readonly\
+  \ _phone: string;\n\n  constructor(data: { email: string; phone: string }) {\n \
+  \   this._email = encrypt(data.email, ENCRYPTION_KEY);\n    this._phone = encrypt(data.phone,\
+  \ ENCRYPTION_KEY);\n  }\n\n  // 외부 노출 시 항상 마스킹\n  get maskedEmail(): string {\n\
+  \    const email = decrypt(this._email, ENCRYPTION_KEY);\n    const [local, domain]\
+  \ = email.split(\"@\");\n    return `${local.slice(0, 2)}***@${domain}`;\n  }\n\n\
+  \  // 원본은 명시적 권한이 있을 때만 접근\n  getEmail(accessor: { hasPermission: (p: string) =>\
+  \ boolean }): string {\n    if (!accessor.hasPermission(\"read:pii\")) throw Errors.forbidden();\n\
+  \    return decrypt(this._email, ENCRYPTION_KEY);\n  }\n}\n\n// DON'T: PII가 그냥 string으로\
+  \ 돌아다니는 설계\ninterface User { email: string; phone: string; } // 어디서든 평문 접근 가능\n\
+  ```\n\n### 원칙 4: 양립 가능 (Positive-Sum)\n보안과 사용성은 상충하지 않는다. 둘 다 달성할 수 있는 설계를 추구한다.\n\
+  - 비밀번호: 복잡한 규칙 대신 최소 12자 + 실시간 강도 피드백\n- 인증: 매번 비밀번호 입력 대신 biometric + 기기 신뢰\n\n\
+  ### 원칙 5: 전체 수명주기 보안 (End-to-End Lifecycle)\n데이터 생성부터 파기까지 보안을 유지한다.\n```typescript\n\
+  // DO: 데이터 보존 정책 + 자동 삭제\nconst DATA_RETENTION_DAYS = 365 * 2; // 2년 보존\n\n// 매일\
+  \ 실행: 보존 기한 초과 데이터 안전 삭제\nasync function purgeExpiredData() {\n  const cutoff =\
+  \ new Date(Date.now() - DATA_RETENTION_DAYS * 86_400_000);\n  const deleted = await\
+  \ db.delete(userActivities)\n    .where(lt(userActivities.createdAt, cutoff));\n\
+  \  logger.info({ event: \"DATA_PURGE\", count: deleted.rowCount, cutoff: cutoff.toISOString()\
+  \ });\n}\n```\n\n### 원칙 6: 가시성과 투명성 (Visibility and Transparency)\n사용자에게 어떤 데이터를\
+  \ 수집하고 어떻게 사용하는지 명확히 알린다.\n- 개인정보 수집 시 목적/보존기간/제3자 제공 여부 명시\n- 사용자 데이터 다운로드/삭제 기능\
+  \ 제공 (GDPR Art.17 삭제권)\n\n### 원칙 7: 사용자 중심 (User-Centric)\n```typescript\n// DO:\
+  \ 사용자가 자신의 데이터를 통제할 수 있는 API\napp.get(\"/me/data-export\", authMiddleware, async\
+  \ (c) => {\n  const data = await userDataService.exportAll(c.get(\"user\").id);\n\
+  \  return c.json({ data }); // GDPR Art.20 데이터 이동권\n});\n\napp.delete(\"/me/account\"\
+  , authMiddleware, mfaRequired, async (c) => {\n  await userService.anonymizeAndDelete(c.get(\"\
+  user\").id); // 완전 삭제\n  return c.json({ message: \"계정이 삭제되었습니다\" });\n});\n```\n\
+  \n### GDPR Art.25 준수 요약\n- Data Minimization: 필요 최소한의 데이터만 수집\n- Purpose Limitation:\
+  \ 수집 목적 외 사용 금지\n- Storage Limitation: 보존 기간 만료 시 자동 삭제\n- Pseudonymization: 가능하면\
+  \ 가명 처리\n"
+domain: development.security
+id: dev.security.secure-by-design
+tags:
+- security
+- privacy-by-design
+- gdpr
+- secure-design
+- pattern
+theory: '#120 Security by Design (Cavoukian, 2009)'
+token_estimate: 1766
+type: pattern
+version: 1
